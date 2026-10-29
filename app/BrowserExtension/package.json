@@ -1,0 +1,18 @@
+{
+  "name": "ladle-browser-extension",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ladle's browser extension for Chrome, Arc, Edge, Brave, Firefox and Safari.",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:store": "node build.mjs --store",
+    "test": "node --test test/unit/*.test.mjs",
+    "test:browser": "node build.mjs chrome && node --test --test-concurrency=1 test/browser/*.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
