@@ -36,6 +36,9 @@ final class UpdateController: ObservableObject {
                 self?.lastChecked = self?.updater.lastUpdateCheckDate
             }
         }
+        // A build still carrying the placeholder key can't verify updates; Sparkle would greet
+        // every launch with an error, so the updater stays off. Release builds always have the key.
+        guard hasPublicKey else { return }
         controller.startUpdater()
         updater.publisher(for: \.canCheckForUpdates)
             .receive(on: RunLoop.main)
@@ -44,6 +47,11 @@ final class UpdateController: ObservableObject {
             }
             .store(in: &cancellables)
         lastChecked = updater.lastUpdateCheckDate
+    }
+
+    private var hasPublicKey: Bool {
+        let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String ?? ""
+        return !key.isEmpty && !key.hasPrefix("REPLACE_WITH")
     }
 
     var currentVersion: String {

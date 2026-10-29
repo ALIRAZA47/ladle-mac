@@ -13,6 +13,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var launched = false
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        // A regular app with a Dock icon and menus, even though its only SwiftUI scene is the
+        // menu bar extra (the windows are AppKit windows).
+        NSApp.setActivationPolicy(.regular)
         Typeface.registerBundledFonts()
     }
 
