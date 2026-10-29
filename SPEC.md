@@ -24,8 +24,9 @@ files for the night, sorts everything into folders, and updates itself.
 | `.github/workflows/app-*.yml` | App CI and releases | app |
 | `.github/workflows/site-*.yml` | Site CI and deploy | site |
 
-Each side edits only its own paths. The one shared file is `site/public/appcast.xml`:
-the site creates it, and the app's release workflow rewrites it on every release.
+Each side edits only its own paths. The one shared piece is the update feed: the site commits
+an empty `site/public/appcast.xml`, and the feed step in `site-deploy.yml` (owned by the app side)
+rebuilds it from the published releases before every deploy.
 
 ## Identity
 
@@ -265,12 +266,19 @@ app's release workflow, on the tag:
 2. builds a universal app, ad-hoc signs it (or signs and notarizes it with Developer ID when those
    secrets exist), signs the update with `SPARKLE_ED_PRIVATE_KEY` (the one required secret), and
    publishes a normal (not pre-) GitHub Release with the version-less assets `Ladle.dmg` and
-   `Ladle-Chrome-Extension.zip`, so the `releases/latest/download/…` links always work;
-3. sets the changelog `date`, rewrites `site/public/appcast.xml`, and commits both to `main`;
-4. starts `.github/workflows/site-deploy.yml` on `main` with `gh workflow run` (that job needs
+   `Ladle-Chrome-Extension.zip`, so the `releases/latest/download/…` links always work, plus
+   `sparkle.json` (`version`, `build`, `edSignature`, `length`, `minimumSystemVersion`) for the feed;
+3. starts `.github/workflows/site-deploy.yml` on `main` with `gh workflow run` (that job needs
    `actions: write`). A push made with the default `GITHUB_TOKEN` doesn't start other workflows,
    but a `workflow_dispatch` does, and because the deploy runs on `main`, the `github-pages`
    environment needs no extra rule for tags.
+
+The workflow never commits: `main` requires pull requests, and the workflow's token can't bypass
+that. Instead, every site deploy rebuilds `site/public/appcast.xml` from the published releases
+(newest first, the last 10, each enclosure pointing at `releases/download/vX.Y.Z/Ladle.dmg`) and
+fills in a missing changelog `date` with the release day, in its own checkout only, before it
+builds the site. If GitHub can't be reached, the deploy fails rather than publishing an empty feed.
+With no releases yet, the feed is an empty channel.
 
 ### Settings
 
