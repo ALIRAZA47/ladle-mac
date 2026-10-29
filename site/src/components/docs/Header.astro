@@ -37,6 +37,22 @@ const isDocsHome = Astro.url.pathname === '/docs/';
 	</div>
 </div>
 
+<script>
+	// Starlight's search button is labelled "Search the docs" but also shows a ⌘K or Ctrl K hint,
+	// and Astro 7's whitespace rules leave no spaces between them ("Search the docsCtrlK"). Put the
+	// spaces back and add the hint to the button's name, so what's announced matches what's on
+	// screen (WCAG 2.5.3). Spaces between flex items don't change the layout.
+	const button = document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]');
+	const hint = button?.querySelector<HTMLElement>(':scope > kbd');
+	if (button && hint) {
+		const keys = [...hint.querySelectorAll('kbd')];
+		hint.before(' ');
+		keys.slice(1).forEach((key) => key.before(' '));
+		const shortcut = keys.map((key) => key.textContent?.trim()).join(' ');
+		button.setAttribute('aria-label', `${button.getAttribute('aria-label')} ${shortcut}`);
+	}
+</script>
+
 <style>
 	.docs-header {
 		height: 100%;
