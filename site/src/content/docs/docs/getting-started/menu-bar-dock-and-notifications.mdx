@@ -3,6 +3,8 @@ title: Menu bar, Dock and notifications
 description: Keep an eye on downloads without opening Ladle’s window. The menu bar, the Dock icon and notifications all show what’s pouring.
 ---
 
+import SettingsTable from '~/components/content/SettingsTable.astro';
+
 ## The menu bar
 
 Ladle’s icon in the menu bar shows your total download speed. Click it for a menu with:
@@ -29,10 +31,14 @@ When a download finishes, Ladle sends a notification with **Open** and **Show in
 
 These settings live in **Ladle › Settings › General**:
 
-| Setting | Out of the box | What it does |
+<SettingsTable>
+
+| Setting | Default | What it does |
 | --- | --- | --- |
 | Notify me when downloads finish | On | Sends a notification for each finished download. |
 | Play a sound too | Off | Adds a sound to that notification. |
+
+</SettingsTable>
 
 The first time Ladle wants to notify you, macOS asks whether to allow it. To change your answer later, open **System Settings › Notifications** and click **Ladle**.
 

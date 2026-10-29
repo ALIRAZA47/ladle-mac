@@ -3,6 +3,8 @@ title: Connections and speed limits
 description: How Ladle splits a file into several connections, when it backs off, how it retries, and how to cap its speed.
 ---
 
+import SettingsTable from '~/components/content/SettingsTable.astro';
+
 ## How Ladle splits a download
 
 A browser fetches a file through one connection. Ladle asks the server for several pieces of the file at once, using **8 connections per download** out of the box, and writes each piece straight into place as it arrives.
@@ -39,13 +41,17 @@ To leave room for a video call or other people on your network, cap Ladle’s to
 
 ## Other settings on the Speed tab
 
-| Setting | Out of the box | What it does |
+<SettingsTable>
+
+| Setting | Default | What it does |
 | --- | --- | --- |
 | Downloads at the same time | 3 | How many downloads run at once. See [The main queue](/docs/queues-and-speed/main-queue/). |
 | Connections per download | 8 (recommended) | How many pieces each download is split into. |
 | Limit total speed | Off, 10 MB/s | One cap across all downloads. |
 | Retry failed downloads | 3 times | Never, 1, 3, 5 or 10 times. |
 | Proxy | Same as macOS | Ladle uses the proxy set in **System Settings › Network**. |
+
+</SettingsTable>
 
 ## Cookies and referrers
 

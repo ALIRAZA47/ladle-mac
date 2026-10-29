@@ -4,6 +4,7 @@ description: Line up big files for the night. Ladle starts them at 1:00 AM, stop
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
+import SettingsTable from '~/components/content/SettingsTable.astro';
 
 ## Add a download to Tonight
 
@@ -42,10 +43,14 @@ The screen can still turn off; only the Mac itself needs to stay awake. Ladle op
 
 Open **Ladle › Settings › Schedule**:
 
-| Setting | Out of the box | What it does |
+<SettingsTable>
+
+| Setting | Default | What it does |
 | --- | --- | --- |
 | Tonight queue | 1:00 AM to 7:00 AM | When the queue starts and stops. |
 | Run on | Every day | The nights the queue runs. Click a day to turn it off or on. |
 | When the queue finishes | Put the Mac to sleep | Choose **Do nothing** to leave your Mac awake. |
 | Pause when running on battery | On | Holds the queue while your Mac runs on battery. |
 | Pause on Low Data networks | On | Holds the queue on networks with macOS Low Data Mode on. |
+
+</SettingsTable>

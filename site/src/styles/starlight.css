@@ -408,9 +408,58 @@ site-search dialog {
 	color: var(--ld-text);
 }
 
-/* Long values wrap inside their cell rather than making the table scroll sideways. */
-.sl-markdown-content :is(th, td) code:not(:where(.not-content *)) {
-	overflow-wrap: anywhere;
+/* Setting tables share column widths, so they line up down the page. */
+@media (min-width: 40.01rem) {
+	.settings-table table {
+		table-layout: fixed;
+	}
+	.settings-table th:nth-child(1) {
+		width: 32%;
+	}
+	.settings-table th:nth-child(2) {
+		width: 24%;
+	}
+}
+
+@media (max-width: 40rem) {
+	/* Long values wrap inside their cell rather than making the table scroll sideways. */
+	.sl-markdown-content :is(th, td) code:not(:where(.not-content *)) {
+		overflow-wrap: anywhere;
+	}
+
+	/* Setting tables stack each row on phones: name, default, then what it does. */
+	.settings-table :is(table, tbody, tr, td) {
+		display: block;
+		width: 100%;
+	}
+	.settings-table thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+	}
+	.settings-table tr {
+		padding: 0.85rem 0;
+		border-bottom: 1px solid var(--ld-line);
+	}
+	.sl-markdown-content .settings-table td:not(:where(.not-content *)) {
+		padding: 0;
+		border: 0;
+	}
+	.settings-table td:first-child {
+		font-weight: 600;
+	}
+	.settings-table td:nth-child(2) {
+		margin: 0.2rem 0 0.35rem;
+		font-size: 0.875rem;
+		color: var(--ld-text2);
+	}
+	.settings-table td:nth-child(2)::before {
+		content: 'Default: ';
+		color: var(--ld-text3);
+	}
 }
 
 /* Asides: a rounded tint with the icon in its own tile, as in the design's tip callout. */

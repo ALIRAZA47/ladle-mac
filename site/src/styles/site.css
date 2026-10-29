@@ -295,6 +295,7 @@ input {
 	font-weight: 650;
 }
 .prose :where(code) {
+	white-space: nowrap;
 	padding: 0.1em 0.4em;
 	border-radius: 6px;
 	background: var(--ld-kbd);
