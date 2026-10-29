@@ -96,6 +96,14 @@ body {
 	outline-offset: 3px;
 }
 
+/* Starlight's skip link: accent fill with dark text, readable in both themes. */
+.sl-skip-link:focus {
+	border-radius: 999px;
+	background: var(--ld-accent);
+	color: var(--ld-on-accent);
+	font-weight: 600;
+}
+
 .page > .header {
 	background-color: var(--sl-color-bg-nav);
 	-webkit-backdrop-filter: blur(20px) saturate(150%);

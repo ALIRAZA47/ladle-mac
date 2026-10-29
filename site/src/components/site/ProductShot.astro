@@ -251,7 +251,8 @@ const label =
 		--app-text3: #675f57;
 		--app-tile: rgba(60, 40, 20, 0.05);
 		--app-track: rgba(60, 40, 20, 0.11);
-		--app-ink: #b4500e;
+		/* A shade darker than the app's #B4500E, so the tiny labels stay above 4.5:1. */
+		--app-ink: #9c440b;
 		--app-shadow: 0 30px 90px rgba(60, 40, 20, 0.18);
 		--app-panel-shadow: 0 12px 40px rgba(60, 40, 20, 0.12);
 	}
@@ -363,6 +364,9 @@ const label =
 	.count {
 		font-size: 11.5px;
 		color: var(--app-text3);
+	}
+	.nav.on .count {
+		color: var(--app-text2);
 	}
 	.speed {
 		margin-top: auto;
