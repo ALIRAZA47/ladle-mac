@@ -39,7 +39,7 @@ the site creates it, and the app's release workflow rewrites it on every release
 | App data folder | `~/Library/Application Support/Ladle` (download list, resume state, settings) |
 | Version | 0.1.0 (build 1) |
 | Minimum macOS | 14.0 |
-| Distribution | Developer ID–signed, notarized `Ladle.dmg` on GitHub Releases. Not sandboxed, hardened runtime on. Not on the Mac App Store. |
+| Distribution | `Ladle.dmg` on GitHub Releases, **ad-hoc signed and not notarized** (no paid Apple Developer account). Users approve the first launch once (see [First launch](#first-launch)). If Developer ID secrets are ever added, the release workflow signs and notarizes instead. Not sandboxed. Not on the Mac App Store. |
 
 ## URLs
 
@@ -50,6 +50,7 @@ Both sides hard-code these. Don't change one side without the other.
 | Website | `https://ladle.alirazakhan.me/` |
 | Download page | `https://ladle.alirazakhan.me/download/` |
 | Latest DMG | `https://github.com/ALIRAZA47/ladle-mac/releases/latest/download/Ladle.dmg` |
+| Latest Chrome extension (until it's in the Chrome Web Store) | `https://github.com/ALIRAZA47/ladle-mac/releases/latest/download/Ladle-Chrome-Extension.zip` |
 | Update feed (Sparkle appcast) | `https://ladle.alirazakhan.me/appcast.xml` (file: `site/public/appcast.xml`) |
 | Release notes | `https://ladle.alirazakhan.me/changelog/` — one section per version, anchor `#v1-0-0` style (`v` + version with dots as dashes) |
 | Docs | `https://ladle.alirazakhan.me/docs/` |
@@ -61,7 +62,7 @@ Both sides hard-code these. Don't change one side without the other.
 The site must publish every one of these; the app opens them from Help and Settings.
 
 ```
-/docs/getting-started/install/
+/docs/getting-started/install/                    anchors: #first-launch
 /docs/getting-started/set-up-your-browser/        anchors: #safari #chrome #firefox
 /docs/getting-started/first-download/
 /docs/getting-started/menu-bar-dock-and-notifications/
@@ -85,6 +86,23 @@ The site must publish every one of these; the app opens them from Help and Setti
 Browser extensions aren't in the Chrome Web Store or Firefox Add-ons yet. In the app,
 "Get extension" opens the matching anchor on `set-up-your-browser`; that page holds the
 store links once they exist.
+
+## First launch
+
+Release builds are ad-hoc signed, not notarized, so macOS asks once before Ladle first opens:
+
+- **macOS 15 Sequoia and later**: open Ladle; macOS says it can't verify it — click **Done**.
+  Open **System Settings › Privacy & Security**, scroll to **Security**, click **Open Anyway**
+  next to "Ladle was blocked…", confirm with your password or Touch ID, then click **Open**.
+- **macOS 14 Sonoma**: Control-click **Ladle** in Applications, choose **Open**, then **Open** again.
+
+It's needed once. Updates install without asking again, because they're downloaded by Ladle
+and checked against Ladle's own update key.
+
+**Safari** only loads extensions from apps signed by a registered Apple developer, so the Safari
+extension can't run in these builds. Settings › Browsers says so and links to the docs. Chrome,
+Arc, Edge and Brave can use `Ladle-Chrome-Extension.zip` from the latest release in developer
+mode until the Chrome Web Store listing exists; Firefox waits for its Firefox Add-ons listing.
 
 ## Look: Molten
 
@@ -227,9 +245,10 @@ The app must behave like this and the docs must describe exactly this.
 Ladle updates itself with Sparkle 2.
 
 - Sparkle 2 via Swift Package Manager (`https://github.com/sparkle-project/Sparkle`, 2.6 or later).
-- Info.plist: `SUFeedURL` = the appcast URL above; `SUPublicEDKey` = `REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY`
-  until the owner generates keys; `SUEnableAutomaticChecks` = YES; `SUAutomaticallyUpdate` = YES;
-  `SUScheduledCheckInterval` = 86400; system profiling off.
+- Info.plist: `SUFeedURL` = the appcast URL above; `SUPublicEDKey` = the owner's Sparkle public key
+  (`REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY` until it's added); `SUEnableAutomaticChecks` = YES;
+  `SUAutomaticallyUpdate` = YES; `SUScheduledCheckInterval` = 86400; system profiling off.
+- Updates are verified with that EdDSA key, so they work without any Apple signing.
 - **Seamless**: updates download in the background. A banner in the main window says
   "Ladle 1.1 is ready" with **Restart to Update** and **Later**; if not restarted, the update
   installs when Ladle quits. If downloads are running, **Restart to Update** warns that they'll
@@ -243,7 +262,10 @@ app's release workflow, on the tag:
 
 1. fails early if that changelog file is missing (tag versions in increasing order: the build
    number is the tag's position among release tags);
-2. builds, signs, notarizes and publishes `Ladle.dmg` to the GitHub Release;
+2. builds a universal app, ad-hoc signs it (or signs and notarizes it with Developer ID when those
+   secrets exist), signs the update with `SPARKLE_ED_PRIVATE_KEY` (the one required secret), and
+   publishes a normal (not pre-) GitHub Release with the version-less assets `Ladle.dmg` and
+   `Ladle-Chrome-Extension.zip`, so the `releases/latest/download/…` links always work;
 3. sets the changelog `date`, rewrites `site/public/appcast.xml`, and commits both to `main`;
 4. calls `.github/workflows/site-deploy.yml` as a reusable workflow (permissions
    `contents: read`, `pages: write`, `id-token: write`), because a push made with the default
