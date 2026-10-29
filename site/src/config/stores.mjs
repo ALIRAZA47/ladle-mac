@@ -15,3 +15,12 @@ export const storeLinks = {
 
 export const hasChromeExtension = storeLinks.chrome.trim() !== '';
 export const hasFirefoxExtension = storeLinks.firefox.trim() !== '';
+
+/**
+ * The browsers that can run Ladle's extension today, for sentences like "Add it to …".
+ * Chrome, Arc, Edge and Brave can, from the store or in developer mode. Safari can't: it only
+ * loads extensions from apps signed by a registered Apple developer.
+ */
+export const extensionBrowsers = hasFirefoxExtension
+	? 'Chrome, Arc, Edge, Brave or Firefox'
+	: 'Chrome, Arc, Edge or Brave';

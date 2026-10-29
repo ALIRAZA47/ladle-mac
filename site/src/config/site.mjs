@@ -3,9 +3,15 @@
 
 export const SITE_URL = 'https://ladle.alirazakhan.me';
 
-/** Always points at the newest release, so the site never needs a new link per version. */
+// Downloads always point at the newest release, so the site never needs a new link per version.
+// Release assets have version-less names for this; `npm run check` fails on a versioned one.
 export const DMG_URL = 'https://github.com/ALIRAZA47/ladle-mac/releases/latest/download/Ladle.dmg';
+/** The Chrome, Arc, Edge and Brave extension, loaded in developer mode until it's in the Chrome Web Store. */
+export const CHROME_EXTENSION_ZIP_URL =
+	'https://github.com/ALIRAZA47/ladle-mac/releases/latest/download/Ladle-Chrome-Extension.zip';
+export const LATEST_RELEASE_URL = 'https://github.com/ALIRAZA47/ladle-mac/releases/latest';
 export const RELEASES_URL = 'https://github.com/ALIRAZA47/ladle-mac/releases';
+export const SOURCE_URL = 'https://github.com/ALIRAZA47/ladle-mac';
 export const SUPPORT_URL = 'https://github.com/ALIRAZA47/ladle-mac/issues';
 export const APPCAST_URL = `${SITE_URL}/appcast.xml`;
 

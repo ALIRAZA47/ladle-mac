@@ -1,9 +1,11 @@
 ---
 title: Install Ladle
-description: Download Ladle, drag it to Applications and open it once. It takes about two minutes, and there’s nothing to sign up for.
+description: Download Ladle, drag it to Applications and approve it the first time you open it. It takes a few minutes, and there’s nothing to sign up for.
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
+import { SOURCE_URL } from '~/config/site.mjs';
+import { extensionBrowsers } from '~/config/stores.mjs';
 
 ## What you need
 
@@ -22,11 +24,9 @@ Ladle is free. There’s no account to create, no trial and no license key.
 
    {/* Screenshot: the Ladle.dmg window, with the Ladle icon and the Applications folder side by side. */}
 
-3. Open Ladle from your Applications folder, or press <kbd>⌘Space</kbd>, type “Ladle” and press <kbd>Return</kbd>.
+3. Eject the disk image: in a Finder window, click the eject button next to **Ladle** in the sidebar. You can move `Ladle.dmg` to the Trash afterwards.
 
-   The first time you open an app from the internet, macOS asks whether you’re sure. Ladle is signed with an Apple Developer ID and notarized by Apple, so click **Open**.
-
-4. Eject the disk image: in a Finder window, click the eject button next to **Ladle** in the sidebar. You can move `Ladle.dmg` to the Trash afterwards.
+4. Open Ladle from your Applications folder. The first time, macOS asks you to approve it, as described in [First launch](#first-launch) below.
 
 </Steps>
 
@@ -34,16 +34,49 @@ Ladle is free. There’s no account to create, no trial and no license key.
 **Keep Ladle in your Applications folder.** Ladle can only update itself from there, so don’t run it straight from the disk image.
 </Aside>
 
-## The first time you open Ladle
+## First launch
+
+Ladle is free, and it isn’t notarized by Apple, because notarizing takes a paid Apple developer account. So the first time you open Ladle, macOS can’t check it with Apple and asks you to approve it. You only do this once. To see which version of macOS you have, choose **Apple menu › About This Mac**.
+
+### macOS 15 Sequoia and later
+
+<Steps>
+
+1. Open Ladle. macOS says it can’t verify that Ladle is free of malware. Click **Done**.
+
+2. Open **System Settings › Privacy & Security** and scroll down to **Security**.
+
+3. Next to “Ladle was blocked…”, click **Open Anyway**.
+
+4. Confirm with your password or Touch ID, then click **Open**.
+
+</Steps>
+
+**Open Anyway** only appears once you’ve tried to open Ladle, and goes away after about an hour. If it isn’t there, open Ladle again, then go back to step 2.
+
+### macOS 14 Sonoma
+
+<Steps>
+
+1. In your Applications folder, Control-click **Ladle** and choose **Open**.
+
+2. macOS asks whether you’re sure you want to open it. Click **Open** again.
+
+</Steps>
+
+From then on, Ladle opens like any other app. Updates don’t ask again: Ladle downloads them itself and checks each one against its own update key before installing it.
+
+Ladle’s <a href={SOURCE_URL}>source code is public on GitHub</a>, and each release is built from that code by GitHub Actions.
+
+## Once Ladle is open
 
 Ladle opens its main window with an empty list, ready for your first link. A few things happen along the way:
 
 - **The menu bar icon appears.** It shows your total speed, and its menu lists what’s downloading. You can hide it with **Show Ladle in the menu bar** in **Ladle › Settings › General**.
 - **Ladle opens at login** from now on, so it’s ready for the Tonight queue after a restart. Turn this off with **Open Ladle at login** in the same place.
 - **macOS may ask to allow notifications.** Click **Allow** if you’d like to hear when downloads finish.
-- **The Safari extension is ready to turn on.** It comes with the app, so there’s nothing else to install.
 
-Next, [set up your browser](/docs/getting-started/set-up-your-browser/) so clicking a download sends it straight to Ladle.
+Next, [set up your browser](/docs/getting-started/set-up-your-browser/), so clicking a download in {extensionBrowsers} sends it straight to Ladle.
 
 ## Updates
 
@@ -55,9 +88,9 @@ Ladle checks for updates once a day and installs them in the background, so you 
 
 1. Quit Ladle: choose **Ladle › Quit Ladle**, or press <kbd>⌘Q</kbd>.
 
-2. Drag **Ladle** from your Applications folder to the Trash. Its Safari extension goes with it.
+2. Drag **Ladle** from your Applications folder to the Trash.
 
-3. If you added Ladle’s extension to Chrome, Arc, Edge, Brave or Firefox, remove it from that browser’s extensions page.
+3. If you added Ladle’s extension to a browser, remove it on that browser’s extensions page. If you loaded it from the **Ladle-Chrome-Extension** folder, move that folder to the Trash too.
 
 </Steps>
 
