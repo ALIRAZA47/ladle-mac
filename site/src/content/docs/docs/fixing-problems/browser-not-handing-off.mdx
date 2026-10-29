@@ -1,0 +1,78 @@
+---
+title: The browser isn’t handing off downloads
+description: If clicking a download still saves it with the browser instead of Ladle, work through these checks. Most of the time it’s one switch.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+import IfStore from '~/components/content/IfStore.astro';
+import UnlessStore from '~/components/content/UnlessStore.astro';
+import { SUPPORT_URL } from '~/config/site.mjs';
+
+## Check the extension
+
+<Tabs syncKey="browser">
+<TabItem label="Safari">
+
+- In Safari, choose **Safari › Settings**, click **Extensions**, and make sure the checkbox next to **Ladle** is selected.
+- With Ladle selected there, check that it’s allowed on every website, or at least on the site you’re downloading from.
+- In a Private Browsing window, extensions only run if you allow them. Select **Ladle** in the same place and turn on **Allow in Private Browsing**.
+- Quit Safari and open it again.
+
+</TabItem>
+<TabItem label="Chrome, Arc, Edge and Brave">
+
+<UnlessStore browser="chrome">
+
+The Ladle extension for Chrome, Arc, Edge and Brave isn’t in the Chrome Web Store yet, so these browsers can’t hand downloads to Ladle for now. Until it is, copy the download link instead: when you switch to Ladle or open its menu bar menu, it offers to download the link. You can also drag the link onto Ladle’s window or Dock icon.
+
+</UnlessStore>
+
+<IfStore browser="chrome">
+
+- Open your browser’s extensions page, for example `chrome://extensions`, and make sure **Ladle** is turned on.
+- In an Incognito or private window, extensions only run if you allow them: on the same page, click **Details** under Ladle and turn on **Allow in Incognito**.
+- Keep Ladle in your Applications folder and open it once, so the extension can reach it.
+- Quit the browser and open it again.
+
+</IfStore>
+
+</TabItem>
+<TabItem label="Firefox">
+
+<UnlessStore browser="firefox">
+
+The Ladle add-on for Firefox isn’t on Firefox Add-ons yet, so Firefox can’t hand downloads to Ladle for now. Until it is, copy the download link instead: when you switch to Ladle or open its menu bar menu, it offers to download the link. You can also drag the link onto Ladle’s window or Dock icon.
+
+</UnlessStore>
+
+<IfStore browser="firefox">
+
+- Choose **Tools › Add-ons and Themes**, click **Extensions**, and make sure **Ladle** is turned on.
+- In a private window, add-ons only run if you allow them: click **Ladle** and set **Run in Private Windows** to **Allow**.
+- Keep Ladle in your Applications folder and open it once, so the add-on can reach it.
+- Quit Firefox and open it again.
+
+</IfStore>
+
+</TabItem>
+</Tabs>
+
+## Check Ladle’s settings
+
+Open **Ladle › Settings › Browsers**:
+
+- **Catch these file types** lists the types Ladle takes over. Out of the box: dmg, pkg, zip, iso, mp4, mov, mkv, mp3, flac and pdf. If yours isn’t there, click **Edit…** and add it.
+- **Ask before downloading** shows the catch panel for each download. If it’s on and you clicked **Let the browser handle it**, that download went to the browser on purpose; the next one will come to Ladle again.
+
+## Check how you clicked
+
+- **Holding ⌥ Option** while you click a link tells Ladle to let the browser download it, just that once. Make sure you’re not holding it by accident.
+- **Some downloads aren’t links.** Sites sometimes start a download from a script or a form, so there’s no link for the extension to catch. Right-click the button or link and copy its address, or choose **Download with Ladle** if it’s there. If there’s nothing to copy, let the browser download it this time.
+
+<Aside type="tip">
+**In a hurry?** Whatever the browser, you can always copy a download link and paste it into the bar at the top of Ladle’s window with <kbd>⌘K</kbd> then <kbd>⌘V</kbd>.
+</Aside>
+
+## Still not working?
+
+Ask on <a href={SUPPORT_URL}>GitHub Issues</a>. Tell us your browser and its version, your Ladle version (from **Ladle › About Ladle**) and the site you were downloading from, if it’s public.

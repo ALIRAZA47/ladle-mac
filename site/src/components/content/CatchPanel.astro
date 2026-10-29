@@ -1,0 +1,192 @@
+---
+/* Illustration of the panel Ladle shows when the browser extension catches a download. */
+import Icon from '../Icon.astro';
+---
+
+<figure class="catch-figure not-content">
+	<div
+		class="stage ld-force-dark"
+		role="img"
+		aria-label="Illustration of Ladle’s catch panel: Ladle caught a download, HandBrake-1.8.2.dmg, 84.6 MB, saving to Downloads › Ladle › Apps, with an Always download .dmg files without asking checkbox and the buttons Let the browser handle it, Later and Download."
+	>
+		<div class="panel">
+			<div class="head">
+				<span class="badge"><Icon name="ladle" size={18} /></span>
+				<span class="head-text">
+					<span class="strong">Ladle caught a download</span>
+					<span class="muted">From handbrake.fr in Safari</span>
+				</span>
+			</div>
+			<div class="file">
+				<span class="ext">DMG</span>
+				<span class="file-text">
+					<span class="strong">HandBrake-1.8.2.dmg</span>
+					<span class="muted">84.6 MB · <span class="ink">Resumable</span></span>
+				</span>
+			</div>
+			<div class="dest">
+				<Icon name="folder" size={15} class="ink" />
+				<span>Downloads › Ladle › Apps</span>
+				<span class="ink change">Change</span>
+			</div>
+			<div class="always"><span class="box"></span>Always download .dmg files without asking</div>
+			<div class="actions">
+				<span class="muted">Let the browser handle it</span>
+				<span class="buttons"><span class="btn ghost">Later</span><span class="btn primary">Download</span></span>
+			</div>
+		</div>
+	</div>
+	<figcaption>The catch panel appears when you click a download link in a browser with Ladle’s extension.</figcaption>
+</figure>
+
+<style>
+	.catch-figure {
+		margin: 1.25rem 0 0;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.stage {
+		display: grid;
+		place-items: center;
+		padding: 30px 20px;
+		border-radius: 24px;
+		background:
+			radial-gradient(420px 220px at 30% 0%, rgba(255, 138, 31, 0.16), transparent 70%),
+			#0c0b0a;
+		border: 1px solid var(--ld-line);
+		font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', var(--ld-font-body);
+		line-height: 1.3;
+	}
+	.panel {
+		width: min(400px, 100%);
+		display: flex;
+		flex-direction: column;
+		gap: 13px;
+		padding: 16px;
+		border-radius: 24px;
+		background: rgba(32, 30, 27, 0.92);
+		border: 1px solid rgba(255, 240, 220, 0.15);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.07),
+			0 24px 60px rgba(0, 0, 0, 0.5);
+		color: #f6f2ec;
+	}
+	.head,
+	.file {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	.badge {
+		width: 36px;
+		height: 36px;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 12px;
+		background: rgba(255, 138, 31, 0.16);
+		color: #ff9a3d;
+	}
+	.head-text,
+	.file-text {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.strong {
+		font-size: 13.5px;
+		font-weight: 600;
+	}
+	.muted {
+		font-size: 12px;
+		color: #b8b0a6;
+	}
+	.ink,
+	.catch-figure :global(.ink) {
+		color: #ff9a3d;
+	}
+	.file {
+		padding: 11px 12px;
+		border-radius: 18px;
+		background: rgba(255, 244, 230, 0.06);
+		border: 1px solid rgba(255, 240, 220, 0.09);
+	}
+	.ext {
+		width: 40px;
+		height: 40px;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 13px;
+		background: rgba(255, 244, 230, 0.06);
+		border: 1px solid rgba(255, 240, 220, 0.09);
+		font-size: 9.5px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		color: #b8b0a6;
+	}
+	.dest {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 0 4px;
+		font-size: 12.5px;
+		color: #b8b0a6;
+	}
+	.dest span:first-of-type {
+		flex: 1;
+	}
+	.change {
+		font-weight: 600;
+	}
+	.always {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 0 4px;
+		font-size: 12.5px;
+		color: #b8b0a6;
+	}
+	.box {
+		width: 18px;
+		height: 18px;
+		flex: none;
+		border-radius: 999px;
+		border: 1.5px solid rgba(255, 240, 220, 0.2);
+	}
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		padding-left: 4px;
+	}
+	.buttons {
+		display: flex;
+		gap: 8px;
+	}
+	.btn {
+		height: 32px;
+		padding: 0 15px;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		font-size: 12.5px;
+	}
+	.ghost {
+		background: rgba(52, 48, 44, 0.6);
+		border: 1px solid rgba(255, 240, 220, 0.15);
+	}
+	.primary {
+		background: #ff8a1f;
+		color: #1e1206;
+		font-weight: 600;
+	}
+	figcaption {
+		font-size: 13.5px;
+		color: var(--ld-text3);
+	}
+</style>

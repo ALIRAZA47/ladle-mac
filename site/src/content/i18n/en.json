@@ -1,0 +1,10 @@
+{
+	"search.label": "Search the docs",
+	"search.devWarning": "Search works in the built site.\nRun npm run build, then npm run preview, to try it.",
+	"themeSelect.accessibleLabel": "Dark theme",
+	"menuButton.accessibleLabel": "Menu",
+	"sidebarNav.accessibleLabel": "All guides",
+	"page.previousLink": "Previous",
+	"page.nextLink": "Next",
+	"404.text": "We couldn’t find that page."
+}

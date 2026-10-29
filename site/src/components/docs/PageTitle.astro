@@ -1,0 +1,108 @@
+---
+/* Article header from the design: breadcrumb, title, lead paragraph and a few facts. */
+const { entry, lastUpdated } = Astro.locals.starlightRoute;
+const ladle = Astro.locals.ladle;
+const { title, description } = entry.data;
+const updated = lastUpdated?.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+
+<div class="page-head">
+	{
+		ladle?.section && (
+			<nav aria-label="Breadcrumb" class="crumbs" data-pagefind-ignore>
+				<ol>
+					<li>
+						<a href="/docs/">Docs</a>
+					</li>
+					<li>
+						<a href={ladle.section.href}>{ladle.section.label}</a>
+					</li>
+					<li aria-current="page">{title}</li>
+				</ol>
+			</nav>
+		)
+	}
+	<h1 id="_top">{title}</h1>
+	{description && <p class="lead">{description}</p>}
+	<ul class="facts" data-pagefind-ignore>
+		<li>{ladle?.minutes ?? 1} min read</li>
+		{updated && <li>Updated {updated}</li>}
+	</ul>
+</div>
+
+<style>
+	.page-head {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		padding-top: 0.5rem;
+	}
+	.crumbs ol {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		font-size: 13.5px;
+		color: var(--ld-text3);
+	}
+	.crumbs li + li::before {
+		content: '›';
+		content: '›' / '';
+		margin-inline-end: 6px;
+	}
+	.crumbs a {
+		color: var(--ld-text3);
+		text-decoration: none;
+		border-radius: 6px;
+	}
+	.crumbs a:hover {
+		color: var(--ld-text);
+	}
+	.crumbs [aria-current] {
+		color: var(--ld-text2);
+	}
+	h1 {
+		margin: 0;
+		font-family: var(--ld-font-display);
+		font-size: clamp(2.25rem, 4vw, 3.125rem);
+		font-weight: 800;
+		line-height: 1.04;
+		letter-spacing: -0.04em;
+		color: var(--ld-text);
+		text-wrap: balance;
+	}
+	.lead {
+		margin: 0;
+		font-size: 1.1875rem;
+		line-height: 1.6;
+		color: var(--ld-text2);
+		text-wrap: pretty;
+	}
+	.facts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		font-size: 12.5px;
+		color: var(--ld-text2);
+	}
+	.facts li {
+		height: 26px;
+		padding: 0 10px;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		background: var(--ld-card);
+		border: 1px solid var(--ld-line);
+	}
+	@media (max-width: 49.99rem) {
+		.lead {
+			font-size: 1.0625rem;
+		}
+	}
+</style>

@@ -1,0 +1,51 @@
+---
+title: Categories and folders
+description: Ladle saves to Downloads › Ladle and sorts each file into a folder for its type. Here’s where everything goes, and how to change it.
+---
+
+## Where files go
+
+Ladle saves downloads to `~/Downloads/Ladle`. With **Sort into category folders** on, which it is out of the box, each file goes into a subfolder for its type:
+
+| Folder | File types |
+| --- | --- |
+| Video | mp4, mov, mkv, webm, avi, m4v, ts |
+| Music | mp3, flac, wav, m4a, aac, ogg |
+| Documents | pdf, epub, doc, docx, txt, pages, key, xlsx, csv |
+| Archives | zip, rar, 7z, tar, gz, tgz, bz2, xz |
+| Apps | dmg, pkg, iso, app |
+| Images | png, jpg, jpeg, heic, webp, gif, svg, tiff |
+
+Anything else goes straight into the `Ladle` folder itself.
+
+The same categories appear in Ladle’s sidebar, so you can show just your videos, or just your apps.
+
+## Change the folder
+
+Open **Ladle › Settings › Downloads**:
+
+- **Save downloads to** picks the base folder. The category folders are made inside it.
+- Turn off **Sort into category folders** to save everything into the base folder.
+
+To save a single download somewhere else, choose a different folder next to **Save to** in the Add sheet, or click **Change** in the panel that appears when Ladle catches a download from your browser.
+
+## While a file is downloading
+
+Ladle writes the file directly into its folder as `name.ladle-part`, where `name` is the file’s real name, and Finder shows the progress on its icon. When the download completes, Ladle renames it to its real name.
+
+Leave the `.ladle-part` file where it is until then: it holds the progress Ladle uses to resume.
+
+## When a download finishes
+
+Choose what happens with **When a download finishes** in **Ladle › Settings › Downloads**:
+
+- **Just notify me** sends a notification with **Open** and **Show in Finder** buttons. This is the default.
+- **Open the file** opens it in its usual app.
+- **Show in Finder** opens a Finder window with the file selected.
+
+To find a file later, select it in Ladle and press <kbd>⇧⌘R</kbd> to show it in Finder, or <kbd>⌘O</kbd> to open it.
+
+## Related settings
+
+- [Duplicate file names](/docs/files-and-folders/duplicate-file-names/): what happens when a file with the same name is already there.
+- [Checksums](/docs/files-and-folders/checksums/): how Ladle checks a file arrived intact.

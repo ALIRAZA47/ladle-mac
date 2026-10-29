@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ladle.alirazakhan.me/sitemap-index.xml

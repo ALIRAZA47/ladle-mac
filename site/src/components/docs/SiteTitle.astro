@@ -1,0 +1,42 @@
+---
+import AppIcon from '../AppIcon.astro';
+---
+
+<a href="/docs/" class="docs-title">
+	<AppIcon size={26} detail="small" />
+	<span class="name">Ladle</span>{' '}
+	<span class="pill">Docs</span>
+	<span class="sr-only"> home</span>
+</a>
+
+<style>
+	.docs-title {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		color: var(--ld-text);
+		text-decoration: none;
+		white-space: nowrap;
+		border-radius: 10px;
+	}
+	.docs-title :global(.app-icon) {
+		border-radius: 7px;
+	}
+	.name {
+		font-family: var(--ld-font-display);
+		font-size: 21px;
+		font-weight: 800;
+		letter-spacing: -0.035em;
+	}
+	.pill {
+		height: 22px;
+		padding: 0 9px;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		background: var(--ld-tint);
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--ld-ink-strong);
+	}
+</style>

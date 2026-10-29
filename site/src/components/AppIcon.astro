@@ -1,0 +1,120 @@
+---
+/**
+ * The Ladle app icon: a molten arrow pouring into a steel ladle on a graphite squircle.
+ * `detail="full"` is for 48px and up; `detail="small"` uses the heavier strokes drawn for tiny sizes.
+ */
+interface Props {
+	size: number;
+	detail?: 'full' | 'small';
+	/** Accessible name. Leave empty when the icon sits next to the word "Ladle". */
+	label?: string;
+	class?: string;
+}
+
+const { size, detail = size >= 48 ? 'full' : 'small', label, class: className } = Astro.props;
+
+// Gradient ids must be unique on a page that shows the icon more than once.
+const g = globalThis as typeof globalThis & { __ladleIconCount?: number };
+g.__ladleIconCount = (g.__ladleIconCount ?? 0) + 1;
+const id = `ldicon${g.__ladleIconCount}`;
+const full = detail === 'full';
+---
+
+<svg
+	class:list={['app-icon', className]}
+	viewBox="0 0 240 240"
+	width={size}
+	height={size}
+	role={label ? 'img' : undefined}
+	aria-label={label}
+	aria-hidden={label ? undefined : 'true'}
+	focusable="false"
+>
+	<defs>
+		<linearGradient id={`${id}-bg`} x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#34302B" />
+			<stop offset="0.55" stop-color="#1B1917" />
+			<stop offset="1" stop-color="#0E0D0C" />
+		</linearGradient>
+		<radialGradient id={`${id}-glow`} cx="0.5" cy="0.5" r="0.5">
+			<stop offset="0" stop-color="#FF8A1F" stop-opacity="0.5" />
+			<stop offset="1" stop-color="#FF8A1F" stop-opacity="0" />
+		</radialGradient>
+		<linearGradient id={`${id}-steel`} x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#F1F3F5" />
+			<stop offset="0.55" stop-color="#A9B0B8" />
+			<stop offset="1" stop-color="#6A7179" />
+		</linearGradient>
+		<radialGradient id={`${id}-molten`} cx="0.5" cy="0.45" r="0.6">
+			<stop offset="0" stop-color="#FFE6A8" />
+			<stop offset="0.45" stop-color="#FFB04A" />
+			<stop offset="1" stop-color="#FF4F1A" />
+		</radialGradient>
+		<linearGradient id={`${id}-pour`} x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#FFD27A" />
+			<stop offset="0.6" stop-color="#FF8A1F" />
+			<stop offset="1" stop-color="#FF4F1A" />
+		</linearGradient>
+		<linearGradient id={`${id}-gloss`} x1="0.33" y1="0.03" x2="0.67" y2="0.97">
+			<stop offset="0" stop-color="#FFFFFF" stop-opacity="0.12" />
+			<stop offset="0.38" stop-color="#FFFFFF" stop-opacity="0" />
+		</linearGradient>
+		<clipPath id={`${id}-clip`}>
+			<rect width="240" height="240" rx="55" />
+		</clipPath>
+	</defs>
+	<g clip-path={`url(#${id}-clip)`}>
+		<rect width="240" height="240" fill={`url(#${id}-bg)`} />
+		{full && <circle cx="106" cy="138" r="84" fill={`url(#${id}-glow)`} />}
+		<path d="M48 138A58 58 0 0 0 164 138Z" fill={`url(#${id}-steel)`} />
+		<ellipse cx="106" cy="138" rx="58" ry="13" fill={`url(#${id}-molten)`} />
+		<path
+			d="M158 131C168 110 179 87 186 67"
+			fill="none"
+			stroke="#CDD2D7"
+			stroke-width={full ? 12 : 16}
+			stroke-linecap="round"
+		/>
+		{full && <circle cx="189" cy="56" r="10" fill="none" stroke="#CDD2D7" stroke-width="6" />}
+		{
+			full && (
+				<path
+					d="M106 46V104M84 84l22 22 22-22"
+					fill="none"
+					stroke="#FF8A1F"
+					stroke-opacity="0.28"
+					stroke-width="30"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
+			)
+		}
+		<path
+			d="M106 46V104M84 84l22 22 22-22"
+			fill="none"
+			stroke={full ? `url(#${id}-pour)` : '#FF8A1F'}
+			stroke-width={full ? 14 : 20}
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		/>
+		{full && <rect width="240" height="240" fill={`url(#${id}-gloss)`} />}
+		<rect
+			x="0.75"
+			y="0.75"
+			width="238.5"
+			height="238.5"
+			rx="54.25"
+			fill="none"
+			stroke="#FFFFFF"
+			stroke-opacity={full ? 0.1 : 0.14}
+			stroke-width="1.5"
+		/>
+	</g>
+</svg>
+
+<style>
+	.app-icon {
+		display: block;
+		flex: none;
+	}
+</style>

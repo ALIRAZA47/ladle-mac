@@ -1,0 +1,167 @@
+---
+import { render } from 'astro:content';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import Icon from '../components/Icon.astro';
+import { versionAnchor, DMG_URL } from '../config/site.mjs';
+import { changelogEntries } from '../lib/release';
+
+const entries = await Promise.all(
+	(await changelogEntries()).map(async (entry) => ({
+		...entry.data,
+		anchor: versionAnchor(entry.data.version),
+		Content: (await render(entry)).Content,
+	}))
+);
+const formatDate = (date: Date) =>
+	date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+
+<SiteLayout
+	title="Changelog — Ladle"
+	description="What’s new in each version of Ladle, the free download manager for Mac."
+	current="changelog"
+>
+	<div class="container page">
+		<header class="intro">
+			<p class="eyebrow">Changelog</p>
+			<h1 class="disp">What’s new in Ladle</h1>
+			<p class="lead">
+				Every release, newest first. Ladle installs updates for you; <a href="/docs/updates/">here’s how</a>.
+			</p>
+		</header>
+
+		<div class="releases">
+			{
+				entries.map((entry) => (
+					<article id={entry.anchor} class="release glass" aria-labelledby={`${entry.anchor}-title`}>
+						<div class="release-head">
+							<h2 id={`${entry.anchor}-title`} class="disp">
+								Ladle {entry.version}
+							</h2>
+							<span class="tag">{entry.title}</span>
+							{entry.date ? (
+								<time datetime={entry.date.toISOString().slice(0, 10)}>{formatDate(entry.date)}</time>
+							) : null}
+							<a class="anchor" href={`#${entry.anchor}`} aria-label={`Link to Ladle ${entry.version}`}>
+								#
+							</a>
+						</div>
+						<div class="prose">
+							<entry.Content />
+						</div>
+					</article>
+				))
+			}
+		</div>
+
+		<p class="get">
+			<a class="btn btn-primary" href={DMG_URL}>
+				<Icon name="download" size={15} strokeWidth={2.3} />Download the latest Ladle
+			</a>
+		</p>
+	</div>
+</SiteLayout>
+
+<style>
+	.page {
+		max-width: 860px;
+		padding-top: 56px;
+		padding-bottom: 96px;
+	}
+	.intro {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+	h1 {
+		margin: 0;
+		font-size: clamp(40px, 5vw, 64px);
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: -0.04em;
+	}
+	.lead {
+		margin: 0;
+		font-size: 18px;
+		line-height: 1.6;
+		color: var(--ld-text2);
+	}
+	.lead a {
+		color: var(--ld-ink);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.releases {
+		margin-top: 40px;
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+	.release {
+		padding: 30px 32px;
+		border-radius: 28px;
+		scroll-margin-top: 24px;
+	}
+	.release:target {
+		box-shadow:
+			inset 0 1px 0 var(--ld-hi),
+			inset 0 0 0 1px rgba(255, 138, 31, 0.45),
+			var(--ld-shadow-panel);
+	}
+	.release-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 14px;
+		margin-bottom: 18px;
+	}
+	.release-head h2 {
+		margin: 0;
+		font-size: 30px;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+	}
+	.tag {
+		height: 26px;
+		padding: 0 11px;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		background: var(--ld-tint);
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--ld-ink-strong);
+	}
+	time {
+		font-size: 14px;
+		color: var(--ld-text3);
+	}
+	.anchor {
+		margin-left: auto;
+		width: 32px;
+		height: 32px;
+		display: grid;
+		place-items: center;
+		border-radius: 999px;
+		color: var(--ld-text3);
+		font-weight: 600;
+	}
+	.anchor:hover {
+		color: var(--ld-text);
+		background: var(--ld-tile);
+	}
+	.prose :global(ul) {
+		padding-left: 1.2em;
+	}
+	.get {
+		margin: 32px 0 0;
+	}
+	@media (max-width: 600px) {
+		.page {
+			padding-top: 32px;
+		}
+		.release {
+			padding: 22px 20px;
+		}
+	}
+</style>

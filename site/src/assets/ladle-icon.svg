@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <!-- Ladle app icon, full detail: a molten arrow pouring into a steel ladle on a graphite squircle. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34302B"/>
+      <stop offset="0.55" stop-color="#1B1917"/>
+      <stop offset="1" stop-color="#0E0D0C"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FF8A1F" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#FF8A1F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F1F3F5"/>
+      <stop offset="0.55" stop-color="#A9B0B8"/>
+      <stop offset="1" stop-color="#6A7179"/>
+    </linearGradient>
+    <radialGradient id="molten" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#FFE6A8"/>
+      <stop offset="0.45" stop-color="#FFB04A"/>
+      <stop offset="1" stop-color="#FF4F1A"/>
+    </radialGradient>
+    <linearGradient id="pour" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD27A"/>
+      <stop offset="0.6" stop-color="#FF8A1F"/>
+      <stop offset="1" stop-color="#FF4F1A"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0.33" y1="0.03" x2="0.67" y2="0.97">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.12"/>
+      <stop offset="0.38" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="squircle">
+      <rect width="240" height="240" rx="55"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#squircle)">
+    <rect width="240" height="240" fill="url(#bg)"/>
+    <circle cx="106" cy="138" r="84" fill="url(#glow)"/>
+    <path d="M48 138A58 58 0 0 0 164 138Z" fill="url(#steel)"/>
+    <ellipse cx="106" cy="138" rx="58" ry="13" fill="url(#molten)"/>
+    <path d="M158 131C168 110 179 87 186 67" fill="none" stroke="#CDD2D7" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="189" cy="56" r="10" fill="none" stroke="#CDD2D7" stroke-width="6"/>
+    <path d="M106 46V104M84 84l22 22 22-22" fill="none" stroke="#FF8A1F" stroke-opacity="0.28" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M106 46V104M84 84l22 22 22-22" fill="none" stroke="url(#pour)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect width="240" height="240" fill="url(#gloss)"/>
+    <rect x="0.75" y="0.75" width="238.5" height="238.5" rx="54.25" fill="none" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="1.5"/>
+  </g>
+</svg>

@@ -1,0 +1,12 @@
+---
+import Default from '@astrojs/starlight/components/Head.astro';
+import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import bricolageLatin from '@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-opsz-normal.woff2?url';
+---
+
+<Default />
+<link rel="preload" href={bricolageLatin} as="font" type="font/woff2" crossorigin />
+<link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#0c0b0a" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)" />

@@ -1,0 +1,67 @@
+---
+title: The Tonight queue
+description: Line up big files for the night. Ladle starts them at 1:00 AM, stops at 7:00 AM and can put your Mac to sleep when they’re done.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SettingsTable from '~/components/content/SettingsTable.astro';
+
+## Add a download to Tonight
+
+<Steps>
+
+1. Press <kbd>⌘N</kbd> to open the Add sheet. Or paste a link into the bar at the top of Ladle’s window and click **More options**, which opens the Add sheet with the link filled in.
+
+2. Under **Start**, choose **Tonight, 1:00 AM**.
+
+3. Add the download. It shows a **Tonight** tag and “Starts at 1:00 AM” in your list.
+
+</Steps>
+
+Click **Tonight** under **Queues** in Ladle’s sidebar to see everything that’s waiting. Changed your mind? Select a download and click **Start now** to start it straight away.
+
+## What happens overnight
+
+- At **1:00 AM**, Ladle starts the queue.
+- At **7:00 AM**, it stops. Anything unfinished keeps its progress and carries on the next night.
+- When the queue is done, Ladle **puts your Mac to sleep**, unless you’ve told it not to.
+
+## Keep your Mac awake for 1:00 AM
+
+Ladle can’t wake a sleeping Mac. For the queue to start on time, your Mac needs to be awake, with Ladle open, at 1:00 AM:
+
+- **On a MacBook**, leave it plugged in with the lid open. Then open **System Settings › Battery**, click **Options…**, and turn on **Prevent automatic sleeping on power adapter when the display is off**.
+- **On an iMac, Mac mini, Mac Studio or Mac Pro**, open **System Settings › Energy** (called **Energy Saver** in macOS Sonoma) and turn on **Prevent automatic sleeping when the display is off**.
+
+The screen can still turn off; only the Mac itself needs to stay awake. Ladle opens at login out of the box, so it’s ready even after a restart. Once the queue starts, Ladle keeps your Mac from dozing off while anything is downloading.
+
+<Aside type="caution">
+**Plugged in?** Out of the box, the Tonight queue waits while a MacBook runs on battery, and starts once it’s plugged in. See [On battery and Low Data networks](#on-battery-and-low-data-networks).
+</Aside>
+
+## On battery and Low Data networks
+
+Two switches in **Ladle › Settings › Schedule** hold the Tonight queue, and both are on out of the box:
+
+- **Pause when running on battery** holds the queue while your Mac runs on battery. It carries on by itself once you plug in.
+- **Pause on Low Data networks** holds it on networks where macOS Low Data Mode is on, like a phone’s hotspot. It carries on by itself once you’re on a regular network.
+
+They only affect the Tonight queue. Downloads you start yourself always run.
+
+To turn on Low Data Mode for a network, open **System Settings › Wi-Fi**, click **Details…** next to the network, and turn on **Low Data Mode**.
+
+## Change the schedule
+
+Open **Ladle › Settings › Schedule**:
+
+<SettingsTable>
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Tonight queue | 1:00 AM to 7:00 AM | When the queue starts and stops. |
+| Run on | Every day | The nights the queue runs. Click a day to turn it off or on. |
+| When the queue finishes | Put the Mac to sleep | Choose **Do nothing** to leave your Mac awake. |
+| Pause when running on battery | On | Holds the queue while your Mac runs on battery. It carries on once you plug in. |
+| Pause on Low Data networks | On | Holds the queue on networks with macOS Low Data Mode on. It carries on once you’re on a regular network. |
+
+</SettingsTable>

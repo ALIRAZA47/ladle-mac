@@ -1,0 +1,11 @@
+---
+/** Shows its content only once the browser's store link is filled in (src/config/stores.mjs). */
+import { storeLinks } from '../../config/stores.mjs';
+
+interface Props {
+	browser: keyof typeof storeLinks;
+}
+const listed = storeLinks[Astro.props.browser].trim() !== '';
+---
+
+{listed && <slot />}

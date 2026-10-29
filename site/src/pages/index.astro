@@ -1,0 +1,862 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import ProductShot from '../components/site/ProductShot.astro';
+import AppIcon from '../components/AppIcon.astro';
+import Icon from '../components/Icon.astro';
+import { DMG_URL, REQUIREMENTS, CHIPS } from '../config/site.mjs';
+import { hasChromeExtension, hasFirefoxExtension } from '../config/stores.mjs';
+
+const otherBrowsersReady = hasChromeExtension && hasFirefoxExtension;
+
+const howPoints = [
+	'Resumes after sleep, restarts and dropped Wi-Fi',
+	'Retries on its own when a server hiccups',
+	'Backs off politely when a server asks it to',
+];
+const howSegs = [78, 56, 64, 38, 49, 27, 44, 36];
+
+const catchCopy = otherBrowsersReady
+	? 'Click a download in Safari, Chrome, Arc, Edge, Brave or Firefox and Ladle takes over. Hold ⌥ Option to let the browser keep it.'
+	: 'Click a download in Safari and Ladle takes over, with Chrome, Arc, Edge, Brave and Firefox on the way. Hold ⌥ Option to let the browser keep it.';
+
+const browsersAnswer = otherBrowsersReady
+	? 'Safari, Chrome, Arc, Edge, Brave and Firefox. For anything else, copy the link and Ladle offers to download it.'
+	: 'Safari, right out of the box. Extensions for Chrome, Arc, Edge, Brave and Firefox are on their way to the Chrome Web Store and Firefox Add-ons. In any browser, copy a link and Ladle offers to download it.';
+
+const faqs = [
+	{
+		q: 'Is it really free?',
+		a: 'Yes. There’s no price, trial, subscription or license key, and nothing to sign up for. Every feature works from the first launch, and updates are free too.',
+	},
+	{
+		q: 'Is it really faster?',
+		a: 'On servers that allow several connections, usually yes, because Ladle pulls eight pieces at once instead of one. When a server allows only one, Ladle still beats a browser at retrying and picking up where it stopped.',
+	},
+	{ q: 'Which browsers does it work with?', a: browsersAnswer },
+	{
+		q: 'Can it save any video?',
+		a: 'It saves videos a site serves as a normal file or stream. It won’t get around copy protection, and some sites’ terms don’t allow downloading, so check before you save.',
+	},
+	{
+		q: 'How does Ladle update?',
+		a: 'It checks once a day and downloads updates in the background. When one is ready, Ladle offers to restart; if you’d rather wait, it installs the next time you quit. You can also choose Ladle › Check for Updates… whenever you like.',
+	},
+	{
+		q: 'Does Ladle collect my data?',
+		a: 'No. There’s no account, analytics or tracking, and your downloads and history stay on your Mac. Besides your downloads, Ladle only sends its daily update check, which carries just the app and macOS versions.',
+	},
+	{
+		q: 'Is it safe to install?',
+		a: 'Ladle is signed with an Apple Developer ID and notarized by Apple, so macOS checks it before it opens. It isn’t on the Mac App Store; download it from this site.',
+	},
+	{
+		q: 'What do I need to run it?',
+		a: `A Mac with ${REQUIREMENTS}. Ladle runs natively on Apple silicon and Intel.`,
+	},
+];
+
+const freePoints = [
+	'Every feature from the first launch',
+	'No account, sign-in or license key',
+	'No ads, no tracking, no analytics',
+	'Updates arrive on their own',
+];
+---
+
+<SiteLayout
+	title="Ladle — free download manager for Mac"
+	description="Ladle splits every file into eight streams, catches downloads from your browser, queues big files for the night and sorts them into folders. Free for macOS 14 or later."
+	current="home"
+>
+	<section class="hero container" aria-labelledby="hero-title">
+		<p class="badge glass"><Icon name="ladle" size={16} class="ink" />Download manager for Mac</p>
+		<h1 id="hero-title" class="disp hero-title">
+			<span>Downloads,</span>
+			<span class="ink">poured fast.</span>
+		</h1>
+		<p class="hero-lead">
+			Ladle splits every file into eight streams, catches downloads straight from your browser, and
+			picks up right where it left off. One button, no setup.
+		</p>
+		<div class="hero-actions">
+			<a class="btn btn-lg btn-primary" href={DMG_URL}>
+				<Icon name="download" size={18} strokeWidth={2.3} />Download for Mac
+			</a>
+			<a class="btn btn-lg btn-ghost" href="/docs/">Read the docs</a>
+		</div>
+		<p class="hero-note">Free, no account · {REQUIREMENTS} · {CHIPS}</p>
+		<ProductShot />
+	</section>
+
+	<section id="how" class="container section" aria-labelledby="how-title">
+		<div class="how">
+			<div class="how-copy">
+				<p class="eyebrow">How it’s fast</p>
+				<h2 id="how-title" class="section-title">Eight streams. One file.</h2>
+				<p class="section-lead">
+					A browser pulls a file through one connection. Ladle opens eight, each fetching its own
+					piece, and writes them into place as they land. When a stream finishes early, it takes over
+					half of the biggest piece that’s left, so nothing waits on a straggler.
+				</p>
+				<ul class="checks">
+					{
+						howPoints.map((text) => (
+							<li>
+								<span class="check" aria-hidden="true">
+									<Icon name="check" size={13} strokeWidth={2.6} />
+								</span>
+								{text}
+							</li>
+						))
+					}
+				</ul>
+			</div>
+			<figure class="compare glass">
+				<div class="lane">
+					<div class="lane-head"><span class="lane-name">Your browser</span><span class="lane-note">One connection</span></div>
+					<div class="single" aria-hidden="true"><span></span></div>
+				</div>
+				<div class="lane">
+					<div class="lane-head"><span class="lane-name ink">Ladle</span><span class="lane-note">Eight connections at once</span></div>
+					<div class="segs tall" aria-hidden="true">
+						{
+							howSegs.map((w) => (
+								<span class="seg">
+									<span class="live pour" style={`width: ${w}%`} />
+								</span>
+							))
+						}
+					</div>
+				</div>
+				<figcaption>
+					Works on servers that allow more than one connection, which is most big download sites. When
+					a server allows only one, Ladle still retries on its own and picks up where it stopped
+					whenever the server lets it.
+				</figcaption>
+			</figure>
+		</div>
+	</section>
+
+	<section id="features" class="container section" aria-labelledby="feat-title">
+		<div class="section-head">
+			<p class="eyebrow">Features</p>
+			<h2 id="feat-title" class="section-title">From click to folder, handled.</h2>
+			<p class="section-lead">Ladle catches the download, picks the right folder and tells you when it’s done.</p>
+		</div>
+		<div class="tiles">
+			<article class="tile glass">
+				<div class="art" aria-hidden="true">
+					<div class="pop catch">
+						<div class="catch-file">
+							<span class="mini-ext">DMG</span>
+							<span class="catch-text"><span class="strong">HandBrake-1.8.2.dmg</span><span class="sub">84.6 MB · from Safari</span></span>
+						</div>
+						<div class="catch-actions"><span class="mini-btn ghost">Later</span><span class="mini-btn primary">Download</span></div>
+					</div>
+				</div>
+				<h3 class="disp">Catches browser downloads</h3>
+				<p>{catchCopy}</p>
+			</article>
+
+			<article class="tile glass">
+				<div class="art video ld-force-dark" aria-hidden="true">
+					<span class="play"><Icon name="play" size={16} /></span>
+					<span class="pop video-pill"><Icon name="ladle" size={14} class="ink" />Download video · 1080p</span>
+				</div>
+				<h3 class="disp">A button on videos</h3>
+				<p>Videos you’re allowed to save get a Download video button. Pick a quality and go. Protected video stays protected.</p>
+			</article>
+
+			<article class="tile glass">
+				<div class="art tonight" aria-hidden="true">
+					<div class="tonight-times"><span class="strong"><Icon name="moon" size={15} class="ink" />1:00 AM</span><span>7:00 AM</span></div>
+					<div class="tonight-bar"><span></span></div>
+					<div class="tonight-chips"><span>2 files · 3.4 GB</span><span>Then sleep</span></div>
+				</div>
+				<h3 class="disp">The Tonight queue</h3>
+				<p>Line up the big files for 1 AM. When they’re done, Ladle can put your Mac to sleep.</p>
+			</article>
+
+			<article class="tile glass">
+				<div class="art folders" aria-hidden="true">
+					{
+						['Video', 'Music', 'Documents', 'Archives', 'Apps', 'Images'].map((name) => (
+							<span class="folder">
+								<Icon name="folder" size={14} class="ink" />
+								{name}
+							</span>
+						))
+					}
+				</div>
+				<h3 class="disp">Sorts itself</h3>
+				<p>Video, music, documents, archives, apps and images each land in their own folder.</p>
+			</article>
+
+			<article class="tile glass">
+				<div class="art" aria-hidden="true">
+					<div class="nudge">
+						<span class="nudge-text"><span class="strong ink">Link on your clipboard</span><span class="sub">the-long-take/ep-145.mp3</span></span>
+						<span class="mini-btn primary">Download</span>
+					</div>
+				</div>
+				<h3 class="disp">Copy a link, get a nudge</h3>
+				<p>Copy a link anywhere and Ladle offers to grab it. Nothing leaves your Mac.</p>
+			</article>
+
+			<article class="tile glass">
+				<div class="art menubar" aria-hidden="true">
+					<span class="pop menubar-pill"><Icon name="ladle" size={15} /><span class="rnum">35.4 MB/s</span></span>
+					<div class="pop menubar-card">
+						<span class="mini-segs"><span></span><span></span><span class="half"></span><span class="empty"></span></span>
+						<span class="menubar-meta"><span>3 downloading</span><span class="rnum">41%</span></span>
+					</div>
+				</div>
+				<h3 class="disp">Lives in your menu bar</h3>
+				<p>Speed, progress and the link you just copied, one click away.</p>
+			</article>
+		</div>
+	</section>
+
+	<section id="free" class="container section" aria-labelledby="free-title">
+		<div class="section-head center">
+			<p class="eyebrow">Price</p>
+			<h2 id="free-title" class="section-title">Free. All of it.</h2>
+			<p class="section-lead">No account, no trial, nothing to unlock. Download it and keep it.</p>
+		</div>
+		<div class="free glass">
+			<div class="free-price">
+				<span class="free-label">Ladle</span>
+				<span class="disp free-big">Free</span>
+				<span class="free-sub">The whole app, for everyone.</span>
+			</div>
+			<ul class="free-list">
+				{
+					freePoints.map((text) => (
+						<li>
+							<Icon name="check" size={16} strokeWidth={2.4} class="ink" />
+							{text}
+						</li>
+					))
+				}
+			</ul>
+			<div class="free-cta">
+				<a class="btn btn-lg btn-primary" href={DMG_URL}>
+					<Icon name="download" size={18} strokeWidth={2.3} />Download for Mac
+				</a>
+				<span class="free-fine">{REQUIREMENTS} · {CHIPS} · <a href="/download/">Install guide</a></span>
+			</div>
+		</div>
+	</section>
+
+	<section id="faq" class="container section" aria-labelledby="faq-title">
+		<div class="section-head">
+			<p class="eyebrow">FAQ</p>
+			<h2 id="faq-title" class="section-title">Questions, answered.</h2>
+		</div>
+		<div class="faqs">
+			{
+				faqs.map((item) => (
+					<article class="faq glass">
+						<h3>{item.q}</h3>
+						<p>{item.a}</p>
+					</article>
+				))
+			}
+		</div>
+	</section>
+
+	<section class="container cta" aria-labelledby="cta-title">
+		<span class="cta-icon"><AppIcon size={72} /></span>
+		<h2 id="cta-title" class="section-title">Pour your first download.</h2>
+		<p class="section-lead">It’s free, there’s nothing to sign up for, and it keeps itself up to date.</p>
+		<div class="hero-actions">
+			<a class="btn btn-lg btn-primary" href={DMG_URL}>
+				<Icon name="download" size={18} strokeWidth={2.3} />Download for Mac
+			</a>
+			<a class="btn btn-lg btn-ghost" href="/docs/">Read the docs</a>
+		</div>
+	</section>
+</SiteLayout>
+
+<style>
+	.ink,
+	:global(.ink) {
+		color: var(--ld-ink);
+	}
+	.strong {
+		font-weight: 600;
+	}
+	.sub {
+		font-size: 11px;
+		color: var(--ld-text3);
+	}
+
+	/* Hero */
+	.hero {
+		padding-top: 72px;
+		padding-bottom: 96px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+	.badge {
+		margin: 0;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 34px;
+		padding: 0 14px 0 10px;
+		border-radius: 999px;
+		font-size: 13.5px;
+		font-weight: 500;
+		color: var(--ld-text2);
+		box-shadow: inset 0 1px 0 var(--ld-hi);
+	}
+	.hero-title {
+		margin: 28px 0 0;
+		font-size: clamp(52px, 8vw, 112px);
+		font-weight: 800;
+		line-height: 0.92;
+		letter-spacing: -0.045em;
+		text-wrap: balance;
+	}
+	.hero-title span {
+		display: block;
+	}
+	.hero-lead {
+		margin: 26px 0 0;
+		max-width: 640px;
+		font-size: clamp(17px, 1.6vw, 20px);
+		line-height: 1.55;
+		color: var(--ld-text2);
+		text-wrap: pretty;
+	}
+	.hero-actions {
+		margin-top: 36px;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 12px;
+	}
+	.hero-note {
+		margin: 16px 0 0;
+		font-size: 14px;
+		color: var(--ld-text3);
+		text-wrap: balance;
+	}
+
+	.section {
+		padding-block: 96px;
+	}
+	.section-head {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		max-width: 720px;
+	}
+	.section-head.center {
+		max-width: none;
+		align-items: center;
+		text-align: center;
+	}
+
+	/* How it's fast */
+	.how {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr));
+		gap: 56px 64px;
+		align-items: center;
+	}
+	.how-copy {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+	.how-copy .section-lead {
+		max-width: 540px;
+	}
+	.checks {
+		margin: 6px 0 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.checks li {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		font-size: 16px;
+	}
+	.check {
+		width: 26px;
+		height: 26px;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 999px;
+		background: var(--ld-tint);
+		color: var(--ld-ink-strong);
+	}
+	.compare {
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 26px;
+		padding: 30px;
+		border-radius: 30px;
+	}
+	.lane {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.lane-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+	}
+	.lane-name {
+		font-size: 15px;
+		font-weight: 600;
+	}
+	.lane-note {
+		font-size: 13px;
+		color: var(--ld-text3);
+	}
+	.single {
+		height: 14px;
+		border-radius: 999px;
+		background: var(--ld-track);
+		overflow: hidden;
+	}
+	.single span {
+		display: block;
+		width: 22%;
+		height: 100%;
+		border-radius: 999px;
+		background: #8e877d;
+	}
+	.segs.tall {
+		height: 14px;
+		gap: 4px;
+	}
+	.compare figcaption {
+		padding-top: 18px;
+		border-top: 1px solid var(--ld-line);
+		font-size: 14px;
+		line-height: 1.55;
+		color: var(--ld-text2);
+	}
+
+	/* Feature tiles */
+	.tiles {
+		margin-top: 48px;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+		gap: 16px;
+	}
+	.tile {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 26px;
+		border-radius: 28px;
+	}
+	.tile h3 {
+		margin: 12px 0 0;
+		font-size: 22px;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+	.tile p {
+		margin: 0;
+		font-size: 15px;
+		line-height: 1.55;
+		color: var(--ld-text2);
+	}
+	.art {
+		height: 132px;
+		display: grid;
+		place-items: center;
+		padding: 0 16px;
+		border-radius: 20px;
+		background: var(--ld-tile);
+		border: 1px solid var(--ld-line);
+		font-size: 12px;
+		line-height: 1.3;
+		text-align: left;
+	}
+	.mini-ext {
+		width: 30px;
+		height: 30px;
+		display: grid;
+		place-items: center;
+		border-radius: 9px;
+		background: var(--ld-tile);
+		border: 1px solid var(--ld-line);
+		font-size: 8.5px;
+		font-weight: 700;
+		color: var(--ld-text2);
+	}
+	.mini-btn {
+		height: 26px;
+		padding: 0 11px;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		font-size: 11.5px;
+		white-space: nowrap;
+	}
+	.mini-btn.ghost {
+		background: var(--ld-btn-ghost);
+		border: 1px solid var(--ld-line2);
+	}
+	.mini-btn.primary {
+		background: var(--ld-accent);
+		color: var(--ld-on-accent);
+		font-weight: 600;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+	}
+	.catch {
+		width: min(270px, 100%);
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 12px;
+		border-radius: 18px;
+	}
+	.catch-file {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.catch-text {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		font-size: 12.5px;
+	}
+	.catch-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 6px;
+	}
+	.video {
+		position: relative;
+		overflow: hidden;
+		background: radial-gradient(120% 90% at 30% 35%, #3a3631 0%, #1d1b19 55%, #121110 100%);
+		border-color: rgba(255, 240, 220, 0.1);
+	}
+	.play {
+		width: 44px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.16);
+		color: #ffffff;
+	}
+	.video-pill {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		height: 30px;
+		padding: 0 11px 0 9px;
+		border-radius: 999px;
+		font-size: 12px;
+		font-weight: 600;
+	}
+	.tonight {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: stretch;
+		gap: 14px;
+		padding: 0 22px;
+	}
+	.tonight-times {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		color: var(--ld-text2);
+	}
+	.tonight-times .strong {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		color: var(--ld-text);
+		font-weight: 500;
+	}
+	.tonight-bar {
+		position: relative;
+		height: 10px;
+		border-radius: 999px;
+		background: var(--ld-track);
+	}
+	.tonight-bar span {
+		position: absolute;
+		inset: 0 38% 0 0;
+		border-radius: 999px;
+		background: var(--ld-pour);
+		box-shadow: 0 0 10px rgba(255, 138, 31, 0.5);
+	}
+	.tonight-chips {
+		display: flex;
+		gap: 6px;
+		font-size: 11.5px;
+		color: var(--ld-text2);
+	}
+	.tonight-chips span,
+	.folder {
+		height: 22px;
+		padding: 0 9px;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		background: var(--ld-tile);
+	}
+	.folders {
+		display: flex;
+		flex-wrap: wrap;
+		align-content: center;
+		justify-content: center;
+		gap: 8px;
+	}
+	.folder {
+		gap: 6px;
+		height: 30px;
+		padding: 0 12px 0 10px;
+		background: var(--ld-btn-ghost);
+		border: 1px solid var(--ld-line2);
+		font-size: 12.5px;
+	}
+	.nudge {
+		width: min(290px, 100%);
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 10px;
+		align-items: center;
+		padding: 10px 10px 10px 14px;
+		border-radius: 18px;
+		background: rgba(255, 138, 31, 0.1);
+		border: 1px solid rgba(255, 138, 31, 0.28);
+	}
+	.nudge-text {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.nudge-text .strong {
+		color: var(--ld-ink-strong);
+	}
+	.nudge-text .sub {
+		color: var(--ld-text2);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.menubar {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+	}
+	.menubar-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		height: 30px;
+		padding: 0 12px;
+		border-radius: 999px;
+		font-weight: 500;
+	}
+	.menubar-card {
+		width: min(250px, 90%);
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 10px 12px;
+		border-radius: 16px;
+	}
+	.mini-segs {
+		display: flex;
+		gap: 2px;
+		height: 4px;
+	}
+	.mini-segs span {
+		flex: 1;
+		border-radius: 999px;
+		background: var(--ld-accent);
+	}
+	.mini-segs .half {
+		opacity: 0.6;
+	}
+	.mini-segs .empty {
+		background: var(--ld-track);
+	}
+	.menubar-meta {
+		display: flex;
+		justify-content: space-between;
+		font-size: 11px;
+		color: var(--ld-text2);
+	}
+
+	/* Free */
+	.free {
+		max-width: 920px;
+		margin: 48px auto 0;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+		gap: 28px 40px;
+		padding: 36px;
+		border-radius: 30px;
+		box-shadow:
+			inset 0 1px 0 var(--ld-hi),
+			inset 0 0 0 1px rgba(255, 138, 31, 0.45),
+			0 30px 80px rgba(255, 138, 31, 0.12);
+	}
+	.free-price {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.free-label {
+		font-size: 15px;
+		font-weight: 600;
+		color: var(--ld-ink);
+	}
+	.free-big {
+		font-size: 64px;
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: -0.04em;
+	}
+	.free-sub {
+		font-size: 15px;
+		color: var(--ld-text2);
+	}
+	.free-list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 14px;
+	}
+	.free-list li {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 16px;
+	}
+	.free-cta {
+		grid-column: 1 / -1;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 14px 20px;
+		padding-top: 26px;
+		border-top: 1px solid var(--ld-line);
+	}
+	.free-fine {
+		font-size: 14px;
+		color: var(--ld-text3);
+	}
+	.free-fine a {
+		color: var(--ld-ink);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	@media (max-width: 700px) {
+		.free {
+			grid-template-columns: 1fr;
+			padding: 26px;
+		}
+		.free-cta .btn {
+			width: 100%;
+		}
+	}
+
+	/* FAQ */
+	.faqs {
+		margin-top: 40px;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr));
+		gap: 16px;
+	}
+	.faq {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 24px 26px;
+		border-radius: 24px;
+	}
+	.faq h3 {
+		margin: 0;
+		font-size: 17.5px;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+	}
+	.faq p {
+		margin: 0;
+		font-size: 15px;
+		line-height: 1.6;
+		color: var(--ld-text2);
+		text-wrap: pretty;
+	}
+
+	/* Closing call to action */
+	.cta {
+		padding-block: 72px 88px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 18px;
+		text-align: center;
+	}
+	.cta-icon {
+		display: block;
+		border-radius: 17px;
+		box-shadow:
+			0 20px 50px rgba(0, 0, 0, 0.45),
+			0 0 50px rgba(255, 138, 31, 0.22);
+	}
+	.cta .section-title {
+		margin-top: 8px;
+	}
+	.cta .hero-actions {
+		margin-top: 14px;
+	}
+
+	@media (max-width: 600px) {
+		.hero {
+			padding-top: 40px;
+			padding-bottom: 64px;
+		}
+		.section {
+			padding-block: 64px;
+		}
+		.compare {
+			padding: 22px;
+		}
+		.tile {
+			padding: 20px;
+		}
+		.hero-actions {
+			width: 100%;
+		}
+		.hero-actions .btn {
+			flex: 1 1 100%;
+		}
+	}
+</style>

@@ -1,0 +1,51 @@
+# Builds the website and checks its links on every branch except main, and on pull requests.
+# Deploys happen in site-deploy.yml.
+name: Site CI
+
+on:
+  push:
+    branches-ignore: [main]
+    paths:
+      - 'site/**'
+      - 'SPEC.md'
+      - '.github/workflows/site-*.yml'
+  pull_request:
+    paths:
+      - 'site/**'
+      - 'SPEC.md'
+      - '.github/workflows/site-*.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and check links
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    env:
+      ASTRO_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history, so each docs page can show when it was last updated.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: site/.nvmrc
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # Fails on broken internal links or anchors, or if a page SPEC.md promises is missing.
+      - run: npm run check

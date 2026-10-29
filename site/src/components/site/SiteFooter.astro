@@ -1,0 +1,119 @@
+---
+import { SUPPORT_URL } from '../../config/site.mjs';
+
+const columns = [
+	{
+		title: 'Product',
+		links: [
+			{ label: 'Features', href: '/#features' },
+			{ label: 'Download', href: '/download/' },
+			{ label: 'Changelog', href: '/changelog/' },
+			{ label: 'Privacy', href: '/privacy/' },
+		],
+	},
+	{
+		title: 'Help',
+		links: [
+			{ label: 'Docs', href: '/docs/' },
+			{ label: 'Set up your browser', href: '/docs/getting-started/set-up-your-browser/' },
+			{ label: 'FAQ', href: '/#faq' },
+			{ label: 'Report a problem', href: SUPPORT_URL },
+		],
+	},
+];
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+	<div class="container top">
+		<div class="brand">
+			<span class="disp name">Ladle</span>
+			<span class="tag">Downloads, poured fast.</span>
+		</div>
+		<div class="cols">
+			{
+				columns.map((col) => (
+					<nav aria-label={col.title}>
+						<h2>{col.title}</h2>
+						<ul>
+							{col.links.map((link) => (
+								<li>
+									<a href={link.href}>{link.label}</a>
+								</li>
+							))}
+						</ul>
+					</nav>
+				))
+			}
+		</div>
+	</div>
+	<div class="container bottom">
+		<span>© {year} Ladle · ladle.alirazakhan.me</span>
+		<span>Free, and made for macOS</span>
+	</div>
+</footer>
+
+<style>
+	.site-footer {
+		border-top: 1px solid var(--ld-line);
+	}
+	.top {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 32px 48px;
+		padding-block: 44px 36px;
+	}
+	.brand {
+		flex: 1 1 240px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.name {
+		font-size: 22px;
+		font-weight: 800;
+		letter-spacing: -0.035em;
+	}
+	.tag {
+		font-size: 14px;
+		color: var(--ld-text2);
+	}
+	.cols {
+		flex: 0 1 420px;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+		gap: 24px;
+	}
+	h2 {
+		margin: 0 0 10px;
+		font-size: 14px;
+		font-weight: 600;
+	}
+	ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		font-size: 14px;
+	}
+	a {
+		color: var(--ld-text2);
+		border-radius: 6px;
+	}
+	a:hover {
+		color: var(--ld-text);
+		text-decoration: underline;
+	}
+	.bottom {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 8px 24px;
+		padding-bottom: 36px;
+		font-size: 13px;
+		color: var(--ld-text3);
+	}
+</style>

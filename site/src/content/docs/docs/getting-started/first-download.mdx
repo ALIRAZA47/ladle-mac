@@ -1,0 +1,66 @@
+---
+title: Your first download
+description: Paste a link in the bar at the top of Ladle’s window, press Download now and watch it pour.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+## Download a file
+
+<Steps>
+
+1. Copy a link to a file, like a `.dmg`, `.zip` or `.mp4`.
+
+2. In Ladle, click the bar at the top of the window that says **Paste a link or search**, or press <kbd>⌘K</kbd>. Then paste with <kbd>⌘V</kbd>.
+
+3. Ladle shows the file’s name, its size and the folder it will be saved in. Click **Download now**.
+
+   {/* Screenshot: the link bar with a pasted link, showing the file name, size, folder, More options and Download now. */}
+
+</Steps>
+
+To pick a different folder or start it tonight, click **More options** instead. It opens the Add sheet with the link filled in.
+
+<Aside type="tip">
+**Copied the link already?** When you switch to Ladle with a file link on your clipboard, it shows **Link on your clipboard**. Click **Download** and you’re done.
+</Aside>
+
+## Watch it pour
+
+Each download’s progress bar is split into one segment per connection. Segments glow while they pour, dim when you pause, and turn into a single steel bar when the file is complete.
+
+Click a download to see its details. The **connection ring** has one arc per connection, each filling as its piece comes in, with the speed, time left and size underneath.
+
+{/* Screenshot: the main window with a download selected and its connection ring in the details panel. */}
+
+The sidebar on the left narrows the list down: **Library** (All Downloads, Active, Queued, Completed and Failed), **Categories** such as Video and Apps, and the **Main queue** and **Tonight** queues. Typing in the bar at the top searches the list.
+
+## Pause, resume and retry
+
+| Do this | Press |
+| --- | --- |
+| Pause or resume the selected download | <kbd>Space</kbd> |
+| Pause or resume everything | <kbd>⌥⌘P</kbd> |
+| Retry a download that failed | <kbd>⌘R</kbd> |
+
+Pausing is safe. Ladle saves each connection’s place, so a download carries on where it stopped, even after you quit Ladle, your Mac sleeps or you change networks. That needs the server to support resuming, which most big download sites do. If it doesn’t, see [A download won’t resume](/docs/fixing-problems/wont-resume/).
+
+## When it’s done
+
+Ladle sends a notification with **Open** and **Show in Finder** buttons. Your file is in `~/Downloads/Ladle`, in a folder for its type, such as **Apps** for a `.dmg`.
+
+| Do this | Press |
+| --- | --- |
+| Open the selected file | <kbd>⌘O</kbd> |
+| Show it in Finder | <kbd>⇧⌘R</kbd> |
+| Remove it from the list (the file stays) | <kbd>⌘⌫</kbd> |
+
+While a file downloads, its folder holds a `.ladle-part` file with the same name, and Finder shows the progress on its icon. Ladle gives it its real name the moment it’s complete.
+
+To open the file or show it in Finder automatically instead of notifying you, change **When a download finishes** in **Ladle › Settings › Downloads**. More in [Categories and folders](/docs/files-and-folders/categories-and-folders/).
+
+## What next
+
+- [Set up your browser](/docs/getting-started/set-up-your-browser/) so clicking a download hands it to Ladle.
+- Queue big files for the night with [the Tonight queue](/docs/queues-and-speed/tonight-queue/).
+- Add a whole list at once with [many links and numbered series](/docs/adding-downloads/many-links/).

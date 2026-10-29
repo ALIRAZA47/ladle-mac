@@ -1,0 +1,51 @@
+---
+title: A download failed
+description: Ladle keeps your progress when a download fails, so retrying carries on where it stopped. Here’s how to find out what went wrong and fix it.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import { SUPPORT_URL } from '~/config/site.mjs';
+
+## Retry it first
+
+Ladle already retried on its own before calling it a failure: 3 times out of the box, with a growing pause between tries. Your progress is saved, so a manual retry carries on where the download stopped.
+
+<Steps>
+
+1. Click **Failed** in Ladle’s sidebar to see failed downloads. Each one shows where it stopped and why, like “Stopped at 42% · the server stopped responding”.
+
+2. Select the download and press <kbd>⌘R</kbd>, or click **Retry**.
+
+</Steps>
+
+If it fails again, find the reason below.
+
+## Common reasons
+
+### The server stopped responding, or your connection dropped
+
+Retry once your connection is back. If you’re on a Wi-Fi network that drops out, Ladle resumes after a network change on its own, as long as the server supports resuming.
+
+### The server asked Ladle to slow down
+
+Some servers limit how many connections you can open, or how often. Ladle backs off on its own by halving its connections to that server and waiting as long as the server asks. If downloads from one site keep failing, lower **Connections per download** in **Ladle › Settings › Speed**, then retry. See [Connections and speed limits](/docs/queues-and-speed/connections-and-speed-limits/).
+
+### The link expired
+
+Many download links only work for a while, or only for the person who was signed in when they were made. If retrying doesn’t help, go back to the page you got the link from and start the download again. Starting it from your browser with Ladle’s extension on also passes along the sign-in the site needs.
+
+### There isn’t enough space
+
+Ladle sets aside the file’s full size in its folder when the download starts. If the disk is nearly full, free up some space, or choose a different folder with **Save downloads to** in **Ladle › Settings › Downloads**, then retry.
+
+### A proxy, VPN or firewall is in the way
+
+Ladle uses the proxy from your macOS network settings. If the download works in your browser but not in Ladle, check that your VPN or firewall app allows Ladle to connect.
+
+<Aside type="tip">
+**Not sure whether the problem is the link?** Paste it into your browser’s address bar. If the browser can’t download it either, the problem is on the site’s end.
+</Aside>
+
+## Still failing?
+
+<a href={SUPPORT_URL}>Ask on GitHub Issues</a>. Include your Ladle version (from **Ladle › About Ladle**), your macOS version and the message Ladle shows. Issues are public, so leave out private download links.

@@ -1,0 +1,166 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import Icon from '../components/Icon.astro';
+import { SUPPORT_URL } from '../config/site.mjs';
+---
+
+<SiteLayout
+	title="Privacy — Ladle"
+	description="Ladle collects nothing about you. No account, no analytics, no tracking, in the app or on this website."
+	current="privacy"
+>
+	<div class="container page">
+		<header class="intro">
+			<p class="eyebrow">Privacy</p>
+			<h1 class="disp">Ladle collects nothing about you.</h1>
+			<p class="lead">
+				No account, no analytics, no tracking, in the app or on this website. Here’s exactly what goes
+				where, in plain words.
+			</p>
+			<p class="updated">Updated October 2026</p>
+		</header>
+
+		<div class="summary glass">
+			<ul>
+				<li><Icon name="check" size={16} strokeWidth={2.4} class="ink" />No account, analytics or telemetry</li>
+				<li><Icon name="check" size={16} strokeWidth={2.4} class="ink" />Your downloads and history stay on your Mac</li>
+				<li><Icon name="check" size={16} strokeWidth={2.4} class="ink" />No cookies or analytics on this website</li>
+			</ul>
+		</div>
+
+		<div class="prose">
+			<h2>The app</h2>
+			<ul>
+				<li>
+					<strong>Ladle sends nothing about you anywhere.</strong> There’s no account, no analytics and no
+					telemetry. Ladle doesn’t know who you are and doesn’t report how you use it.
+				</li>
+				<li>
+					<strong>Its only network traffic is the downloads you start and one update check a day.</strong>{' '}
+					Ladle connects to the sites you download from, and nowhere else, apart from that check.
+				</li>
+				<li>
+					<strong>The update check sends only Ladle’s version and your macOS version.</strong> It reads the
+					update feed from this website. New versions of Ladle download from GitHub Releases. You can turn the
+					check off in <strong>Ladle › Settings › Updates</strong>.
+				</li>
+				<li>
+					<strong>Your download history stays on your Mac</strong>, in{' '}
+					<code>~/Library/Application Support/Ladle</code>. Remove a download from the list, or delete that
+					folder, and it’s gone.
+				</li>
+				<li>
+					<strong>Your clipboard is read on your Mac and never sent.</strong> Ladle looks at it only to spot a
+					link to a file you might want to download. Turn this off with{' '}
+					<strong>Watch the clipboard for links</strong> in <strong>Ladle › Settings › General</strong>.
+				</li>
+				<li>
+					<strong>Cookies and referrers stay with their site.</strong> When a download comes from your browser,
+					Ladle sends the cookies and page address that came with it only to the site the file comes from.
+				</li>
+			</ul>
+
+			<h2>The browser extension</h2>
+			<p>
+				Ladle’s extension looks at the downloads you click and the videos on the page you’re viewing, so it
+				can hand downloads to Ladle and show the Download video button. When it hands over a download, it
+				passes the file’s link, the page it came from, its name and the cookies that site needs, directly to
+				Ladle on your Mac. It doesn’t keep or send a record of your browsing.
+			</p>
+
+			<h2>This website</h2>
+			<ul>
+				<li><strong>No cookies, no analytics, no tracking scripts and no ads.</strong></li>
+				<li>
+					<strong>Fonts come from this site</strong>, not from a font service, so loading a page doesn’t tell
+					anyone else you visited.
+				</li>
+				<li>
+					<strong>Two preferences stay in your browser:</strong> your light or dark theme, and which browser
+					you picked in the docs. They’re kept in your browser’s local storage, on your device, and never sent
+					anywhere.
+				</li>
+				<li>
+					<strong>The site is hosted on GitHub Pages</strong>, and Ladle’s downloads come from GitHub Releases.
+					Like any web host, GitHub receives the usual request details, such as your IP address, when you load a
+					page or download a file. We don’t get visitor logs or statistics from it. GitHub’s{' '}
+					<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">privacy statement</a>{' '}
+					covers what it does with that information.
+				</li>
+			</ul>
+
+			<h2>Support</h2>
+			<p>
+				Support happens on <a href={SUPPORT_URL}>GitHub Issues</a>, which are public. Anything you post there,
+				including links and logs, can be read by anyone, so leave out private download links and personal
+				details.
+			</p>
+
+			<h2>If anything changes</h2>
+			<p>
+				If Ladle or this website ever handles your information differently, this page will be updated first and
+				the change will be called out in the <a href="/changelog/">changelog</a>.
+			</p>
+		</div>
+	</div>
+</SiteLayout>
+
+<style>
+	.page {
+		max-width: 820px;
+		padding-top: 56px;
+		padding-bottom: 96px;
+	}
+	.intro {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+	h1 {
+		margin: 0;
+		font-size: clamp(38px, 5vw, 60px);
+		font-weight: 800;
+		line-height: 1.02;
+		letter-spacing: -0.04em;
+		text-wrap: balance;
+	}
+	.lead {
+		margin: 0;
+		font-size: 18px;
+		line-height: 1.6;
+		color: var(--ld-text2);
+	}
+	.updated {
+		margin: 0;
+		font-size: 14px;
+		color: var(--ld-text3);
+	}
+	.summary {
+		margin: 32px 0 8px;
+		padding: 22px 26px;
+		border-radius: 24px;
+	}
+	.summary ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		font-size: 16px;
+		font-weight: 500;
+	}
+	.summary li {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.summary :global(.ink) {
+		color: var(--ld-ink);
+	}
+	@media (max-width: 600px) {
+		.page {
+			padding-top: 32px;
+		}
+	}
+</style>

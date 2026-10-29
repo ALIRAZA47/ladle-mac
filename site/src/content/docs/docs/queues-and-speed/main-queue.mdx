@@ -1,0 +1,34 @@
+---
+title: The main queue
+description: Ladle runs a few downloads at the same time and lines up the rest, so each file gets a fair share of your connection.
+---
+
+## How it works
+
+Everything you start goes into the main queue. Ladle runs **3 downloads at the same time** out of the box; the rest wait in line and start one by one as slots free up. Waiting downloads show **Next in line** with their size.
+
+To see only what’s waiting, click **Main queue** under **Queues** in Ladle’s sidebar.
+
+## Change how many run at once
+
+Open **Ladle › Settings › Speed** and set **Downloads at the same time**, anywhere from 1 to 8.
+
+- **Fewer** gives each file more of your bandwidth, so the first ones finish sooner.
+- **More** helps when you’re fetching lots of small files, or the servers are slow on their own.
+
+Each download also splits into several connections. See [Connections and speed limits](/docs/queues-and-speed/connections-and-speed-limits/).
+
+## Start, pause and resume
+
+| Do this | How |
+| --- | --- |
+| Start a waiting download right away | Select it, then click **Start now** |
+| Pause or resume the selected download | <kbd>Space</kbd> |
+| Pause or resume everything | <kbd>⌥⌘P</kbd> |
+| Retry a failed download | <kbd>⌘R</kbd> |
+
+A paused download keeps its place. When you resume it, every connection picks up where it stopped.
+
+## On battery or a Low Data network
+
+Downloads you start yourself always run, even on battery or on a Low Data network. The battery and Low Data settings only hold the Tonight queue; see [On battery and Low Data networks](/docs/queues-and-speed/tonight-queue/#on-battery-and-low-data-networks).

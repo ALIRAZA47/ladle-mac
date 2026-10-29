@@ -1,0 +1,69 @@
+---
+import '../styles/site.css';
+import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import bricolageLatin from '@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-opsz-normal.woff2?url';
+import ThemeInit from '../components/site/ThemeInit.astro';
+import SiteHeader from '../components/site/SiteHeader.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import { SITE_URL } from '../config/site.mjs';
+
+interface Props {
+	title: string;
+	description: string;
+	current?: 'home' | 'download' | 'changelog' | 'privacy' | 'other';
+	/** Set false for pages search engines shouldn't index, like the 404 page. */
+	index?: boolean;
+}
+
+const { title, description, current = 'other', index = true } = Astro.props;
+const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+const ogImage = `${SITE_URL}/og.png`;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		{index ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
+		<ThemeInit />
+		<meta name="color-scheme" content="dark light" />
+		<meta name="theme-color" content="#0c0b0a" media="(prefers-color-scheme: dark)" />
+		<meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)" />
+		<link rel="icon" href="/favicon.ico" sizes="32x32" />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<link rel="preload" href={bricolageLatin} as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Ladle" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		{index && <meta property="og:url" content={canonical} />}
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="Ladle — Downloads, poured fast." />
+		<meta property="og:locale" content="en" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:image" content={ogImage} />
+		<slot name="head" />
+	</head>
+	<body>
+		<a class="skip-link" href="#main">Skip to content</a>
+		<SiteHeader current={current} />
+		<main id="main" tabindex="-1">
+			<slot />
+		</main>
+		<SiteFooter />
+	</body>
+</html>
+
+<style>
+	main:focus {
+		outline: none;
+	}
+</style>

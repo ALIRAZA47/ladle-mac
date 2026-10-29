@@ -1,0 +1,62 @@
+---
+import Pagination from './Pagination.astro';
+import Feedback from './Feedback.astro';
+
+const { entry } = Astro.locals.starlightRoute;
+const isArticle = entry.data.template !== 'splash';
+const year = new Date().getFullYear();
+---
+
+<footer class="docs-footer print:hidden">
+	{
+		isArticle && (
+			<>
+				<Feedback />
+				<Pagination />
+			</>
+		)
+	}
+	<div class="fine" data-pagefind-ignore>
+		<span>© {year} Ladle · ladle.alirazakhan.me/docs</span>
+		<nav aria-label="Footer">
+			<a href="/">Home</a>
+			<a href="/download/">Download</a>
+			<a href="/changelog/">Changelog</a>
+			<a href="/privacy/">Privacy</a>
+		</nav>
+	</div>
+</footer>
+
+<style>
+	.docs-footer {
+		display: flex;
+		flex-direction: column;
+		gap: 22px;
+		margin-top: 3rem;
+	}
+	.fine {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 10px 24px;
+		margin-top: 1.5rem;
+		padding-top: 22px;
+		border-top: 1px solid var(--ld-line);
+		font-size: 13.5px;
+		color: var(--ld-text3);
+	}
+	.fine nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 20px;
+	}
+	.fine a {
+		color: var(--ld-text3);
+		text-decoration: none;
+		border-radius: 6px;
+	}
+	.fine a:hover {
+		color: var(--ld-text);
+		text-decoration: underline;
+	}
+</style>

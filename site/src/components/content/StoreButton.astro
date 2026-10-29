@@ -1,0 +1,48 @@
+---
+/** "Add to …" button for an extension store listing. Renders nothing until the link exists. */
+import Icon from '../Icon.astro';
+import { storeLinks } from '../../config/stores.mjs';
+
+interface Props {
+	browser: keyof typeof storeLinks;
+}
+const { browser } = Astro.props;
+const href = storeLinks[browser].trim();
+const label = browser === 'chrome' ? 'Get it from the Chrome Web Store' : 'Get it from Firefox Add-ons';
+---
+
+{
+	href && (
+		<p class="not-content store">
+			<a href={href} class="store-button">
+				<Icon name="download" size={16} strokeWidth={2.3} />
+				{label}
+			</a>
+		</p>
+	)
+}
+
+<style>
+	.store {
+		margin: 1rem 0 0;
+	}
+	.store-button {
+		height: 44px;
+		padding: 0 18px;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		border-radius: 999px;
+		background: var(--ld-accent);
+		color: var(--ld-on-accent);
+		font-size: 15px;
+		font-weight: 600;
+		text-decoration: none;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.35),
+			0 8px 22px rgba(255, 138, 31, 0.28);
+	}
+	.store-button:hover {
+		filter: brightness(1.07);
+	}
+</style>

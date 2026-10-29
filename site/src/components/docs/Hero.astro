@@ -1,0 +1,109 @@
+---
+/* The docs home hero: "How can we help?", a live search box and popular guides. */
+import { getEntry } from 'astro:content';
+import DocsSearch from './DocsSearch.astro';
+import { hrefFor } from '../../config/docs-nav.mjs';
+
+const { data } = Astro.locals.starlightRoute.entry;
+const title = data.hero?.title ?? data.title;
+const tagline = data.hero?.tagline;
+
+const popularSlugs = [
+	'docs/getting-started/set-up-your-browser',
+	'docs/adding-downloads/video-button',
+	'docs/queues-and-speed/tonight-queue',
+	'docs/fixing-problems/wont-resume',
+];
+const popular = await Promise.all(
+	popularSlugs.map(async (slug) => {
+		const entry = await getEntry('docs', slug);
+		if (!entry) throw new Error(`Popular guide not found: ${slug}`);
+		return { href: hrefFor(slug), title: entry.data.title };
+	})
+);
+---
+
+<div class="docs-hero not-content">
+	<h1 id="_top" set:html={title} />
+	{tagline && <p class="tagline" set:html={tagline} />}
+	<DocsSearch />
+	<div class="popular">
+		<span class="popular-label" id="popular-label">Popular:</span>
+		<ul aria-labelledby="popular-label">
+			{
+				popular.map((item) => (
+					<li>
+						<a href={item.href}>{item.title}</a>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</div>
+
+<style>
+	.docs-hero {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 14px;
+		padding: 56px 0 40px;
+		text-align: center;
+	}
+	h1 {
+		margin: 0;
+		font-family: var(--ld-font-display);
+		font-size: clamp(40px, 5vw, 64px);
+		font-weight: 800;
+		line-height: 1.02;
+		letter-spacing: -0.04em;
+		color: var(--ld-text);
+	}
+	.tagline {
+		margin: 0;
+		max-width: 560px;
+		font-size: 18px;
+		line-height: 1.55;
+		color: var(--ld-text2);
+	}
+	.popular {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 8px;
+		margin-top: 4px;
+		font-size: 13px;
+	}
+	.popular-label {
+		color: var(--ld-text3);
+	}
+	ul {
+		display: contents;
+		list-style: none;
+	}
+	li {
+		margin: 0;
+	}
+	a {
+		height: 30px;
+		padding: 0 13px;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		background: var(--ld-card);
+		border: 1px solid var(--ld-line);
+		color: var(--ld-text2);
+		text-decoration: none;
+		box-shadow: var(--ld-shadow-card);
+	}
+	a:hover {
+		color: var(--ld-text);
+		border-color: var(--ld-line2);
+	}
+	@media (max-width: 49.99rem) {
+		.docs-hero {
+			padding: 28px 0 28px;
+		}
+	}
+</style>

@@ -1,0 +1,42 @@
+---
+title: Checksums
+description: When a site publishes a SHA-256 or MD5 for a file, Ladle checks the download against it and tells you whether it matches.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## What Ladle checks
+
+A checksum is a fingerprint of a file. If even one byte of your download is different from the original, the fingerprint won’t match.
+
+With **Verify checksums** on in **Ladle › Settings › Downloads**, which it is out of the box, Ladle checks a finished download whenever it knows its SHA-256 or MD5:
+
+- **Verified** appears next to the file when it matches.
+- If it doesn’t match, Ladle warns you instead.
+
+## Where Ladle gets the checksum
+
+Ladle finds a checksum in any of these ways:
+
+- **You paste it.** When you paste links into the Add sheet, put the checksum on the same line after the link, separated by a space. Use the hex digest, optionally starting with `sha256:` or `md5:`. Ladle tells them apart by length: 64 hex characters is SHA-256, 32 is MD5.
+
+  ```text title="Add sheet"
+  https://example.com/files/tool-2.4.dmg 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+  https://example.com/files/tool-2.4.dmg sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+  https://example.com/files/notes.pdf md5:5d41402abc4b2a76b9719d911017c592
+  ```
+
+- **The browser extension passes it along** when it has one for the download.
+- **The site publishes it next to the file**, as the file’s name plus `.sha256`. For `tool-2.4.dmg`, that’s `tool-2.4.dmg.sha256` in the same place. Ladle looks for it on its own.
+
+## If a checksum doesn’t match
+
+The file isn’t the one the site published. It may have been damaged on the way, changed on the server, or come from somewhere it shouldn’t have.
+
+- Don’t open it, especially if it’s an app or installer.
+- Delete it and download it again from the official site.
+- If it still doesn’t match, tell the site’s owners. Their file or their checksum may be out of date.
+
+<Aside type="note">
+MD5 catches files that were damaged by accident, but it isn’t safe against deliberate tampering. When a site offers both, paste the SHA-256.
+</Aside>

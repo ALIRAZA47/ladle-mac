@@ -1,0 +1,39 @@
+---
+title: The video button
+description: On videos you’re allowed to save, Ladle’s browser extension adds a Download video button. Pick a quality and Ladle does the rest.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+## Save a video
+
+<Steps>
+
+1. Play the video in a browser with Ladle’s extension turned on. A **Download video** button appears on the video.
+
+2. Click it. The menu lists the qualities the site offers, with an estimated size when the site shares one, plus **Audio only** when there’s a separate audio track.
+
+3. Pick a quality and click the download button under the list. It names your choice, like **Download 1080p**. With category folders on, the video goes to the **Video** folder inside `~/Downloads/Ladle`.
+
+</Steps>
+
+{/* Screenshot: a video with the Download video button and its quality menu open. */}
+
+The button needs Ladle’s browser extension. If you haven’t turned it on yet, see [Set up your browser](/docs/getting-started/set-up-your-browser/).
+
+## Which videos get the button
+
+Ladle adds the button to videos that play:
+
+- **A plain video file**, such as an `.mp4`, `.webm` or `.mov`. Ladle saves it as it is.
+- **An unencrypted HLS stream**, the kind that comes in many small pieces. Ladle joins the pieces into one file: an `.mp4` when the stream is made of MP4 pieces, or a `.ts` file when it’s made of MPEG-TS pieces.
+
+Videos delivered any other way, such as MPEG-DASH streams, don’t get a button. Ladle doesn’t use site-specific tricks to dig videos out of pages, so what you see is what the page itself serves.
+
+## Protected video stays protected
+
+If a video is encrypted or uses the browser’s copy protection (Encrypted Media Extensions), the button is switched off and says **Protected video can’t be saved**. Ladle never gets around protection, and there’s no setting to change that.
+
+<Aside type="caution">
+Only save videos you’re allowed to. Some sites’ terms don’t allow downloading, even when the video isn’t protected, so check before you save.
+</Aside>
