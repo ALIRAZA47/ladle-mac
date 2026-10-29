@@ -1,0 +1,46 @@
+---
+title: Many links and numbered series
+description: Paste a whole list of links at once, or type one pattern like ep-[01-12].mp3 and let Ladle fill in every number.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+## Add a list of links
+
+<Steps>
+
+1. Press <kbd>⌘N</kbd>, or click **+**, to open the Add sheet.
+
+2. Paste your links, one per line. Ladle lists every file it finds, with its size and where it will be saved. Each file goes to the folder for its type.
+
+3. Uncheck anything you don’t want.
+
+4. Choose **Start: Now** or **Tonight, 1:00 AM**, then click the button to add them.
+
+</Steps>
+
+{/* Screenshot: the Add sheet with four links pasted, one of them unchecked as Already downloaded. */}
+
+## Numbered series
+
+When files are numbered, type the link once and put the range in square brackets. Ladle expands it to every number in between:
+
+| You type | Ladle adds |
+| --- | --- |
+| `https://example.com/podcast/ep-[01-12].mp3` | `ep-01.mp3`, `ep-02.mp3` … `ep-12.mp3` |
+| `https://example.com/scans/img[1-20].jpg` | `img1.jpg`, `img2.jpg` … `img20.jpg` |
+| `https://example.com/show/ep-[140-150].mp3` | `ep-140.mp3` … `ep-150.mp3` |
+
+Zero padding is kept: `[01-12]` gives `01`, `02` and so on, while `[1-12]` gives `1`, `2`.
+
+## Already downloaded
+
+If a link in your list has been downloaded before, Ladle still shows it, marked **Already downloaded** and unchecked, so you don’t fetch it twice by accident. Check it if you do want a fresh copy.
+
+## Every link on a web page
+
+With the browser extension on, right-click a page and choose **Download All Links with Ladle…** to pick from the links on that page. See [Set up your browser](/docs/getting-started/set-up-your-browser/).
+
+<Aside type="tip">
+**Have a checksum?** Paste it after the link on the same line, separated by a space, and Ladle checks the file when it’s done. See [Checksums](/docs/files-and-folders/checksums/).
+</Aside>

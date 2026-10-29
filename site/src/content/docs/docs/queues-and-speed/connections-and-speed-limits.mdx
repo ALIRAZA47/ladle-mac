@@ -1,0 +1,52 @@
+---
+title: Connections and speed limits
+description: How Ladle splits a file into several connections, when it backs off, how it retries, and how to cap its speed.
+---
+
+## How Ladle splits a download
+
+A browser fetches a file through one connection. Ladle asks the server for several pieces of the file at once, using **8 connections per download** out of the box, and writes each piece straight into place as it arrives.
+
+When one connection finishes early, it takes over the second half of the biggest piece that’s left, so a single slow piece can’t hold up the whole file. Ladle doesn’t split pieces smaller than 1 MiB.
+
+Not every server can do this. If a server can’t send a file in pieces, or doesn’t say how big the file is, Ladle downloads it over a single connection. It still retries on its own, but it can’t resume that file if it stops.
+
+## Change the number of connections
+
+Open **Ladle › Settings › Speed** and drag **Connections per download**, from 1 to 32. Eight is the recommended setting.
+
+- **More connections** can be faster on big, fast servers that allow them.
+- **Fewer connections** are gentler on servers that limit how many you can open at once.
+
+You rarely need to change it. When a server pushes back, Ladle adjusts on its own.
+
+## When a server says “slow down”
+
+If a server answers that it’s busy or that you’re making too many requests, Ladle halves the number of connections it uses for that server and waits as long as the server asks before trying again.
+
+## Retries
+
+When a piece of a download fails, Ladle retries it after a short wait that grows each time: about 1, 2, 4, 8 and then 16 seconds.
+
+Set how many times Ladle retries a failed download with **Retry failed downloads** in **Ladle › Settings › Speed**: **Never**, **1**, **3**, **5** or **10** times. It’s 3 out of the box. After that, the download shows as failed and keeps its progress, so [retrying](/docs/fixing-problems/download-failed/) carries on where it stopped.
+
+## Limit your total speed
+
+To leave room for a video call or other people on your network, cap Ladle’s total speed. One limit covers every download together.
+
+- In **Ladle › Settings › Speed**, turn on **Limit total speed**. It’s set to **10 MB/s**.
+- Or flip the **Limit speed** switch in Ladle’s menu bar menu.
+
+## Other settings on the Speed tab
+
+| Setting | Out of the box | What it does |
+| --- | --- | --- |
+| Downloads at the same time | 3 | How many downloads run at once. See [The main queue](/docs/queues-and-speed/main-queue/). |
+| Connections per download | 8 (recommended) | How many pieces each download is split into. |
+| Limit total speed | Off, 10 MB/s | One cap across all downloads. |
+| Retry failed downloads | 3 times | Never, 1, 3, 5 or 10 times. |
+| Proxy | Same as macOS | Ladle uses the proxy set in **System Settings › Network**. |
+
+## Cookies and referrers
+
+When a download comes from your browser, the extension can pass along the page it came from and the cookies the site needs, so downloads that require you to be signed in still work. Ladle only ever sends those to the download’s own site.

@@ -1,0 +1,67 @@
+---
+title: Paste, drop or ⌘N
+description: Every way to hand Ladle a link, from the link bar and the Add sheet to drag and drop, your clipboard and the ladle:// link.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Paste into the link bar
+
+The bar at the top of Ladle’s window does two jobs. Paste a link and it shows the file’s name, size and destination, with **Download now** and **More options**. Type anything else and it searches your list.
+
+Press <kbd>⌘K</kbd> to jump to the bar from anywhere in Ladle.
+
+## Use the Add sheet
+
+Press <kbd>⌘N</kbd>, or click the **+** button, to open the Add sheet. Paste one link, or several with one per line, then choose when to start:
+
+- **Now** starts straight away, or as soon as a slot is free in the [main queue](/docs/queues-and-speed/main-queue/).
+- **Tonight, 1:00 AM** waits for the [Tonight queue](/docs/queues-and-speed/tonight-queue/).
+
+The sheet also shows where each file will be saved. Lists and numbered series like `ep-[01-12].mp3` have their own guide: [Many links and numbered series](/docs/adding-downloads/many-links/).
+
+{/* Screenshot: the Add sheet with one link pasted, showing Save to, Start (Now / Tonight, 1:00 AM) and the Download button. */}
+
+## Copy a link anywhere
+
+When Ladle is the frontmost app, or you open its menu bar menu, it checks your clipboard. If there’s a link to a file it recognizes, like a `.zip`, `.dmg` or `.mp4`, it shows **Link on your clipboard** with **Download** and **Not now**.
+
+Ladle reads the clipboard on your Mac and never sends it anywhere. To stop the suggestions, turn off **Watch the clipboard for links** in **Ladle › Settings › General**.
+
+## Drag and drop
+
+Drag a link from a browser, or a `.webloc` file from Finder, onto Ladle’s window or onto its icon in the Dock.
+
+## From your browser
+
+With Ladle’s browser extension turned on, clicking a download link hands it to Ladle. See [Set up your browser](/docs/getting-started/set-up-your-browser/). The extension also adds two items when you right-click a page:
+
+- **Download with Ladle** sends the link you right-clicked.
+- **Download All Links with Ladle…** gathers the links on the page so you can choose which ones to download.
+
+<Aside type="tip">
+Hold <kbd>⌥ Option</kbd> while you click a link to let the browser download it instead, just that once.
+</Aside>
+
+## From scripts and Shortcuts
+
+Ladle opens `ladle://` links, so other apps, scripts and Shortcuts can add downloads too:
+
+```text
+ladle://add?url=<link>&referrer=<page>&filename=<name>&cookies=<cookies>
+```
+
+Percent-encode each value. Only `url` is required:
+
+| Parameter | What it is |
+| --- | --- |
+| `url` | The file to download. |
+| `referrer` | The page the link came from. Some sites need it. |
+| `filename` | The name to save the file as. |
+| `cookies` | Cookies the site needs for this download. Ladle only ever sends them to the download’s own site. |
+
+For example, in Terminal:
+
+```sh
+open "ladle://add?url=https%3A%2F%2Fexample.com%2Ffiles%2Freport.pdf"
+```
