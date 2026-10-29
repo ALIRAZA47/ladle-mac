@@ -108,5 +108,9 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(NativeHostManifest.isInstalled(for: .brave, home: folder.url, bridgePath: "/b"))
         XCTAssertFalse(NativeHostManifest.isInstalled(for: .brave, home: folder.url, bridgePath: "/moved"))
         XCTAssertFalse(NativeHostManifest.isInstalled(for: .edge, home: folder.url, bridgePath: "/b"))
+        XCTAssertTrue(NativeHostManifest.isCurrent(for: .brave, home: folder.url, bridgePath: "/b", chromeOrigins: ["x"], firefoxIDs: ["y"]))
+        XCTAssertFalse(NativeHostManifest.isCurrent(for: .brave, home: folder.url, bridgePath: "/b", chromeOrigins: ["x", "store"], firefoxIDs: ["y"]), "a new store ID needs a rewrite")
+        XCTAssertTrue(NativeHostManifest.isCurrent(for: .firefox, home: folder.url, bridgePath: "/b", chromeOrigins: ["other"], firefoxIDs: ["y"]))
+        XCTAssertFalse(NativeHostManifest.isCurrent(for: .edge, home: folder.url, bridgePath: "/b", chromeOrigins: ["x"], firefoxIDs: ["y"]))
     }
 }

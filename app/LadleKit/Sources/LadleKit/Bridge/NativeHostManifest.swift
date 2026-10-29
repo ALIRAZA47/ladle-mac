@@ -93,9 +93,21 @@ public enum NativeHostManifest {
 
     /// Whether a manifest is installed and points at `bridgePath`.
     public static func isInstalled(for family: BrowserFamily, home: URL, bridgePath: String) -> Bool {
+        installed(for: family, home: home)?["path"] as? String == bridgePath
+    }
+
+    /// Whether the installed manifest is exactly what `install` would write now: the same helper
+    /// and the same extension IDs (a store ID added in a later version counts as a change).
+    public static func isCurrent(for family: BrowserFamily, home: URL, bridgePath: String, chromeOrigins: [String], firefoxIDs: [String]) -> Bool {
+        guard let found = installed(for: family, home: home),
+              let data = try? json(for: family, bridgePath: bridgePath, chromeOrigins: chromeOrigins, firefoxIDs: firefoxIDs),
+              let wanted = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+        return NSDictionary(dictionary: found).isEqual(to: wanted)
+    }
+
+    private static func installed(for family: BrowserFamily, home: URL) -> [String: Any]? {
         let file = family.manifestDirectory(home: home).appendingPathComponent("\(hostName).json")
-        guard let data = try? Data(contentsOf: file),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
-        return object["path"] as? String == bridgePath
+        guard let data = try? Data(contentsOf: file) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
     }
 }
