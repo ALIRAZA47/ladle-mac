@@ -1,0 +1,120 @@
+<!doctype html>
+<!-- Template for public/og.png (1200×630). Rendered by scripts/make-images.mjs. -->
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<style>
+			@font-face {
+				font-family: 'Bricolage';
+				src: url('../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-opsz-normal.woff2') format('woff2');
+				font-weight: 200 800;
+			}
+			@font-face {
+				font-family: 'Inter';
+				src: url('../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2');
+				font-weight: 100 900;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				width: 1200px;
+				height: 630px;
+			}
+			body {
+				position: relative;
+				overflow: hidden;
+				display: flex;
+				align-items: center;
+				gap: 64px;
+				padding: 0 96px;
+				background:
+					radial-gradient(760px 520px at 12% -10%, rgba(255, 138, 31, 0.26), transparent 64%),
+					radial-gradient(640px 480px at 104% 112%, rgba(255, 79, 26, 0.16), transparent 60%),
+					#0c0b0a;
+				color: #f6f2ec;
+				font-family: 'Inter', sans-serif;
+				-webkit-font-smoothing: antialiased;
+			}
+			.icon {
+				flex: none;
+				width: 280px;
+				height: 280px;
+				border-radius: 64px;
+				box-shadow:
+					0 40px 90px rgba(0, 0, 0, 0.6),
+					0 0 90px rgba(255, 138, 31, 0.25);
+			}
+			.icon img {
+				display: block;
+			}
+			.copy {
+				display: flex;
+				flex-direction: column;
+				gap: 18px;
+			}
+			h1 {
+				margin: 0;
+				font-family: 'Bricolage', sans-serif;
+				font-size: 168px;
+				font-weight: 800;
+				line-height: 0.86;
+				letter-spacing: -0.045em;
+			}
+			.tagline {
+				margin: 0;
+				font-family: 'Bricolage', sans-serif;
+				font-size: 46px;
+				font-weight: 600;
+				letter-spacing: -0.02em;
+				color: #ff9a3d;
+			}
+			.segs {
+				display: flex;
+				gap: 7px;
+				width: 560px;
+				height: 14px;
+				margin-top: 14px;
+			}
+			.seg {
+				flex: 1;
+				border-radius: 999px;
+				background: rgba(255, 240, 220, 0.12);
+				overflow: hidden;
+			}
+			.seg span {
+				display: block;
+				height: 100%;
+				border-radius: 999px;
+				background: linear-gradient(90deg, #ff4f1a, #ff8a1f 55%, #ffc46b);
+				box-shadow: 0 0 12px rgba(255, 138, 31, 0.6);
+			}
+			.meta {
+				margin: 6px 0 0;
+				font-size: 25px;
+				font-weight: 500;
+				color: #bdb5aa;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="icon"><img src="../src/assets/ladle-icon.svg" width="280" height="280" alt="" /></div>
+		<div class="copy">
+			<h1>Ladle</h1>
+			<p class="tagline">Downloads, poured fast.</p>
+			<div class="segs">
+				<div class="seg"><span style="width: 78%"></span></div>
+				<div class="seg"><span style="width: 56%"></span></div>
+				<div class="seg"><span style="width: 64%"></span></div>
+				<div class="seg"><span style="width: 38%"></span></div>
+				<div class="seg"><span style="width: 49%"></span></div>
+				<div class="seg"><span style="width: 27%"></span></div>
+				<div class="seg"><span style="width: 44%"></span></div>
+				<div class="seg"><span style="width: 36%"></span></div>
+			</div>
+			<p class="meta">The free download manager for Mac</p>
+		</div>
+	</body>
+</html>

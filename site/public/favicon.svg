@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34302B"/>
+      <stop offset="0.55" stop-color="#1B1917"/>
+      <stop offset="1" stop-color="#0E0D0C"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F1F3F5"/>
+      <stop offset="0.55" stop-color="#A9B0B8"/>
+      <stop offset="1" stop-color="#6A7179"/>
+    </linearGradient>
+    <radialGradient id="molten" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#FFE6A8"/>
+      <stop offset="0.45" stop-color="#FFB04A"/>
+      <stop offset="1" stop-color="#FF4F1A"/>
+    </radialGradient>
+  </defs>
+  <rect width="240" height="240" rx="55" fill="url(#bg)"/>
+  <path d="M48 138A58 58 0 0 0 164 138Z" fill="url(#steel)"/>
+  <ellipse cx="106" cy="138" rx="58" ry="13" fill="url(#molten)"/>
+  <path d="M158 131C168 110 179 87 186 67" fill="none" stroke="#CDD2D7" stroke-width="16" stroke-linecap="round"/>
+  <path d="M106 46V104M84 84l22 22 22-22" fill="none" stroke="#FF8A1F" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
