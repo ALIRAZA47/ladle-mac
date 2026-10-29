@@ -103,22 +103,16 @@ Releases follow the release flow in [`SPEC.md`](../SPEC.md#updates):
    `version` and `title` in the front matter. The changelog page turns the version into its
    anchor, such as `#v1-2-0`, which each update feed item links to.
 2. Push the tag. The app's release workflow fails early if that file is missing, publishes
-   `Ladle.dmg` and `Ladle-Chrome-Extension.zip`, fills in the entry's `date`, rewrites
-   `public/appcast.xml`, commits both to `main`, and then starts `site-deploy.yml` on `main`.
-   It has to start it: a push made with the default `GITHUB_TOKEN` doesn't start other workflows,
-   but a `workflow_dispatch` does, and a run on `main` passes the `github-pages` environment's
-   branch rule:
-
-   ```yaml
-   deploy-site:
-     needs: update-site        # the job that commits appcast.xml
-     runs-on: ubuntu-latest
-     permissions: { actions: write }
-     steps:
-       - run: gh workflow run site-deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
-         env:
-           GH_TOKEN: ${{ github.token }}
-   ```
+   `Ladle.dmg`, `Ladle-Chrome-Extension.zip` and `sparkle.json` to the GitHub Release, and then
+   starts `site-deploy.yml` on `main` with `gh workflow run`. A push made with the default
+   `GITHUB_TOKEN` wouldn't start it, but a `workflow_dispatch` does, and a run on `main` passes
+   the `github-pages` environment's branch rule. Nothing is committed, since `main` requires
+   pull requests.
+3. Every deploy, not only a release's, rebuilds `public/appcast.xml` from the published releases
+   and fills in the `date` of each released version's changelog entry when it's missing, in its
+   own checkout, before it builds. That step belongs to the app side
+   ([`app/scripts/publish_release.py`](../app/scripts/publish_release.py) `feed`). The committed
+   `public/appcast.xml` stays an empty feed, which is what local builds use.
 
 The release assets have version-less names, so the site links to them through GitHub's
 `releases/latest/download/…` URLs and never needs a new link per release. `npm run check` fails
@@ -131,8 +125,8 @@ before the first release. To redeploy by hand, run **Site deploy** from the repo
 ## Deploy
 
 [`site-deploy.yml`](../.github/workflows/site-deploy.yml) builds the site and publishes it to
-GitHub Pages whenever a push to `main` changes `site/`. It can also be run by hand or called by
-another workflow. [`site-ci.yml`](../.github/workflows/site-ci.yml) builds and runs
+GitHub Pages whenever a push to `main` changes `site/`. It can also be run by hand, which is how
+a release starts it. [`site-ci.yml`](../.github/workflows/site-ci.yml) builds and runs
 `npm run check` on every other branch and on pull requests.
 
 ### One-time setup
