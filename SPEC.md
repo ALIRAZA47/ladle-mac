@@ -248,7 +248,7 @@ Ladle updates itself with Sparkle 2.
 
 - Sparkle 2 via Swift Package Manager (`https://github.com/sparkle-project/Sparkle`, 2.6 or later).
 - Info.plist: `SUFeedURL` = the appcast URL above; `SUPublicEDKey` = the owner's Sparkle public key
-  (`REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY` until it's added); `SUEnableAutomaticChecks` = YES;
+  (`KHEwBrneF/Lth44nE+Tr7rTvjAJ1g4513i5UQmPPFoQ=`); `SUEnableAutomaticChecks` = YES;
   `SUAutomaticallyUpdate` = YES; `SUScheduledCheckInterval` = 86400; system profiling off.
 - Updates are verified with that EdDSA key, so they work without any Apple signing.
 - **Seamless**: updates download in the background. A banner in the main window says

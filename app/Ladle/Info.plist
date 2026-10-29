@@ -82,7 +82,7 @@
 	<key>SUFeedURL</key>
 	<string>https://ladle.alirazakhan.me/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY</string>
+	<string>KHEwBrneF/Lth44nE+Tr7rTvjAJ1g4513i5UQmPPFoQ=</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUAutomaticallyUpdate</key>

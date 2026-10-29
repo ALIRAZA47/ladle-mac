@@ -18,8 +18,8 @@ The setup is one key pair and one secret.
    Finder and go to `../artifacts/sparkle/Sparkle/bin/`).
 2. Run `./generate_keys`. It keeps the private key in your login keychain and prints the
    public key.
-3. Put the public key in [`Ladle/Info.plist`](Ladle/Info.plist), replacing
-   `REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY` in `SUPublicEDKey`, and merge that to `main`.
+3. Put the public key in `SUPublicEDKey` in [`Ladle/Info.plist`](Ladle/Info.plist) and merge that
+   to `main`. (Ladle's key is already there.)
 4. Export the private key: `./generate_keys -x sparkle_private_key.txt`. In the repository's
    **Settings › Secrets and variables › Actions**, save the file's contents as the secret
    `SPARKLE_ED_PRIVATE_KEY`, then delete the file.
