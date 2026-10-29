@@ -1,0 +1,136 @@
+---
+title: Set up your browser
+description: Ladle catches downloads from your browser, so you never have to copy a link by hand. Switching it on takes a minute, once per browser.
+---
+
+import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+import TabAnchor from '~/components/content/TabAnchor.astro';
+import IfStore from '~/components/content/IfStore.astro';
+import UnlessStore from '~/components/content/UnlessStore.astro';
+import StoreButton from '~/components/content/StoreButton.astro';
+import CatchPanel from '~/components/content/CatchPanel.astro';
+
+## Turn on the extension
+
+<Tabs syncKey="browser">
+<TabItem label="Safari">
+
+<TabAnchor id="safari" />
+
+<Steps>
+
+1. Open Ladle once. Its Safari extension comes with the app, so there’s nothing else to install.
+
+2. In Safari, choose **Safari › Settings**, then click **Extensions**.
+
+3. Select the checkbox next to **Ladle**. When Safari asks which websites Ladle can use, choose **Always Allow on Every Website** so it can catch downloads on any site.
+
+   {/* Screenshot: Safari Settings, Extensions tab, with Ladle turned on. */}
+
+</Steps>
+
+Safari asks for permission once, and you can change it later in the same place. **Ladle › Settings › Browsers** shows whether the Safari extension is on, with a **Manage** button next to it.
+
+</TabItem>
+<TabItem label="Chrome, Arc, Edge and Brave">
+
+<TabAnchor id="chrome" />
+
+<UnlessStore browser="chrome">
+
+The Ladle extension for Chrome, Arc, Edge and Brave is on its way to the Chrome Web Store. As soon as it’s listed, the link to add it will be right here, and **Get extension** in Ladle’s settings will bring you to it.
+
+Until then, Ladle still works with these browsers. Instead of clicking the download:
+
+- **Copy the link.** Right-click the download link and copy its address. When you switch to Ladle or open its menu bar menu, it offers to download it.
+- **Drag the link** onto Ladle’s window or its Dock icon.
+- **Paste the link** into the bar at the top of Ladle’s window. Press <kbd>⌘K</kbd> to jump there.
+
+</UnlessStore>
+
+<IfStore browser="chrome">
+
+<Steps>
+
+1. In Ladle, choose **Ladle › Settings**, click **Browsers**, then click **Get extension** next to Chrome, Arc, Edge and Brave. Or use the button below.
+
+2. On the Chrome Web Store page, click the button to add Ladle to your browser, then confirm.
+
+3. Keep Ladle in your Applications folder and open it once, so the extension can reach it.
+
+</Steps>
+
+<StoreButton browser="chrome" />
+
+Arc, Edge and Brave use the same extension as Chrome. In Edge, turn on **Allow extensions from other stores** when Edge asks.
+
+{/* Screenshot: the Ladle extension page in the Chrome Web Store. */}
+
+</IfStore>
+
+</TabItem>
+<TabItem label="Firefox">
+
+<TabAnchor id="firefox" />
+
+<UnlessStore browser="firefox">
+
+The Ladle add-on for Firefox is on its way to Firefox Add-ons. As soon as it’s listed, the link to add it will be right here, and **Get extension** in Ladle’s settings will bring you to it.
+
+Until then, Ladle still works with Firefox. Instead of clicking the download:
+
+- **Copy the link.** Right-click the download link and copy its address. When you switch to Ladle or open its menu bar menu, it offers to download it.
+- **Drag the link** onto Ladle’s window or its Dock icon.
+- **Paste the link** into the bar at the top of Ladle’s window. Press <kbd>⌘K</kbd> to jump there.
+
+</UnlessStore>
+
+<IfStore browser="firefox">
+
+<Steps>
+
+1. In Ladle, choose **Ladle › Settings**, click **Browsers**, then click **Get extension** next to Firefox. Or use the button below.
+
+2. On the Firefox Add-ons page, click **Add to Firefox**, then **Add**.
+
+3. To use Ladle in private windows too, choose **Tools › Add-ons and Themes** in Firefox, click **Ladle**, and set **Run in Private Windows** to **Allow**.
+
+</Steps>
+
+<StoreButton browser="firefox" />
+
+{/* Screenshot: the Ladle add-on page on Firefox Add-ons. */}
+
+</IfStore>
+
+</TabItem>
+</Tabs>
+
+<Aside type="tip">
+**Want the browser to keep a download?** Hold <kbd>⌥ Option</kbd> while you click the link and Ladle stays out of the way, just that once.
+</Aside>
+
+## Check that it works
+
+Click a download link for a file type Ladle catches, like a `.dmg` or `.zip`. Ladle shows its catch panel with the file’s name, size and where it will be saved.
+
+<CatchPanel />
+
+- **Download** starts it right away.
+- **Later** keeps it in Ladle without starting it yet.
+- **Let the browser handle it** hands the file back to your browser, just this once.
+- **Always download .dmg files without asking** (it names the file’s type) skips the panel for that type from now on.
+
+Rather never see the panel? Turn off **Ask before downloading** in **Ladle › Settings › Browsers**, and Ladle starts every download it catches straight away.
+
+## If downloads still open in the browser
+
+- Check that the extension is turned on, then quit and reopen the browser.
+- Ladle only catches the file types listed under **Catch these file types** in **Ladle › Settings › Browsers**. Out of the box that’s dmg, pkg, zip, iso, mp4, mov, mkv, mp3, flac and pdf. Click **Edit…** to add the type you need.
+- Some sites start downloads from a script instead of a link. Copy the link, and Ladle offers to grab it.
+
+Still stuck? Read [The browser isn’t handing off downloads](/docs/fixing-problems/browser-not-handing-off/).
+
+## Using another browser
+
+Ladle doesn’t need an extension to download a link. In any browser, copy a download link and Ladle offers to grab it the next time you switch to it or open its menu bar menu. You can always paste the link into Ladle’s window too. You’ll see this listed as **Everything else** in **Ladle › Settings › Browsers**.

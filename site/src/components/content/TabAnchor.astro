@@ -1,0 +1,46 @@
+---
+/**
+ * A link target inside a <TabItem>. Visiting the page with that #id selects the tab that holds it
+ * and scrolls the tabs into view, so links like /set-up-your-browser/#chrome open the Chrome tab.
+ */
+interface Props {
+	id: string;
+}
+const { id } = Astro.props;
+---
+
+<span id={id} class="tab-anchor" data-tab-anchor></span>
+
+<script>
+	type TabsElement = HTMLElement & {
+		switchTab?: (tab: HTMLElement, index: number, shouldSync?: boolean) => void;
+	};
+
+	function openTabFromHash() {
+		const id = decodeURIComponent(location.hash.slice(1));
+		const anchor = id ? document.getElementById(id) : null;
+		if (!anchor?.hasAttribute('data-tab-anchor')) return;
+		const panel = anchor.closest<HTMLElement>('[role="tabpanel"]');
+		const tabs = panel?.closest<TabsElement>('starlight-tabs');
+		if (!panel || !tabs) return;
+		const panels = [...tabs.querySelectorAll<HTMLElement>(':scope > [role="tabpanel"]')];
+		const tabButtons = [...tabs.querySelectorAll<HTMLElement>('[role="tab"]')];
+		const index = panels.indexOf(panel);
+		if (index === -1 || !tabButtons[index]) return;
+		if (panel.hidden) tabs.switchTab?.(tabButtons[index], index, false);
+		tabs.scrollIntoView({ block: 'start' });
+	}
+
+	customElements.whenDefined('starlight-tabs').then(() => {
+		openTabFromHash();
+		window.addEventListener('hashchange', openTabFromHash);
+	});
+</script>
+
+<style>
+	.tab-anchor {
+		display: block;
+		height: 0;
+		scroll-margin-top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height) + 6rem);
+	}
+</style>
