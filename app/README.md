@@ -153,8 +153,9 @@ downloads API, so there the content script takes clicks on links to watched file
   the browser downloads as usual.
 - The Chrome Web Store, Edge Add-ons and AMO listings don't exist yet; their IDs need adding to
   `BrowserIntegration.swift` when they do ([`RELEASING.md`](RELEASING.md)).
-- So links dropped on the Dock icon reach Ladle, it registers for `http` and `https`. That puts
-  Ladle in macOS's list of possible default browsers; it never makes itself the default.
+- The Dock icon takes dropped `.webloc` files but not plain links. Accepting links there would
+  mean registering for `http` and `https`, which would list Ladle as a possible default browser.
+  Links can be dropped on the window instead.
 - The clipboard suggestion shows the file's name and site but not its size: Ladle doesn't contact
   a server until you choose Download.
 - **Put the Mac to sleep** after Tonight uses `IOPMSleepSystem`, which hasn't been tried on a Mac.

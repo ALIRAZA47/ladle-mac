@@ -61,18 +61,6 @@
 				<string>ladle</string>
 			</array>
 		</dict>
-		<!-- So links dragged onto the Dock icon are accepted. Ladle never makes itself the default. -->
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>Web links</string>
-			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>http</string>
-				<string>https</string>
-			</array>
-		</dict>
 	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>
