@@ -94,7 +94,8 @@ Release builds are ad-hoc signed, not notarized, so macOS asks once before Ladle
 
 - **macOS 15 Sequoia and later**: open Ladle; macOS says it can't verify it — click **Done**.
   Open **System Settings › Privacy & Security**, scroll to **Security**, click **Open Anyway**
-  next to "Ladle was blocked…", confirm with your password or Touch ID, then click **Open**.
+  next to "Ladle was blocked…". macOS warns once more: click **Open Anyway** there too, then
+  confirm with your password or Touch ID.
 - **macOS 14 Sonoma**: Control-click **Ladle** in Applications, choose **Open**, then **Open** again.
 
 It's needed once. Updates install without asking again, because they're downloaded by Ladle
