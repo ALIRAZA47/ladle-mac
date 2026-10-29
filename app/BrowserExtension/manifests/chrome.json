@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Ladle",
+  "short_name": "Ladle",
+  "description": "Hands your downloads to Ladle, the free download manager for the Mac, and adds a Download video button to videos you’re allowed to save.",
+  "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnkXawPgtRG6Egjhs4JCilyWNDxtdbyujRBiQHVwo//tXCEe1BI/miZqgcsqHFYTCYmtqriMPivbtRHlK3qZTxSI9qtvcI1cbZuhhOjwDodR50aZ4JLKVaMQUUOV+F/Js4sR8HnE9/sIA/whv/3MVmasu3p+sOLgDEQVPZbUf1om0ZvlSdRqrEPfivD7h/ZZhu54KxaI8kbv90TDjeCQZiW5ZEpX9tnT0ciX2+wJEiQ2BpannAu8a9sVWvw2NqJqkvVFGAtkakvnftJ27RWr5AnauiXHr+nOyhuv50Fm7szbkN0edz7V6P11r6WZwV0MCm0oagC5fT9k/lS6Q+vAOOwIDAQAB",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Ladle",
+    "default_icon": {
+      "16": "icons/toolbar-16.png",
+      "32": "icons/toolbar-32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "downloads",
+    "contextMenus",
+    "cookies",
+    "nativeMessaging",
+    "storage",
+    "webRequest",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "lib/ladle-common.js",
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "homepage_url": "https://ladle.alirazakhan.me/"
+}

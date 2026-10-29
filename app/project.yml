@@ -1,0 +1,143 @@
+# XcodeGen spec for Ladle. Generate the project with `xcodegen generate` in this folder;
+# the .xcodeproj is not committed. See README.md ("Building on a Mac").
+name: Ladle
+
+options:
+  bundleIdPrefix: me.alirazakhan
+  deploymentTarget:
+    macOS: "14.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    # Signs to run locally out of the box. The release workflow signs with Developer ID.
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+  configs:
+    Debug:
+      # Library validation would refuse ad-hoc signed frameworks (Sparkle) in a local build.
+      ENABLE_HARDENED_RUNTIME: NO
+    Release:
+      ENABLE_HARDENED_RUNTIME: YES
+      ONLY_ACTIVE_ARCH: NO
+      ARCHS: "arm64 x86_64"
+
+packages:
+  LadleKit:
+    path: LadleKit
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.6.0"
+
+targets:
+  Ladle:
+    type: application
+    platform: macOS
+    sources:
+      - path: Ladle
+      - path: Shared
+    dependencies:
+      - package: LadleKit
+      - package: Sparkle
+      # The native messaging host lives next to the app's executable: Contents/MacOS/LadleBridge.
+      - target: LadleBridge
+        embed: true
+        codeSign: true
+        copy:
+          destination: executables
+      - target: SafariExtension
+        embed: true
+        codeSign: true
+    settings:
+      base:
+        PRODUCT_NAME: Ladle
+        PRODUCT_BUNDLE_IDENTIFIER: me.alirazakhan.Ladle
+        INFOPLIST_FILE: Ladle/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+
+  LadleBridge:
+    type: tool
+    platform: macOS
+    sources:
+      - path: LadleBridge
+      - path: Shared
+    dependencies:
+      - package: LadleKit
+    settings:
+      base:
+        PRODUCT_NAME: LadleBridge
+        PRODUCT_BUNDLE_IDENTIFIER: me.alirazakhan.Ladle.Bridge
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        SKIP_INSTALL: YES
+
+  SafariExtension:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: SafariExtension
+    dependencies:
+      - package: LadleKit
+      - sdk: SafariServices.framework
+    settings:
+      base:
+        PRODUCT_NAME: SafariExtension
+        PRODUCT_BUNDLE_IDENTIFIER: me.alirazakhan.Ladle.SafariExtension
+        INFOPLIST_FILE: SafariExtension/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: SafariExtension/SafariExtension.entitlements
+        SKIP_INSTALL: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
+    postBuildScripts:
+      # The same web extension as Chrome and Firefox, with Safari's manifest.
+      - name: Copy the web extension
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          src="${PROJECT_DIR}/BrowserExtension"
+          dest="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          mkdir -p "${dest}"
+          rsync -a --exclude '.*' "${src}/src/" "${dest}/"
+          cp "${src}/manifests/safari.json" "${dest}/manifest.json"
+
+  LadleTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: LadleTests
+    dependencies:
+      - target: Ladle
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: me.alirazakhan.LadleTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Ladle.app/Contents/MacOS/Ladle"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  Ladle:
+    build:
+      targets:
+        Ladle: all
+        LadleTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - LadleTests
+    archive:
+      config: Release

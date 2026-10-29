@@ -1,0 +1,112 @@
+# Builds and tests the app on every push and pull request that touches app/:
+# LadleKit's tests on Linux and macOS, an unsigned build of the app with its tests, the
+# browser extension's tests in Chromium, and the release scripts' tests.
+name: App CI
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'app/**'
+      - '.github/workflows/app-*.yml'
+  pull_request:
+    paths:
+      - 'app/**'
+      - '.github/workflows/app-*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    name: App (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Test LadleKit
+        run: swift test --package-path app/LadleKit
+
+      - name: Generate the Xcode project
+        working-directory: app
+        run: xcodegen generate
+
+      # Signed to run locally only; the release workflow signs with Developer ID.
+      # Keeps compiling past the first error, so one run reports every error.
+      - name: Build and test the app (unsigned)
+        working-directory: app
+        run: |
+          set -o pipefail
+          defaults write com.apple.dt.Xcode IDEBuildingContinueBuildingAfterErrors -bool YES
+          xcodebuild \
+            -project Ladle.xcodeproj \
+            -scheme Ladle \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            DEVELOPMENT_TEAM= \
+            ENABLE_HARDENED_RUNTIME=NO \
+            build test
+
+      - name: Check the app bundle
+        run: |
+          app="$RUNNER_TEMP/DerivedData/Build/Products/Debug/Ladle.app"
+          test -x "$app/Contents/MacOS/LadleBridge"
+          test -f "$app/Contents/PlugIns/SafariExtension.appex/Contents/Resources/manifest.json"
+          test -f "$app/Contents/PlugIns/SafariExtension.appex/Contents/Resources/background.js"
+          test -d "$app/Contents/Frameworks/Sparkle.framework"
+          /usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$app/Contents/Info.plist"
+
+  linux:
+    name: LadleKit (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.4.1-noble
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test LadleKit
+        run: swift test --package-path app/LadleKit
+
+  extension:
+    name: Browser extension
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/BrowserExtension
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/BrowserExtension/package-lock.json
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Tests in Chromium
+        run: npm run test:browser
+      - name: Build every browser's copy
+        run: npm run build
+
+  scripts:
+    name: Release scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test publish_release.py
+        run: python3 -m unittest discover -s app/scripts -p 'test_*.py' -v
