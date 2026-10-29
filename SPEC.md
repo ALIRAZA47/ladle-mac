@@ -37,7 +37,7 @@ the site creates it, and the app's release workflow rewrites it on every release
 | Native messaging host (Chrome, Firefox) | `me.alirazakhan.ladle` |
 | URL scheme | `ladle://` |
 | App data folder | `~/Library/Application Support/Ladle` (download list, resume state, settings) |
-| Version | 1.0.0 (build 1) |
+| Version | 0.1.0 (build 1) |
 | Minimum macOS | 14.0 |
 | Distribution | Developer ID–signed, notarized `Ladle.dmg` on GitHub Releases. Not sandboxed, hardened runtime on. Not on the Mac App Store. |
 

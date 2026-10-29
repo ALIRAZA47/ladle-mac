@@ -97,7 +97,7 @@ test('the extension loads with its stable development ID', async () => {
   assert.equal(new URL(worker.url()).host, EXTENSION_ID);
   const manifest = await worker.evaluate(() => chrome.runtime.getManifest());
   assert.equal(manifest.name, 'Ladle');
-  assert.equal(manifest.version, '1.0.0');
+  assert.equal(manifest.version, '0.1.0');
 });
 
 test('says hello to Ladle and catches a watched download with its cookies and referrer', async () => {

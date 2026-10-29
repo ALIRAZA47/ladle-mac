@@ -79,7 +79,7 @@ Every update is signed with an EdDSA key, and Ladle only installs updates signed
    Leave out `date:`; the workflow sets it to the release day.
 2. Tag the commit on `main` and push the tag. Tag versions in increasing order: the build
    number (`CFBundleVersion`, which Sparkle compares) is the tag's place among all release tags,
-   so `v1.0.0` is build 1.
+   so `v0.1.0` is build 1.
 
    ```sh
    git tag v1.2.0
