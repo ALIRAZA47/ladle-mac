@@ -267,9 +267,10 @@ app's release workflow, on the tag:
    publishes a normal (not pre-) GitHub Release with the version-less assets `Ladle.dmg` and
    `Ladle-Chrome-Extension.zip`, so the `releases/latest/download/…` links always work;
 3. sets the changelog `date`, rewrites `site/public/appcast.xml`, and commits both to `main`;
-4. calls `.github/workflows/site-deploy.yml` as a reusable workflow (permissions
-   `contents: read`, `pages: write`, `id-token: write`), because a push made with the default
-   `GITHUB_TOKEN` doesn't start other workflows. Called that way it deploys the latest `main`.
+4. starts `.github/workflows/site-deploy.yml` on `main` with `gh workflow run` (that job needs
+   `actions: write`). A push made with the default `GITHUB_TOKEN` doesn't start other workflows,
+   but a `workflow_dispatch` does, and because the deploy runs on `main`, the `github-pages`
+   environment needs no extra rule for tags.
 
 ### Settings
 
