@@ -13,17 +13,20 @@ import { SUPPORT_URL } from '~/config/site.mjs';
 <Tabs syncKey="browser">
 <TabItem label="Safari">
 
-- In Safari, choose **Safari › Settings**, click **Extensions**, and make sure the checkbox next to **Ladle** is selected.
-- With Ladle selected there, check that it’s allowed on every website, or at least on the site you’re downloading from.
-- In a Private Browsing window, extensions only run if you allow them. Select **Ladle** in the same place and turn on **Allow in Private Browsing**.
-- Quit Safari and open it again.
+Ladle’s Safari extension can’t run for now, because Safari only loads extensions from apps signed by a registered Apple developer. [Set up your browser](/docs/getting-started/set-up-your-browser/#safari) explains why. Until that changes, copy the download link instead: when you switch to Ladle or open its menu bar menu, it offers to download the link. You can also drag the link onto Ladle’s window or Dock icon.
 
 </TabItem>
 <TabItem label="Chrome, Arc, Edge and Brave">
 
 <UnlessStore browser="chrome">
 
-The Ladle extension for Chrome, Arc, Edge and Brave isn’t in the Chrome Web Store yet, so these browsers can’t hand downloads to Ladle for now. Until it is, copy the download link instead: when you switch to Ladle or open its menu bar menu, it offers to download the link. You can also drag the link onto Ladle’s window or Dock icon.
+Until Ladle is in the Chrome Web Store, these browsers run its early-access copy in developer mode. If you haven’t added it yet, see [Set up your browser](/docs/getting-started/set-up-your-browser/#chrome).
+
+- Open your browser’s extensions page, for example `chrome://extensions`, and make sure **Developer mode** is on and **Ladle** is turned on.
+- If Ladle’s card shows an error, or you moved or deleted the **Ladle-Chrome-Extension** folder, remove Ladle there and add it again from a fresh download.
+- In an Incognito or private window, extensions only run if you allow them: on the same page, click **Details** under Ladle and turn on **Allow in Incognito**.
+- Keep Ladle in your Applications folder and open it once, so the extension can reach it.
+- Quit the browser and open it again.
 
 </UnlessStore>
 

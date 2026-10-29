@@ -49,11 +49,18 @@ npm run check      # broken links, missing #anchors, pages SPEC.md requires
 | `src/components/docs/` | Starlight overrides: header, page title, footer, docs home hero and search. |
 | `public/appcast.xml` | The Sparkle update feed. The app's release workflow rewrites it. |
 
-## Add the browser extension store links
+## Browser extensions and their store links
 
-The Chrome-family and Firefox extensions aren't listed yet, so the docs say they're on the way and
-the site only promises Safari. When a listing goes live, paste its URL into
-[`src/config/stores.mjs`](src/config/stores.mjs):
+Neither extension is in a store yet, and releases are ad-hoc signed, not notarized (see
+[First launch](../SPEC.md#first-launch) in the spec). So for now:
+
+- **Chrome, Arc, Edge and Brave:** [Set up your browser](https://ladle.alirazakhan.me/docs/getting-started/set-up-your-browser/#chrome)
+  shows how to load `Ladle-Chrome-Extension.zip` from the latest release in developer mode.
+- **Firefox:** the guide says the add-on is on its way to Firefox Add-ons.
+- **Safari:** the extension can't run, because Safari only loads extensions from apps signed by a
+  registered Apple developer. The docs say so wherever Safari comes up.
+
+When a store listing goes live, paste its URL into [`src/config/stores.mjs`](src/config/stores.mjs):
 
 ```js
 export const storeLinks = {
@@ -65,10 +72,11 @@ export const storeLinks = {
 Push to `main` and the site redeploys. For each filled-in link:
 
 - [Set up your browser](https://ladle.alirazakhan.me/docs/getting-started/set-up-your-browser/)
-  swaps its "coming soon" note for the store button and install steps (the `#chrome` and
-  `#firefox` tabs the app opens);
-- the troubleshooting page shows that browser's checklist;
-- with both filled in, the home page feature tile and FAQ name every browser.
+  swaps the developer-mode steps (Chrome) or the "on its way" note (Firefox) for the store button
+  and install steps, in the `#chrome` and `#firefox` tabs the app opens. The Chrome tab keeps a
+  short note for anyone moving over from the developer-mode copy;
+- the troubleshooting page shows that browser's store checklist;
+- the home page, the download page and the docs home name every browser with an extension.
 
 ## Write or change a docs page
 

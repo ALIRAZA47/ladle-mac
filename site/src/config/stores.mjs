@@ -1,8 +1,10 @@
 // Browser extension store listings.
 //
-// The Chrome-family and Firefox extensions aren't listed yet. Paste each listing URL between the
-// quotes once it's live and rebuild: the browser setup guide swaps its "coming soon" note for the
-// store button and install steps, and the home page and FAQ start naming those browsers.
+// Neither extension is listed yet. Until the Chrome Web Store link is set, the browser setup guide
+// shows how to load Ladle-Chrome-Extension.zip from the latest release in developer mode. Once
+// it's set, the store button and steps take over, with a note for anyone switching from the
+// developer-mode copy. Until the Firefox link is set, the guide says the add-on is on its way.
+// The home page, the download page and the docs home follow both links.
 //
 // Leave a value as '' until that listing exists, so the site never shows a broken link.
 

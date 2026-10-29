@@ -1,17 +1,18 @@
 ---
 import Icon from '../Icon.astro';
+import { extensionBrowsers } from '../../config/stores.mjs';
 
 const steps = [
 	{
 		href: '/docs/getting-started/install/',
 		title: 'Install Ladle',
-		text: 'Drag Ladle to Applications and open it once. Its Safari extension comes along with it.',
-		time: '2 min',
+		text: 'Drag Ladle to Applications, then approve it the first time you open it. macOS only asks once.',
+		time: '3 min',
 	},
 	{
 		href: '/docs/getting-started/set-up-your-browser/',
 		title: 'Set up your browser',
-		text: 'Turn on the extension, and clicking a download in your browser hands it straight to Ladle.',
+		text: `Add the extension to ${extensionBrowsers}, and clicking a download hands it straight to Ladle.`,
 		time: '3 min',
 	},
 	{
