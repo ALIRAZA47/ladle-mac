@@ -1,0 +1,693 @@
+---
+/**
+ * The Ladle main window, drawn in HTML and CSS so it stays sharp at any size and follows the
+ * site's light/dark theme. Everything is computed at build time; there is no script.
+ */
+import Icon from '../Icon.astro';
+
+type Row = {
+	ext: string;
+	name: string;
+	meta: string;
+	speed?: string;
+	segs: number[];
+	state: 'pouring' | 'paused' | 'queued';
+	chip?: string;
+	selected?: boolean;
+};
+
+const rows: Row[] = [
+	{
+		ext: 'ISO',
+		name: 'ubuntu-24.04.2-desktop-amd64.iso',
+		meta: '2.35 of 5.79 GB · 3 min left',
+		speed: '18.4 MB/s',
+		segs: [62, 48, 55, 30, 41, 22, 36, 30],
+		state: 'pouring',
+		selected: true,
+	},
+	{
+		ext: 'DMG',
+		name: 'blender-4.2.3-macos-arm64.dmg',
+		meta: '200 of 312 MB · 16 s left',
+		speed: '6.8 MB/s',
+		segs: [84, 72, 58, 66, 50, 73, 55, 54],
+		state: 'pouring',
+	},
+	{
+		ext: 'MP4',
+		name: 'lecture-07-distributed-systems.mp4',
+		meta: '186 MB of 1.24 GB · 2 min left',
+		speed: '10.2 MB/s',
+		segs: [22, 12, 18, 9, 16, 13],
+		state: 'pouring',
+	},
+	{
+		ext: 'ZIP',
+		name: 'brand-assets-2026.zip',
+		meta: '466 of 846 MB · resumes where it stopped',
+		segs: [71, 60, 52, 48, 63, 44, 57, 45],
+		state: 'paused',
+		chip: 'Paused',
+	},
+	{
+		ext: 'ZIP',
+		name: 'wallpapers-4k-pack.zip',
+		meta: 'Starts at 1:00 AM · 2.10 GB',
+		segs: [0, 0, 0, 0, 0, 0, 0, 0],
+		state: 'queued',
+		chip: 'Tonight',
+	},
+];
+
+const library = [
+	{ label: 'All Downloads', count: 10, selected: true },
+	{ label: 'Active', count: 4 },
+	{ label: 'Queued', count: 2 },
+	{ label: 'Completed', count: 3 },
+	{ label: 'Failed', count: 1 },
+];
+const categories = [
+	{ label: 'Video', count: 2 },
+	{ label: 'Music', count: 1 },
+	{ label: 'Documents', count: 1 },
+	{ label: 'Archives', count: 3 },
+	{ label: 'Apps', count: 3 },
+];
+
+// Connection ring: one arc per connection for the selected download.
+const pieces = [0.62, 0.48, 0.55, 0.3, 0.41, 0.22, 0.36, 0.3];
+const radius = 70;
+const circumference = 2 * Math.PI * radius;
+const slot = circumference / pieces.length;
+const span = slot - 17;
+const arcs = pieces.map((done, i) => ({
+	track: `${span.toFixed(2)} ${circumference.toFixed(2)}`,
+	fill: `${(span * done).toFixed(2)} ${circumference.toFixed(2)}`,
+	offset: (-(i * slot + (slot - span) / 2)).toFixed(2),
+}));
+
+// Total-speed sparkline.
+const samples = Array.from({ length: 40 }, (_, i) => 33 + Math.sin(i / 3.4) * 4.5 + Math.sin(i / 1.6) * 1.4);
+const spark =
+	'M' + samples.map((v, i) => `${((i * 200) / 39).toFixed(1)} ${(38 - (v / 45) * 34).toFixed(1)}`).join(' L');
+
+const label =
+	'The Ladle window with three downloads pouring, each split into eight connections, a paused download, one waiting for the Tonight queue, and the connection ring for the selected file.';
+---
+
+<div class="shot-wrap">
+	<div class="shot-glow" aria-hidden="true"></div>
+	<div class="shot" role="img" aria-label={label}>
+		<svg width="0" height="0" class="defs" aria-hidden="true">
+			<defs>
+				<linearGradient id="shot-ring" x1="0" y1="1" x2="1" y2="0">
+					<stop offset="0" stop-color="#FF4F1A" />
+					<stop offset="0.55" stop-color="#FF8A1F" />
+					<stop offset="1" stop-color="#FFC46B" />
+				</linearGradient>
+			</defs>
+		</svg>
+
+		<div class="side panel">
+			<div class="lights"><span></span><span></span><span></span></div>
+			<div class="group">
+				<span class="group-label">Library</span>
+				{
+					library.map((item) => (
+						<div class:list={['nav', { on: item.selected }]}>
+							<span class="dot" />
+							<span class="nav-label">{item.label}</span>
+							<span class="count tnum">{item.count}</span>
+						</div>
+					))
+				}
+			</div>
+			<div class="group">
+				<span class="group-label">Categories</span>
+				{
+					categories.map((item) => (
+						<div class="nav">
+							<span class="dot square" />
+							<span class="nav-label">{item.label}</span>
+							<span class="count tnum">{item.count}</span>
+						</div>
+					))
+				}
+			</div>
+			<div class="speed">
+				<span class="speed-label">Speed</span>
+				<span class="rnum speed-value">35.4 MB/s</span>
+				<svg viewBox="0 0 200 40" width="100%" height="34" preserveAspectRatio="none">
+					<path d={`${spark} L200 40 L0 40 Z`} class="spark-fill" />
+					<path d={spark} class="spark-line" />
+				</svg>
+			</div>
+		</div>
+
+		<div class="list">
+			<div class="toolbar">
+				<div class="title">
+					<span class="title-text">All Downloads</span>
+					<span class="subtitle tnum">3 downloading · 35.4 MB/s</span>
+				</div>
+				<div class="omni panel">
+					<Icon name="search" size={14} />
+					<span>Paste a link or search</span>
+				</div>
+				<span class="add"><Icon name="plus" size={16} strokeWidth={2.4} /></span>
+			</div>
+			<span class="list-label">Downloading</span>
+			{
+				rows.map((row) => (
+					<div class:list={['row', { selected: row.selected }]}>
+						<span class:list={['ext', { live: row.state === 'pouring' }]}>{row.ext}</span>
+						<span class="row-main">
+							<span class="row-name">
+								<span class="name">{row.name}</span>
+								{row.chip && <span class="chip">{row.chip}</span>}
+							</span>
+							<span class:list={['segs', `is-${row.state}`]}>
+								{row.segs.map((w) => (
+									<span class="seg">
+										<span
+											class:list={{ live: row.state === 'pouring' && w > 0 && w < 100, pour: row.state === 'pouring' && w > 0 && w < 100 }}
+											style={`width: ${w}%`}
+										/>
+									</span>
+								))}
+							</span>
+							<span class="meta tnum">{row.meta}</span>
+						</span>
+						<span class="rnum row-speed">{row.speed}</span>
+					</div>
+				))
+			}
+		</div>
+
+		<div class="insp panel">
+			<div class="insp-head">
+				<span class="insp-name">ubuntu-24.04.2-desktop-amd64.iso</span>
+				<span class="insp-host">releases.ubuntu.com</span>
+			</div>
+			<div class="ring">
+				<svg viewBox="0 0 168 168" width="168" height="168">
+					{
+						arcs.map((arc) => (
+							<g transform="rotate(-90 84 84)">
+								<circle cx="84" cy="84" r={radius} class="arc-track" stroke-dasharray={arc.track} stroke-dashoffset={arc.offset} />
+								<circle cx="84" cy="84" r={radius} class="arc-glow" stroke-dasharray={arc.fill} stroke-dashoffset={arc.offset} />
+								<circle cx="84" cy="84" r={radius} class="arc-fill" stroke-dasharray={arc.fill} stroke-dashoffset={arc.offset} />
+							</g>
+						))
+					}
+				</svg>
+				<div class="ring-center">
+					<span class="rnum ring-pct">40%</span>
+					<span class="rnum ring-speed">18.4 MB/s</span>
+				</div>
+			</div>
+			<div class="stats">
+				<span><span class="k">Speed</span><span class="rnum v">18.4 MB/s</span></span>
+				<span><span class="k">Time left</span><span class="rnum v">3 min</span></span>
+				<span><span class="k">Size</span><span class="rnum v">5.79 GB</span></span>
+			</div>
+			<span class="note">Each arc is one connection · 8 of 8 pouring</span>
+		</div>
+	</div>
+</div>
+
+<style>
+	.shot-wrap {
+		--app-bg: radial-gradient(700px 420px at 10% -10%, rgba(255, 138, 31, 0.2), transparent 62%),
+			radial-gradient(600px 420px at 108% 112%, rgba(255, 79, 26, 0.12), transparent 60%), #0c0b0a;
+		--app-glass: rgba(30, 28, 26, 0.58);
+		--app-hi: rgba(255, 255, 255, 0.07);
+		--app-line: rgba(255, 240, 220, 0.09);
+		--app-line2: rgba(255, 240, 220, 0.15);
+		--app-text: #f6f2ec;
+		--app-text2: #b8b0a6;
+		--app-text3: #9c9489;
+		--app-tile: rgba(255, 244, 230, 0.06);
+		--app-track: rgba(255, 240, 220, 0.1);
+		--app-ink: #ff9a3d;
+		--app-shadow: 0 40px 120px rgba(0, 0, 0, 0.6);
+		--app-panel-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+		position: relative;
+		width: 100%;
+		max-width: 1152px;
+		margin-top: 60px;
+		text-align: left;
+	}
+	:global(:root[data-theme='light']) .shot-wrap {
+		--app-bg: radial-gradient(700px 420px at 10% -10%, rgba(255, 138, 31, 0.17), transparent 62%),
+			radial-gradient(600px 420px at 108% 112%, rgba(255, 79, 26, 0.09), transparent 60%), #f3efe9;
+		--app-glass: rgba(255, 255, 255, 0.6);
+		--app-hi: rgba(255, 255, 255, 0.9);
+		--app-line: rgba(60, 40, 20, 0.1);
+		--app-line2: rgba(60, 40, 20, 0.16);
+		--app-text: #1a1714;
+		--app-text2: #554e46;
+		--app-text3: #675f57;
+		--app-tile: rgba(60, 40, 20, 0.05);
+		--app-track: rgba(60, 40, 20, 0.11);
+		--app-ink: #b4500e;
+		--app-shadow: 0 30px 90px rgba(60, 40, 20, 0.18);
+		--app-panel-shadow: 0 12px 40px rgba(60, 40, 20, 0.12);
+	}
+
+	.shot-glow {
+		position: absolute;
+		left: 10%;
+		right: 10%;
+		top: -40px;
+		bottom: 40px;
+		border-radius: 50%;
+		background: radial-gradient(closest-side, rgba(255, 138, 31, 0.32), transparent);
+		filter: blur(30px);
+	}
+	:global(:root[data-theme='light']) .shot-glow {
+		background: radial-gradient(closest-side, rgba(255, 138, 31, 0.2), transparent);
+	}
+
+	.shot {
+		position: relative;
+		height: 580px;
+		display: flex;
+		gap: 10px;
+		padding: 10px;
+		overflow: hidden;
+		border-radius: 28px;
+		background: var(--app-bg);
+		border: 1px solid var(--app-line2);
+		box-shadow: var(--app-shadow);
+		color: var(--app-text);
+		font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', var(--ld-font-body);
+		line-height: 1.3;
+		user-select: none;
+	}
+	.defs {
+		position: absolute;
+	}
+	.panel {
+		background: var(--app-glass);
+		border: 1px solid var(--app-line);
+		box-shadow: inset 0 1px 0 var(--app-hi), var(--app-panel-shadow);
+	}
+
+	/* Sidebar */
+	.side {
+		width: 212px;
+		flex: none;
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		padding: 14px 10px;
+		border-radius: 20px;
+	}
+	.lights {
+		display: flex;
+		gap: 7px;
+		padding: 2px 6px;
+	}
+	.lights span {
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+		background: #ff5f57;
+	}
+	.lights span:nth-child(2) {
+		background: #febc2e;
+	}
+	.lights span:nth-child(3) {
+		background: #28c840;
+	}
+	.group {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.group-label {
+		padding: 0 8px 4px;
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--app-text3);
+	}
+	.nav {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		height: 29px;
+		padding: 0 8px;
+		border-radius: 10px;
+		font-size: 13px;
+	}
+	.nav.on {
+		box-shadow: inset 0 0 0 999px rgba(255, 138, 31, 0.16);
+	}
+	.dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--app-text3);
+	}
+	.nav.on .dot {
+		background: var(--app-ink);
+	}
+	.dot.square {
+		border-radius: 2px;
+	}
+	.nav-label {
+		flex: 1;
+	}
+	.count {
+		font-size: 11.5px;
+		color: var(--app-text3);
+	}
+	.speed {
+		margin-top: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 12px;
+		border-radius: 16px;
+		background: var(--app-tile);
+		border: 1px solid var(--app-line);
+	}
+	.speed-label {
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--app-text2);
+	}
+	.speed-value {
+		font-size: 24px;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+	.speed svg {
+		display: block;
+	}
+	.spark-fill {
+		fill: #ff8a1f;
+		fill-opacity: 0.16;
+	}
+	.spark-line {
+		fill: none;
+		stroke: #ff8a1f;
+		stroke-width: 1.8;
+		vector-effect: non-scaling-stroke;
+	}
+
+	/* Download list */
+	.list {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.toolbar {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 6px 4px 4px 10px;
+	}
+	.title {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.title-text {
+		font-size: 24px;
+		font-weight: 700;
+		letter-spacing: -0.03em;
+		white-space: nowrap;
+	}
+	.subtitle {
+		font-size: 12px;
+		color: var(--app-text2);
+		white-space: nowrap;
+	}
+	.omni {
+		flex: 0 1 260px;
+		min-width: 0;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		height: 38px;
+		padding: 0 12px;
+		border-radius: 999px;
+		font-size: 12.5px;
+		color: var(--app-text3);
+		box-shadow: inset 0 1px 0 var(--app-hi);
+	}
+	.omni span {
+		flex: 1;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.add {
+		width: 38px;
+		height: 38px;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 999px;
+		background: #ff8a1f;
+		color: #1e1206;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.35),
+			0 6px 18px rgba(255, 138, 31, 0.3);
+	}
+	.list-label {
+		padding: 8px 12px 2px;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--app-text2);
+	}
+	.row {
+		display: grid;
+		grid-template-columns: 40px minmax(0, 1fr) auto;
+		gap: 12px;
+		align-items: center;
+		padding: 10px 12px;
+		border-radius: 18px;
+	}
+	.row.selected {
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 138, 31, 0.45),
+			inset 0 0 0 999px rgba(255, 138, 31, 0.07);
+	}
+	.ext {
+		width: 40px;
+		height: 40px;
+		display: grid;
+		place-items: center;
+		border-radius: 13px;
+		background: var(--app-tile);
+		border: 1px solid var(--app-line);
+		font-size: 9.5px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		color: var(--app-text2);
+	}
+	.ext.live {
+		color: var(--app-ink);
+	}
+	.row-main {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.row-name {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+	}
+	.name {
+		min-width: 0;
+		font-size: 13.5px;
+		font-weight: 600;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.chip {
+		flex: none;
+		height: 19px;
+		padding: 0 8px;
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		background: var(--app-tile);
+		font-size: 10.5px;
+		font-weight: 600;
+		color: var(--app-text2);
+	}
+	.segs {
+		--ld-track: var(--app-track);
+	}
+	.segs.is-paused .seg > span {
+		opacity: 0.45;
+	}
+	.meta {
+		font-size: 12px;
+		color: var(--app-text2);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.row-speed {
+		min-width: 70px;
+		text-align: right;
+		font-size: 13.5px;
+		font-weight: 600;
+	}
+
+	/* Details panel */
+	.insp {
+		width: 286px;
+		flex: none;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 16px;
+		padding: 18px;
+		border-radius: 22px;
+	}
+	.insp-head {
+		align-self: stretch;
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+	}
+	.insp-name {
+		font-size: 13.5px;
+		font-weight: 600;
+		overflow-wrap: anywhere;
+	}
+	.insp-host {
+		font-size: 12px;
+		color: var(--app-text2);
+	}
+	.ring {
+		position: relative;
+		width: 168px;
+		height: 168px;
+	}
+	.ring svg {
+		display: block;
+	}
+	.ring circle {
+		fill: none;
+		stroke-linecap: round;
+	}
+	.arc-track {
+		stroke: var(--app-track);
+		stroke-width: 11;
+	}
+	.arc-glow {
+		stroke: url(#shot-ring);
+		stroke-width: 22;
+		opacity: 0.22;
+	}
+	.arc-fill {
+		stroke: url(#shot-ring);
+		stroke-width: 11;
+	}
+	.ring-center {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+	}
+	.ring-pct {
+		font-size: 36px;
+		font-weight: 700;
+		letter-spacing: -0.03em;
+		line-height: 1;
+	}
+	.ring-speed {
+		font-size: 11.5px;
+		color: var(--app-text2);
+	}
+	.stats {
+		align-self: stretch;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 4px;
+		padding: 10px 4px;
+		border-radius: 16px;
+		background: var(--app-tile);
+		border: 1px solid var(--app-line);
+		text-align: center;
+	}
+	.stats > span {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.k {
+		font-size: 10.5px;
+		color: var(--app-text3);
+	}
+	.v {
+		font-size: 13px;
+		font-weight: 600;
+	}
+	.note {
+		font-size: 11.5px;
+		color: var(--app-text2);
+		text-align: center;
+	}
+
+	@media (max-width: 900px) {
+		.side,
+		.insp {
+			display: none;
+		}
+		.shot {
+			height: auto;
+		}
+		.shot-wrap {
+			margin-top: 44px;
+		}
+	}
+	@media (max-width: 560px) {
+		.shot {
+			border-radius: 22px;
+			padding: 6px;
+		}
+		.toolbar {
+			padding: 6px 2px 4px 8px;
+		}
+		.title-text {
+			font-size: 20px;
+		}
+		.omni {
+			display: none;
+		}
+		.row {
+			gap: 10px;
+			padding: 9px 8px;
+			grid-template-columns: 36px minmax(0, 1fr) auto;
+		}
+		.ext {
+			width: 36px;
+			height: 36px;
+			border-radius: 11px;
+		}
+		.row-speed {
+			min-width: 0;
+			font-size: 12.5px;
+		}
+	}
+</style>
