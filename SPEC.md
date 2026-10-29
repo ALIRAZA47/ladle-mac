@@ -128,8 +128,15 @@ The app must behave like this and the docs must describe exactly this.
 - **Clipboard**: when Ladle is frontmost or its menu bar menu opens, and the clipboard holds a
   link to a file with a known extension, show "Link on your clipboard" with **Download** and
   **Not now**. Setting: *Watch the clipboard for links* (on). Nothing leaves the Mac.
-- **Drag and drop** links or `.webloc` files onto the window or the Dock icon.
+- **Drag and drop** links onto the window, and `.webloc` files onto the window or the Dock icon.
+  Ladle doesn't register for `http`/`https`, so it never shows up as a possible default browser.
 - **URL scheme**: `ladle://add?url=<percent-encoded>&referrer=<…>&filename=<…>&cookies=<…>`.
+  The extension and the bridge may also pass `size`, `mime`, `sha256` or `md5`, `source`,
+  `mode` (`caught`, `direct` or `choose`), `kind`, `audio`, `title`, `quality`, `bandwidth` and `token`.
+- The **clipboard suggestion** shows the file's name and site but not its size: Ladle contacts
+  no server until you choose Download.
+- The extension's **toolbar button** runs Download All Links with Ladle; its badge counts the
+  page's file links.
 - **Browser hand-off**: the extension catches downloads of watched file types and Ladle shows
   the catch panel — **Download**, **Later** (adds it to the list without starting it),
   **Let the browser handle it**, and "Always download .<ext> files without asking".
@@ -153,13 +160,19 @@ The app must behave like this and the docs must describe exactly this.
   before starting over.
 - **Retries**: failed pieces retry with backoff (1, 2, 4, 8, 16 s with jitter). Setting
   *Retry failed downloads*: Never, 1, 3 (default), 5, 10 times. On `429`/`503` Ladle halves the
-  connections it uses for that host and honors `Retry-After` — "backs off when a server asks it to".
-- **Speed limit**: one global limit across all downloads (*Limit total speed*, off; 10 MB/s).
+  connections it uses for that host and honors `Retry-After` (up to an hour) — "backs off when a
+  server asks it to". The host gets its full connections back after 10 quiet minutes.
+- **Speed limit**: one global limit across all downloads (*Limit total speed*, off; choices 1, 2,
+  5, 10 (default), 25 and 50 MB/s). *Proxy*: **Same as macOS** (default) or **Don't use a proxy**.
+- While anything is downloading, Ladle keeps the Mac from going to sleep on its own.
 - **Cookies and referrer** from the browser are sent only to the download's own host.
 
 ### Queues
 
 - **Main queue**: runs *Downloads at the same time* (default 3, range 1–8); the rest wait in line.
+- **Pause All** also pauses waiting downloads; **Resume All** also starts ones set aside with Later.
+- The list groups downloads as Downloading, Paused, Up next, Needs attention, Completed today
+  (collapsible) and Completed earlier.
 - **Tonight**: starts at 1:00 AM, stops at 7:00 AM (unfinished items wait for the next night),
   runs every day by default. *When the queue finishes*: **Do nothing** or **Put the Mac to sleep**
   (default).
@@ -228,7 +241,8 @@ Ladle updates itself with Sparkle 2.
 `site/src/content/changelog/X.Y.Z.md` (front matter: `version`, `title`, optional `date`). The
 app's release workflow, on the tag:
 
-1. fails early if that changelog file is missing;
+1. fails early if that changelog file is missing (tag versions in increasing order: the build
+   number is the tag's position among release tags);
 2. builds, signs, notarizes and publishes `Ladle.dmg` to the GitHub Release;
 3. sets the changelog `date`, rewrites `site/public/appcast.xml`, and commits both to `main`;
 4. calls `.github/workflows/site-deploy.yml` as a reusable workflow (permissions
