@@ -4,6 +4,9 @@
 //   node build.mjs                 all browsers, into dist/<browser>/ plus a .zip each
 //   node build.mjs chrome firefox  just those
 //   node build.mjs --store         Chrome Web Store upload (drops the development "key")
+//   node build.mjs --release       dist/Ladle-Chrome-Extension.zip for the GitHub Release: the
+//                                  development build (its "key" pins the extension ID), inside a
+//                                  Ladle-Chrome-Extension folder ready for "Load unpacked"
 //
 // Safari's copy is also made by the Xcode build (see app/project.yml); this one is for checking.
 
@@ -19,8 +22,13 @@ const browsers = ['chrome', 'firefox', 'safari'];
 
 const args = process.argv.slice(2);
 const store = args.includes('--store');
+const release = args.includes('--release');
 const wanted = args.filter((a) => !a.startsWith('--'));
-const targets = wanted.length ? wanted : browsers;
+const targets = release ? ['chrome'] : wanted.length ? wanted : browsers;
+if (release && store) {
+  console.error('--release is the development build; it can\'t be combined with --store.');
+  process.exit(1);
+}
 for (const target of targets) {
   if (!browsers.includes(target)) {
     console.error(`Unknown browser "${target}". Use: ${browsers.join(', ')}`);
@@ -52,14 +60,14 @@ function crc32(buffer) {
 }
 
 /** A minimal zip (deflate) with fixed timestamps, so builds are reproducible. */
-function zip(root, outFile) {
+function zip(root, outFile, folder = '') {
   const locals = [];
   const centrals = [];
   let offset = 0;
   const dosTime = 0;
   const dosDate = (2026 - 1980) << 9 | 1 << 5 | 1;
   for (const path of files(root)) {
-    const name = Buffer.from(relative(root, path).split(sep).join('/'));
+    const name = Buffer.from((folder ? folder + '/' : '') + relative(root, path).split(sep).join('/'));
     const data = readFileSync(path);
     const packed = deflateRawSync(data, { level: 9 });
     const crc = crc32(data);
@@ -110,6 +118,12 @@ for (const browser of targets) {
   const manifest = JSON.parse(readFileSync(join(here, 'manifests', `${browser}.json`), 'utf8'));
   if (store) delete manifest.key;
   writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+  if (release) {
+    const archive = join(dist, 'Ladle-Chrome-Extension.zip');
+    zip(out, archive, 'Ladle-Chrome-Extension');
+    console.log(`${browser}: ${relative(here, out)}  →  ${relative(here, archive)}`);
+    continue;
+  }
   const archive = join(dist, `ladle-${browser}-${manifest.version}${store && browser === 'chrome' ? '-store' : ''}.zip`);
   zip(out, archive);
   console.log(`${browser}: ${relative(here, out)}  →  ${relative(here, archive)}`);
