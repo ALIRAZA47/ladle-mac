@@ -54,8 +54,9 @@ final class AddSheetModel: ObservableObject, Identifiable {
 
     // MARK: Derived
 
+    /// The list with checkboxes: several links, a series, or a page's links (even just one).
     var isMany: Bool {
-        entries.count > 1 || text.trimmingCharacters(in: .whitespacesAndNewlines).contains("\n") || LinkParser.containsSeries(text)
+        context != nil || entries.count > 1 || text.trimmingCharacters(in: .whitespacesAndNewlines).contains("\n") || LinkParser.containsSeries(text)
     }
 
     var title: String {
