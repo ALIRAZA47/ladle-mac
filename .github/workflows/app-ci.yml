@@ -9,10 +9,12 @@ on:
     branches: ['**']
     paths:
       - 'app/**'
+      - 'site/public/install.sh'
       - '.github/workflows/app-*.yml'
   pull_request:
     paths:
       - 'app/**'
+      - 'site/public/install.sh'
       - '.github/workflows/app-*.yml'
   workflow_dispatch:
 
@@ -113,6 +115,10 @@ jobs:
         run: python3 -m unittest discover -s app/scripts -p 'test_*.py' -v
       - name: Check the packaging scripts' syntax
         run: for script in app/scripts/*.sh; do bash -n "$script"; done
+      - name: Lint the website's install script
+        run: |
+          bash -n site/public/install.sh
+          shellcheck --shell=bash site/public/install.sh
 
   # The release's packaging path (app/scripts/package-app.sh), with a throwaway Sparkle key made
   # here: a universal Release build signed ad hoc inside out, Ladle.dmg, the Chrome extension zip
@@ -155,6 +161,42 @@ jobs:
 
       - name: Check the package
         run: app/scripts/verify-package.sh
+
+      # The website's install script (site/public/install.sh) on this package, the way people run
+      # it. The second run replaces the first copy.
+      - name: Install with the install script
+        env:
+          LADLE_DOWNLOAD_BASE: file://${{ env.LADLE_OUT }}
+        run: |
+          apps="$RUNNER_TEMP/Applications"
+          bash site/public/install.sh --dir "$apps" --browser none --no-open
+          bash site/public/install.sh --dir "$apps" --browser none --no-open
+          app="$apps/Ladle.app"
+          codesign --verify --deep --strict "$app"
+          if xattr -p com.apple.quarantine "$app" > /dev/null 2>&1; then
+            echo "::error::The installed Ladle is quarantined, so macOS would ask on its first launch."
+            exit 1
+          fi
+          installed=$(plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist")
+          if [ "$installed" != "$LADLE_VERSION" ]; then
+            echo "::error::The script installed Ladle $installed, not $LADLE_VERSION."
+            exit 1
+          fi
+          leftovers=$(find "$apps" -mindepth 1 -maxdepth 1 ! -name Ladle.app)
+          if [ -n "$leftovers" ]; then
+            echo "::error::The script left files behind: $leftovers"
+            exit 1
+          fi
+          manifest="$HOME/Library/Application Support/Ladle/Ladle-Chrome-Extension/manifest.json"
+          if ! grep -q '"key"' "$manifest"; then
+            echo "::error::$manifest is missing, or has no development key to pin the extension's ID."
+            exit 1
+          fi
+          echo "Installed Ladle $installed and the extension $(plutil -extract version raw -o - "$manifest" 2> /dev/null || echo '(version unread)')"
+          if bash site/public/install.sh --no-such-option 2> /dev/null; then
+            echo "::error::The script accepted an unknown option."
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v7
         with:

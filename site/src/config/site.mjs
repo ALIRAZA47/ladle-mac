@@ -12,6 +12,9 @@ export const CHROME_EXTENSION_ZIP_URL =
 export const LATEST_RELEASE_URL = 'https://github.com/ALIRAZA47/ladle-mac/releases/latest';
 export const RELEASES_URL = 'https://github.com/ALIRAZA47/ladle-mac/releases';
 export const SOURCE_URL = 'https://github.com/ALIRAZA47/ladle-mac';
+/** Installs Ladle and sets up its Chrome extension from Terminal. The script is public/install.sh. */
+export const INSTALL_COMMAND = `curl -fsSL ${SITE_URL}/install.sh | bash`;
+export const INSTALL_SCRIPT_SOURCE = 'https://github.com/ALIRAZA47/ladle-mac/blob/main/site/public/install.sh';
 export const SUPPORT_URL = 'https://github.com/ALIRAZA47/ladle-mac/issues';
 export const APPCAST_URL = `${SITE_URL}/appcast.xml`;
 

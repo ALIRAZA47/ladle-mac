@@ -19,6 +19,7 @@ files for the night, sorts everything into folders, and updates itself.
 | Path | What | Owner |
 | --- | --- | --- |
 | `README.md`, `SPEC.md` | Overview and this spec | lead |
+| `site/public/install.sh` | The install script (see [First launch](#first-launch)) | lead |
 | `app/` | The macOS app, its browser extensions and native messaging helper | app |
 | `site/` | Website and docs (Astro + Starlight) | site |
 | `.github/workflows/app-*.yml` | App CI and releases | app |
@@ -53,6 +54,7 @@ Both sides hard-code these. Don't change one side without the other.
 | Latest DMG | `https://github.com/ALIRAZA47/ladle-mac/releases/latest/download/Ladle.dmg` |
 | Latest Chrome extension (until it's in the Chrome Web Store) | `https://github.com/ALIRAZA47/ladle-mac/releases/latest/download/Ladle-Chrome-Extension.zip` |
 | Update feed (Sparkle appcast) | `https://ladle.alirazakhan.me/appcast.xml` (file: `site/public/appcast.xml`) |
+| Install script | `https://ladle.alirazakhan.me/install.sh` (file: `site/public/install.sh`) |
 | Release notes | `https://ladle.alirazakhan.me/changelog/` — one section per version, anchor `#v1-0-0` style (`v` + version with dots as dashes) |
 | Docs | `https://ladle.alirazakhan.me/docs/` |
 | Privacy | `https://ladle.alirazakhan.me/privacy/` |
@@ -63,7 +65,7 @@ Both sides hard-code these. Don't change one side without the other.
 The site must publish every one of these; the app opens them from Help and Settings.
 
 ```
-/docs/getting-started/install/                    anchors: #first-launch
+/docs/getting-started/install/                    anchors: #first-launch #install-from-terminal
 /docs/getting-started/set-up-your-browser/        anchors: #safari #chrome #firefox
 /docs/getting-started/first-download/
 /docs/getting-started/menu-bar-dock-and-notifications/
@@ -105,6 +107,24 @@ and checked against Ladle's own update key.
 extension can't run in these builds. Settings › Browsers says so and links to the docs. Chrome,
 Arc, Edge and Brave can use `Ladle-Chrome-Extension.zip` from the latest release in developer
 mode until the Chrome Web Store listing exists; Firefox waits for its Firefox Add-ons listing.
+
+**Install script.** `curl -fsSL https://ladle.alirazakhan.me/install.sh | bash` installs the
+latest release without the approval step, because files `curl` downloads aren't quarantined.
+It runs on the Bash that ships with macOS, and does the following:
+
+1. Downloads `Ladle.dmg` and skips the app if that version is already installed. If Ladle is open,
+   it waits for you to quit it.
+2. Copies the app into `/Applications` (`~/Applications` when the account can't write there),
+   checks its signature, then opens it.
+3. Unpacks `Ladle-Chrome-Extension.zip` into
+   `~/Library/Application Support/Ladle/Ladle-Chrome-Extension`, always the same folder, so a
+   reload in the browser picks up a new version.
+4. Copies that path to the clipboard and opens the browser's extensions page for **Load unpacked**.
+
+Options: `--app-only`, `--extension-only`, `--browser chrome|arc|edge|brave|none`,
+`--dir FOLDER`, `--no-open`. When the Chrome Web Store listing exists, set `CHROME_STORE_URL` in
+the script, and it opens the store instead. App CI runs the script on macOS against the packaged
+app on every run of its packaging dry run.
 
 ## Look: Molten
 

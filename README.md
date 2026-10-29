@@ -9,6 +9,8 @@ everything into folders, and updates itself.
 - Website: https://ladle.alirazakhan.me
 - Docs: https://ladle.alirazakhan.me/docs/
 - Download: https://github.com/ALIRAZA47/ladle-mac/releases/latest/download/Ladle.dmg
+- Or install from Terminal, with the Chrome extension:
+  `curl -fsSL https://ladle.alirazakhan.me/install.sh | bash`
 - Issues and support: https://github.com/ALIRAZA47/ladle-mac/issues
 
 ## What's in this repository

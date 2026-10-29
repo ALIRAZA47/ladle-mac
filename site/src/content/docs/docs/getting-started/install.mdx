@@ -4,7 +4,7 @@ description: Download Ladle, drag it to Applications and approve it the first ti
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
-import { SOURCE_URL } from '~/config/site.mjs';
+import { INSTALL_SCRIPT_SOURCE, SOURCE_URL } from '~/config/site.mjs';
 import { extensionBrowsers } from '~/config/stores.mjs';
 
 ## What you need
@@ -15,6 +15,8 @@ import { extensionBrowsers } from '~/config/stores.mjs';
 Ladle is free. There’s no account to create, no trial and no license key.
 
 ## Install
+
+Rather use Terminal? [One command](#install-from-terminal) does all of this, opens Ladle without the first-launch approval, and sets up the Chrome extension too.
 
 <Steps>
 
@@ -67,6 +69,37 @@ Ladle is free, and it isn’t notarized by Apple, because notarizing takes a pai
 From then on, Ladle opens like any other app. Updates don’t ask again: Ladle downloads them itself and checks each one against its own update key before installing it.
 
 Ladle’s <a href={SOURCE_URL}>source code is public on GitHub</a>, and each release is built from that code by GitHub Actions.
+
+## Install from Terminal
+
+One command installs the latest Ladle and sets up its extension for Chrome, Arc, Edge or Brave. Open **Terminal** from **Applications › Utilities**, paste this and press <kbd>Return</kbd>:
+
+```sh
+curl -fsSL https://ladle.alirazakhan.me/install.sh | bash
+```
+
+Here’s what it does:
+
+- **Installs Ladle** in your Applications folder and opens it, without the [first-launch](#first-launch) approval: macOS only asks about apps a browser downloaded, and the script downloads Ladle itself. If Ladle is open, the script waits for you to quit it.
+- **Puts the extension** in `~/Library/Application Support/Ladle/Ladle-Chrome-Extension`, opens your browser’s extensions page and copies the folder’s path. Browsers only let you add an extension like this yourself, so you finish there: turn on **Developer mode**, click **Load unpacked**, press <kbd>⌘⇧G</kbd>, paste with <kbd>⌘V</kbd>, press <kbd>Return</kbd> and click **Select**.
+
+Run the command again to update the extension, then click the reload button on Ladle’s card on the extensions page. Ladle updates itself, so the script leaves it alone when it’s up to date.
+
+To do only part of it, add options after `bash -s --`:
+
+```sh
+curl -fsSL https://ladle.alirazakhan.me/install.sh | bash -s -- --app-only
+```
+
+| Option | What it does |
+| --- | --- |
+| `--app-only` | Installs Ladle without the extension. |
+| `--extension-only` | Sets up the extension only. |
+| `--browser` | Picks the browser for the extension: `--browser chrome`, `arc`, `edge`, `brave` or `none`. Without it, the script uses the one you have, or asks when you have several. |
+| `--dir` | Installs Ladle in another folder, as in `--dir ~/Applications`. |
+| `--no-open` | Doesn’t open Ladle or your browser at the end. |
+
+It’s a short script, and you can <a href={INSTALL_SCRIPT_SOURCE}>read it on GitHub</a> before you run it.
 
 ## Once Ladle is open
 

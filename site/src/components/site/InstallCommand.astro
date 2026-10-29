@@ -1,0 +1,112 @@
+---
+/**
+ * A Terminal command with a Copy button, for the one-line install. The command scrolls sideways
+ * on narrow screens instead of wrapping, so it stays copyable as one line.
+ */
+import Icon from '../Icon.astro';
+import { INSTALL_COMMAND } from '../../config/site.mjs';
+
+interface Props {
+	command?: string;
+	class?: string;
+}
+const { command = INSTALL_COMMAND, class: className } = Astro.props;
+---
+
+<div class:list={['install-cmd', className]}>
+	<code class="cmd-text"><span class="prompt" aria-hidden="true">$</span>{command}</code>
+	<button type="button" class="cmd-copy" data-copy-command={command}>
+		<Icon name="copy" size={15} class="idle" />
+		<Icon name="check" size={15} class="done" />
+		<span class="label">Copy</span>
+	</button>
+	<span class="sr-only" aria-live="polite" data-copy-status></span>
+</div>
+
+<script>
+	document.addEventListener('click', async (event) => {
+		const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-copy-command]');
+		if (!button) return;
+		const box = button.closest('.install-cmd');
+		const status = box?.querySelector<HTMLElement>('[data-copy-status]');
+		try {
+			await navigator.clipboard.writeText(button.dataset.copyCommand ?? '');
+		} catch {
+			// No clipboard access: select the command instead, so ⌘C copies it.
+			const code = box?.querySelector('.cmd-text');
+			const selection = getSelection();
+			if (code && selection) {
+				const range = document.createRange();
+				range.selectNodeContents(code);
+				selection.removeAllRanges();
+				selection.addRange(range);
+			}
+			if (status) status.textContent = 'Selected. Press Command-C to copy.';
+			return;
+		}
+		button.dataset.copied = '';
+		button.querySelector('.label')!.textContent = 'Copied';
+		if (status) status.textContent = 'Copied to the clipboard.';
+		setTimeout(() => {
+			delete button.dataset.copied;
+			button.querySelector('.label')!.textContent = 'Copy';
+			if (status) status.textContent = '';
+		}, 2000);
+	});
+</script>
+
+<style>
+	.install-cmd {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+		padding: 6px 6px 6px 14px;
+		border-radius: 14px;
+		background: var(--ld-code-bg);
+		border: 1px solid var(--ld-line2);
+	}
+	.cmd-text {
+		flex: 1;
+		min-width: 0;
+		overflow-x: auto;
+		white-space: nowrap;
+		padding: 6px 0;
+		font-family: var(--ld-font-mono);
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--ld-text);
+		scrollbar-width: thin;
+	}
+	.prompt {
+		margin-right: 0.6em;
+		color: var(--ld-text3);
+		user-select: none;
+	}
+	.cmd-copy {
+		flex: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: 34px;
+		padding: 0 12px;
+		border: 0;
+		border-radius: 999px;
+		background: var(--ld-tint);
+		color: var(--ld-ink-strong);
+		font: inherit;
+		font-size: 13.5px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.cmd-copy:hover {
+		box-shadow: inset 0 0 0 1px var(--ld-tint-ring);
+	}
+	.cmd-copy .done,
+	.cmd-copy[data-copied] .idle {
+		display: none;
+	}
+	.cmd-copy[data-copied] .done {
+		display: inline-block;
+	}
+</style>

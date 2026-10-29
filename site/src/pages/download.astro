@@ -2,12 +2,14 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 import AppIcon from '../components/AppIcon.astro';
 import Icon from '../components/Icon.astro';
-import { DMG_URL, LATEST_RELEASE_URL, RELEASES_URL, REQUIREMENTS } from '../config/site.mjs';
+import InstallCommand from '../components/site/InstallCommand.astro';
+import { DMG_URL, INSTALL_SCRIPT_SOURCE, LATEST_RELEASE_URL, RELEASES_URL, REQUIREMENTS } from '../config/site.mjs';
 import { extensionBrowsers } from '../config/stores.mjs';
 import { latestRelease } from '../lib/release';
 
 const release = await latestRelease();
 const FIRST_LAUNCH = '/docs/getting-started/install/#first-launch';
+const FROM_TERMINAL = '/docs/getting-started/install/#install-from-terminal';
 
 const steps: { title: string; text: string; link?: { href: string; text: string } }[] = [
 	{ title: 'Open the download', text: 'Open Ladle.dmg from your Downloads folder.' },
@@ -57,6 +59,21 @@ const requirements = [
 				<p class="fl-links">
 					<a href={FIRST_LAUNCH}>First launch steps <Icon name="arrow-right" size={15} /></a>
 					<a href={LATEST_RELEASE_URL}>Latest release on GitHub <Icon name="external" size={15} /></a>
+				</p>
+			</div>
+		</div>
+		<div class="terminal glass" role="group" aria-labelledby="terminal-title">
+			<span class="fl-icon" aria-hidden="true"><Icon name="terminal" size={18} /></span>
+			<div class="fl-body">
+				<p class="fl-title" id="terminal-title">Or install from Terminal</p>
+				<p>
+					One command installs Ladle and sets up its Chrome extension. Installed this way, Ladle opens without
+					the approval step.
+				</p>
+				<InstallCommand class="t-cmd" />
+				<p class="fl-links">
+					<a href={FROM_TERMINAL}>What it does <Icon name="arrow-right" size={15} /></a>
+					<a href={INSTALL_SCRIPT_SOURCE}>Read the script <Icon name="external" size={15} /></a>
 				</p>
 			</div>
 		</div>
@@ -187,9 +204,10 @@ const requirements = [
 		text-decoration: underline;
 		text-underline-offset: 3px;
 	}
-	.first-launch {
+	.first-launch,
+	.terminal {
 		margin-top: 28px;
-		width: min(560px, 100%);
+		width: min(680px, 100%);
 		display: flex;
 		align-items: flex-start;
 		gap: 14px;
@@ -197,6 +215,12 @@ const requirements = [
 		border-radius: 22px;
 		text-align: left;
 		box-shadow: inset 0 1px 0 var(--ld-hi), var(--ld-shadow-card);
+	}
+	.terminal {
+		margin-top: 14px;
+	}
+	.fl-body :global(.t-cmd) {
+		margin-top: 6px;
 	}
 	.fl-icon {
 		width: 36px;
@@ -391,7 +415,8 @@ const requirements = [
 		.card {
 			padding: 22px;
 		}
-		.first-launch {
+		.first-launch,
+		.terminal {
 			padding: 16px;
 		}
 	}
