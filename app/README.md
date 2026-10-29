@@ -12,7 +12,7 @@ What Ladle does, and every name, URL, setting and shortcut it uses, is in [`SPEC
 | [`SafariExtension/`](SafariExtension/) | The Safari Web Extension target: the shared web extension plus a native handler |
 | [`BrowserExtension/`](BrowserExtension/) | One MV3 web extension for every browser, its build script and tests |
 | [`LadleTests/`](LadleTests/) | Tests for the app target |
-| [`scripts/`](scripts/) | Icon rendering, notarization and release-feed scripts |
+| [`scripts/`](scripts/) | Packaging, Sparkle signature, release-feed, notarization and icon scripts |
 | [`project.yml`](project.yml) | XcodeGen spec. The `.xcodeproj` is generated, never committed |
 
 ## Architecture
@@ -82,9 +82,19 @@ things that come with that:
 - Safari only loads extensions from signed apps. With a local build, turn on
   **Safari › Settings › Advanced › Show features for web developers**, then
   **Develop › Allow Unsigned Extensions**, and enable Ladle in **Safari › Settings › Extensions**.
-- The Debug configuration has the hardened runtime off, because library validation refuses
-  ad-hoc signed frameworks such as Sparkle. Release builds turn it on and are signed with
-  Developer ID by the release workflow ([`RELEASING.md`](RELEASING.md)).
+- The hardened runtime is off, because its library validation refuses ad-hoc signed frameworks
+  such as Sparkle. Releases are ad-hoc signed the same way; only a Developer ID release turns it
+  on ([`RELEASING.md`](RELEASING.md)).
+
+To package Ladle exactly the way a release does (universal Release build, signed inside out,
+`Ladle.dmg`, `Ladle-Chrome-Extension.zip`, and `sparkle.json` when given a Sparkle key):
+
+```sh
+python3 app/scripts/sparkle_ed.py generate /tmp/key.txt     # prints a throwaway public key
+LADLE_VERSION=0.1.0 LADLE_BUILD=1 LADLE_SPARKLE_KEY_FILE=/tmp/key.txt \
+  LADLE_PUBLIC_ED_KEY_OVERRIDE=<that public key> app/scripts/package-app.sh
+LADLE_VERSION=0.1.0 LADLE_BUILD=1 app/scripts/verify-package.sh
+```
 
 To sign with your own team, set `DEVELOPMENT_TEAM` and `CODE_SIGN_IDENTITY` ("Apple
 Development") on the targets in Xcode, or pass them to `xcodebuild`.
@@ -101,13 +111,16 @@ cd app/BrowserExtension && npm ci
 npm test                                                  # extension unit tests (Node)
 npx playwright install chromium && npm run test:browser   # the built extension in Chromium
 
-python3 -m unittest discover -s app/scripts -p 'test_*.py'   # release-feed script
+python3 -m unittest discover -s app/scripts -p 'test_*.py'   # release feed and Sparkle keys
 ```
 
 LadleKit's tests run real segmented downloads against an in-memory server and a local HTTP
 server (ranges, redirects, cookies staying with their host, the speed limit), plus the queue,
 Tonight window, holds, HLS planning, checksums, link parsing and every UI string.
-`.github/workflows/app-ci.yml` runs all of the above on each push that touches `app/`.
+`.github/workflows/app-ci.yml` runs all of the above on each push that touches `app/`. On `main`
+and on pull requests it also runs the release's packaging as a dry run, with a throwaway Sparkle
+key, and checks the mounted DMG: signatures, versions, Sparkle, LadleBridge answering a native
+message, the extension zip and the update's EdDSA signature.
 
 ## The browser pieces
 
@@ -115,15 +128,19 @@ Tonight window, holds, HLS planning, checksums, link parsing and every UI string
 cd app/BrowserExtension
 npm run build          # dist/chrome, dist/firefox, dist/safari and a .zip of each
 npm run build:store    # the Chrome Web Store upload, without the development "key"
+node build.mjs --release   # dist/Ladle-Chrome-Extension.zip, the copy each release publishes
 ```
 
 - **Chrome, Arc, Edge, Brave**: load `dist/chrome` unpacked. The `key` in
   `manifests/chrome.json` fixes the development ID to `pleopllngomokgfeebgjmnkjhebmcmkk`, which
-  `Ladle/Browser/BrowserIntegration.swift` allows.
+  `Ladle/Browser/BrowserIntegration.swift` allows. Until the Chrome Web Store listing exists,
+  people load `Ladle-Chrome-Extension.zip` from the latest release the same way; it unpacks to a
+  `Ladle-Chrome-Extension` folder.
 - **Firefox**: load `dist/firefox/manifest.json` from `about:debugging`. Its ID is
   `ladle@alirazakhan.me`.
 - **Safari**: nothing to load; the Xcode build copies `src/` and `manifests/safari.json` into
-  the Safari extension inside Ladle.app.
+  the Safari extension inside Ladle.app. Safari only runs it when Ladle is signed by a registered
+  Apple developer (see Known gaps).
 
 Clicking **Get extension** in **Settings › Browsers** writes the native messaging host manifest
 (`me.alirazakhan.ladle.json`, pointing at `Ladle.app/Contents/MacOS/LadleBridge`) for every
@@ -139,9 +156,19 @@ downloads API, so there the content script takes clicks on links to watched file
 
 ## Known gaps
 
-- **Not run signed yet.** CI builds every target unsigned and runs the tests, but Developer ID
-  signing, notarization and a real Sparkle update have only been written, not run; the first
-  tagged release will be their first run.
+- **The first launch needs approval.** Releases are ad-hoc signed and not notarized (there's no
+  paid Apple Developer account), so macOS blocks Ladle the first time it opens: people click
+  **Open Anyway** in System Settings › Privacy & Security (macOS 15 and later) or Control-click
+  › Open (macOS 14), once. Updates then install without asking, verified with Ladle's EdDSA key.
+  See [First launch](https://ladle.alirazakhan.me/docs/getting-started/install/#first-launch).
+- **Safari needs a signed build.** Safari only loads extensions from apps signed by a registered
+  Apple developer, so Ladle's Safari extension doesn't run from release builds (except with
+  **Develop › Allow Unsigned Extensions**, which Safari turns off each time it quits). Settings ›
+  Browsers says so and links to the docs. Chrome, Arc, Edge and Brave can load
+  `Ladle-Chrome-Extension.zip` from the latest release in developer mode.
+- Not yet run for real: an update from one release to the next (Sparkle's checks are described
+  in [`RELEASING.md`](RELEASING.md)), and the Developer ID path, which only runs once its secrets
+  exist.
 - Ladle can't wake a sleeping Mac. The Tonight queue starts at 1:00 AM only if the Mac is awake;
   while something downloads, Ladle keeps the Mac from idling to sleep.
 - Live HLS streams aren't offered. A separate audio track is merged into the video for fMP4
