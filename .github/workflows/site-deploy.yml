@@ -1,15 +1,11 @@
 # Builds the website and publishes it to GitHub Pages at https://ladle.alirazakhan.me.
 #
-# Runs on pushes to main that touch site/, by hand from the Actions tab, or from another
-# workflow. Pushes made with the default GITHUB_TOKEN don't start other workflows, so the app's
-# release workflow should call this one after it commits a new site/public/appcast.xml:
+# Runs on pushes to main that touch site/ or the feed script, and by hand from the Actions tab,
+# which is how the app's release workflow starts it after publishing a release (`gh workflow run`).
 #
-#   deploy-site:
-#     needs: <the job that commits appcast.xml>
-#     permissions: { contents: read, pages: write, id-token: write }
-#     uses: ./.github/workflows/site-deploy.yml
-#
-# When called this way it checks out the latest main, which includes the new appcast.
+# Every deploy rebuilds the update feed (site/public/appcast.xml) and the missing release dates
+# from the published GitHub Releases, in this checkout only; nothing is committed. That step
+# belongs to the app side (app/scripts/publish_release.py, see SPEC.md "Release flow").
 name: Site deploy
 
 on:
@@ -18,13 +14,8 @@ on:
     paths:
       - 'site/**'
       - '.github/workflows/site-deploy.yml'
+      - 'app/scripts/publish_release.py'
   workflow_dispatch:
-  workflow_call:
-    inputs:
-      ref:
-        description: Branch or commit to deploy. Defaults to main, so a release that just committed appcast.xml deploys it.
-        type: string
-        default: main
 
 permissions:
   contents: read
@@ -48,8 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # Empty for pushes and manual runs (the triggering commit); `main` when called by a release.
-          ref: ${{ inputs.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v7
@@ -59,6 +48,18 @@ jobs:
           cache-dependency-path: site/package-lock.json
 
       - run: npm ci
+
+      # The update feed and release dates come from the published releases. If GitHub can't be
+      # reached, this fails the deploy rather than publish an empty feed.
+      - name: Build the update feed from the published releases
+        working-directory: .
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 app/scripts/publish_release.py feed
+          --repo "$GITHUB_REPOSITORY"
+          --appcast site/public/appcast.xml
+          --changelog site/src/content/changelog
 
       - run: npm run build
 
