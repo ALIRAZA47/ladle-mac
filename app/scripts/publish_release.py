@@ -240,16 +240,21 @@ def build_feed(repo, appcast_path, changelog_dir, releases, fetch=None):
 
     # Everything is fetched and checked before anything is written.
     tree = ET.parse(appcast_path)
-    channel = tree.getroot().find("channel")
+    root = tree.getroot()
+    channel = root.find("channel")
     if channel is None:
         raise ValueError("%s has no <channel>" % appcast_path)
     for item in channel.findall("item"):
         channel.remove(item)
     for version, info, published in entries[:KEEP_ITEMS]:
         channel.append(make_item(repo, version, info, published))
+    # ElementTree declares a namespace only where it's used. An empty feed keeps xmlns:sparkle too.
+    if not any(element.tag.startswith("{%s}" % SPARKLE_NS) for element in root.iter()):
+        root.set("xmlns:sparkle", SPARKLE_NS)
     ET.indent(tree, space="  ")
-    tree.write(appcast_path, encoding="utf-8", xml_declaration=True)
-    with open(appcast_path, "a", encoding="utf-8") as handle:
+    with open(appcast_path, "w", encoding="utf-8") as handle:
+        handle.write('<?xml version="1.0" encoding="utf-8"?>\n')
+        tree.write(handle, encoding="unicode")
         handle.write("\n")
 
     for version, _, published in entries:

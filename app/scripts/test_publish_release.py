@@ -181,7 +181,8 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(enclosure.get("type"), "application/octet-stream")
         self.assertEqual(enclosure.get(release.sparkle("edSignature")), SIGNATURE)
         text = self.read(self.feed)
-        self.assertIn('xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"', text)
+        self.assertTrue(text.startswith('<?xml version="1.0" encoding="utf-8"?>\n<rss '))
+        self.assertEqual(text.count('xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"'), 1)
         self.assertIn("<sparkle:shortVersionString>0.12.0</sparkle:shortVersionString>", text)
 
         self.assertIn("date: 2026-12-01", self.read(os.path.join(self.changelog, "0.12.0.md")), "dated from published_at")
@@ -195,6 +196,8 @@ class ReleaseTests(unittest.TestCase):
         channel = ET.parse(self.feed).getroot().find("channel")
         self.assertEqual(channel.findtext("title"), "Ladle")
         self.assertEqual(channel.findtext("language"), "en")
+        # Still a Sparkle feed, written the way the site keeps it.
+        self.assertEqual(self.read(self.feed), EMPTY_FEED)
 
     def test_a_bad_release_writes_nothing(self):
         releases = [fake_release("1.0.0"), fake_release("1.1.0", size=999)]
