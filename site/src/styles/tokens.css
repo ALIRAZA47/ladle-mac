@@ -28,6 +28,8 @@
 	--ld-card-hover: rgba(255, 244, 230, 0.075);
 	--ld-track: rgba(255, 240, 220, 0.1);
 	--ld-kbd: rgba(255, 244, 230, 0.08);
+	--ld-code-bg: #151311;
+	--ld-code-bar: #1d1a17;
 
 	--ld-accent: #ff8a1f;
 	--ld-on-accent: #1e1206;
@@ -71,6 +73,8 @@
 	--ld-card-hover: #ffffff;
 	--ld-track: rgba(60, 40, 20, 0.11);
 	--ld-kbd: rgba(60, 40, 20, 0.06);
+	--ld-code-bg: #ffffff;
+	--ld-code-bar: #f3eee8;
 
 	--ld-ink: #b4500e;
 	--ld-ink-strong: #9c440b;

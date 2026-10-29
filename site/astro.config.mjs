@@ -46,11 +46,24 @@ export default defineConfig({
 				themes: ['github-dark-default', 'github-light-default'],
 				// Wrap long lines (URLs) instead of scrolling sideways on phones.
 				defaultProps: { wrap: true },
+				// Warm graphite frames instead of the themes' own blue-black.
 				styleOverrides: {
 					borderRadius: '1rem',
 					borderColor: 'var(--ld-line)',
+					codeBackground: 'var(--ld-code-bg)',
 					codeFontSize: '0.875rem',
-					frames: { shadowColor: 'transparent', editorActiveTabIndicatorTopColor: 'transparent' },
+					frames: {
+						shadowColor: 'transparent',
+						editorActiveTabIndicatorTopColor: 'transparent',
+						editorActiveTabBackground: 'var(--ld-code-bg)',
+						editorActiveTabForeground: 'var(--ld-text2)',
+						editorTabBarBackground: 'var(--ld-code-bar)',
+						editorTabBarBorderBottomColor: 'var(--ld-line)',
+						terminalTitlebarBackground: 'var(--ld-code-bar)',
+						terminalTitlebarForeground: 'var(--ld-text3)',
+						terminalTitlebarBorderBottomColor: 'var(--ld-line)',
+						terminalBackground: 'var(--ld-code-bg)',
+					},
 				},
 			},
 		}),
