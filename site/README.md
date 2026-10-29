@@ -31,7 +31,7 @@ npm run check      # broken links, missing #anchors, pages SPEC.md requires
 | `npm run dev` | Dev server with hot reload. |
 | `npm run build` | Static build into `dist/`, plus the search index and sitemap. |
 | `npm run preview` | Serves the build. |
-| `npm run check` | Crawls `dist/` for broken internal links and anchors, checks every URL and docs page in `SPEC.md`, the changelog anchor for the spec's version, and that `appcast.xml` is a Sparkle feed. |
+| `npm run check` | Crawls `dist/` for broken internal links and anchors, checks every URL and docs page in `SPEC.md`, the changelog anchor for the spec's version, that download links are version-less, and that `appcast.xml` is a Sparkle feed. |
 | `npm run images` | Regenerates `favicon.ico`, `apple-touch-icon.png` and `og.png` in `public/`. See [Images](#images). |
 
 ## Where things are
@@ -40,8 +40,8 @@ npm run check      # broken links, missing #anchors, pages SPEC.md requires
 | --- | --- |
 | `src/pages/` | Landing page, `/download/`, `/changelog/`, `/privacy/` and the 404 page. |
 | `src/content/docs/docs/` | Every docs page, as MDX. The folder path is the URL. |
-| `src/content/changelog/` | One Markdown file per release, such as `1.0.0.md`. |
-| `src/config/site.mjs` | URLs from the spec: download, releases, support, appcast. |
+| `src/content/changelog/` | One Markdown file per release, such as `0.1.0.md`. |
+| `src/config/site.mjs` | URLs from the spec: downloads, releases, source, support, appcast. |
 | `src/config/docs-nav.mjs` | Docs sidebar order, the docs home topic cards and breadcrumbs. |
 | `src/config/stores.mjs` | Browser extension store links. See below. |
 | `src/styles/tokens.css` | Molten colors, fonts and shadows for both themes. |
@@ -49,11 +49,18 @@ npm run check      # broken links, missing #anchors, pages SPEC.md requires
 | `src/components/docs/` | Starlight overrides: header, page title, footer, docs home hero and search. |
 | `public/appcast.xml` | The Sparkle update feed. The app's release workflow rewrites it. |
 
-## Add the browser extension store links
+## Browser extensions and their store links
 
-The Chrome-family and Firefox extensions aren't listed yet, so the docs say they're on the way and
-the site only promises Safari. When a listing goes live, paste its URL into
-[`src/config/stores.mjs`](src/config/stores.mjs):
+Neither extension is in a store yet, and releases are ad-hoc signed, not notarized (see
+[First launch](../SPEC.md#first-launch) in the spec). So for now:
+
+- **Chrome, Arc, Edge and Brave:** [Set up your browser](https://ladle.alirazakhan.me/docs/getting-started/set-up-your-browser/#chrome)
+  shows how to load `Ladle-Chrome-Extension.zip` from the latest release in developer mode.
+- **Firefox:** the guide says the add-on is on its way to Firefox Add-ons.
+- **Safari:** the extension can't run, because Safari only loads extensions from apps signed by a
+  registered Apple developer. The docs say so wherever Safari comes up.
+
+When a store listing goes live, paste its URL into [`src/config/stores.mjs`](src/config/stores.mjs):
 
 ```js
 export const storeLinks = {
@@ -65,10 +72,11 @@ export const storeLinks = {
 Push to `main` and the site redeploys. For each filled-in link:
 
 - [Set up your browser](https://ladle.alirazakhan.me/docs/getting-started/set-up-your-browser/)
-  swaps its "coming soon" note for the store button and install steps (the `#chrome` and
-  `#firefox` tabs the app opens);
-- the troubleshooting page shows that browser's checklist;
-- with both filled in, the home page feature tile and FAQ name every browser.
+  swaps the developer-mode steps (Chrome) or the "on its way" note (Firefox) for the store button
+  and install steps, in the `#chrome` and `#firefox` tabs the app opens. The Chrome tab keeps a
+  short note for anyone moving over from the developer-mode copy;
+- the troubleshooting page shows that browser's store checklist;
+- the home page, the download page and the docs home name every browser with an extension.
 
 ## Write or change a docs page
 
@@ -95,17 +103,26 @@ Releases follow the release flow in [`SPEC.md`](../SPEC.md#updates):
    `version` and `title` in the front matter. The changelog page turns the version into its
    anchor, such as `#v1-2-0`, which each update feed item links to.
 2. Push the tag. The app's release workflow fails early if that file is missing, publishes
-   `Ladle.dmg`, fills in the entry's `date`, rewrites `public/appcast.xml`, commits both to
-   `main`, and then calls `site-deploy.yml`. It has to call it: a push made with the default
-   `GITHUB_TOKEN` doesn't start other workflows. Called that way, the deploy builds the latest
-   `main`:
+   `Ladle.dmg` and `Ladle-Chrome-Extension.zip`, fills in the entry's `date`, rewrites
+   `public/appcast.xml`, commits both to `main`, and then starts `site-deploy.yml` on `main`.
+   It has to start it: a push made with the default `GITHUB_TOKEN` doesn't start other workflows,
+   but a `workflow_dispatch` does, and a run on `main` passes the `github-pages` environment's
+   branch rule:
 
    ```yaml
    deploy-site:
-     needs: publish            # the job that commits appcast.xml
-     permissions: { contents: read, pages: write, id-token: write }
-     uses: ./.github/workflows/site-deploy.yml
+     needs: update-site        # the job that commits appcast.xml
+     runs-on: ubuntu-latest
+     permissions: { actions: write }
+     steps:
+       - run: gh workflow run site-deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
+         env:
+           GH_TOKEN: ${{ github.token }}
    ```
+
+The release assets have version-less names, so the site links to them through GitHub's
+`releases/latest/download/…` URLs and never needs a new link per release. `npm run check` fails
+if a download link names a version or an asset that `SPEC.md` doesn't list.
 
 The download page shows the newest version in `appcast.xml`, or the newest changelog entry
 before the first release. To redeploy by hand, run **Site deploy** from the repository's

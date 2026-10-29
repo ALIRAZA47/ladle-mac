@@ -1,6 +1,6 @@
 ---
 title: Set up your browser
-description: Ladle catches downloads from your browser, so you never have to copy a link by hand. Switching it on takes a minute, once per browser.
+description: With Ladle’s extension, clicking a download in your browser hands it straight to Ladle. Adding it takes a few minutes, once per browser.
 ---
 
 import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -9,27 +9,22 @@ import IfStore from '~/components/content/IfStore.astro';
 import UnlessStore from '~/components/content/UnlessStore.astro';
 import StoreButton from '~/components/content/StoreButton.astro';
 import CatchPanel from '~/components/content/CatchPanel.astro';
+import { CHROME_EXTENSION_ZIP_URL } from '~/config/site.mjs';
 
-## Turn on the extension
+## Add the extension
 
 <Tabs syncKey="browser">
 <TabItem label="Safari">
 
 <TabAnchor id="safari" />
 
-<Steps>
+Ladle’s Safari extension can’t run for now. Safari only loads extensions from apps signed by a registered Apple developer, and Ladle is made without a paid Apple developer account. That’s also why macOS asks you to approve Ladle on its [first launch](/docs/getting-started/install/#first-launch). **Ladle › Settings › Browsers** says the same.
 
-1. Open Ladle once. Its Safari extension comes with the app, so there’s nothing else to install.
+Ladle still works with Safari. Instead of clicking the download:
 
-2. In Safari, choose **Safari › Settings**, then click **Extensions**.
-
-3. Select the checkbox next to **Ladle**. When Safari asks which websites Ladle can use, choose **Always Allow on Every Website** so it can catch downloads on any site.
-
-   {/* Screenshot: Safari Settings, Extensions tab, with Ladle turned on. */}
-
-</Steps>
-
-Safari asks for permission once, and you can change it later in the same place. **Ladle › Settings › Browsers** shows whether the Safari extension is on, with a **Manage** button next to it.
+- **Copy the link.** Right-click the download link and choose **Copy Link**. When you switch to Ladle or open its menu bar menu, it offers to download it.
+- **Drag the link** onto Ladle’s window or its Dock icon.
+- **Paste the link** into the bar at the top of Ladle’s window. Press <kbd>⌘K</kbd> to jump there.
 
 </TabItem>
 <TabItem label="Chrome, Arc, Edge and Brave">
@@ -38,13 +33,29 @@ Safari asks for permission once, and you can change it later in the same place. 
 
 <UnlessStore browser="chrome">
 
-The Ladle extension for Chrome, Arc, Edge and Brave is on its way to the Chrome Web Store. As soon as it’s listed, the link to add it will be right here, and **Get extension** in Ladle’s settings will bring you to it.
+Ladle’s extension is on its way to the Chrome Web Store. Until it’s there, you can add an early-access copy in developer mode: the same extension, loaded from a folder on your Mac instead of the store. Arc, Edge and Brave use it too.
 
-Until then, Ladle still works with these browsers. Instead of clicking the download:
+<Steps>
 
-- **Copy the link.** Right-click the download link and copy its address. When you switch to Ladle or open its menu bar menu, it offers to download it.
-- **Drag the link** onto Ladle’s window or its Dock icon.
-- **Paste the link** into the bar at the top of Ladle’s window. Press <kbd>⌘K</kbd> to jump there.
+1. Download <a href={CHROME_EXTENSION_ZIP_URL}>`Ladle-Chrome-Extension.zip`</a> from Ladle’s latest release, then double-click it to unzip it. Keep the **Ladle-Chrome-Extension** folder you get, because your browser loads the extension from there.
+
+2. Open your browser’s extensions page by typing its address into the address bar: `chrome://extensions` in Chrome, `arc://extensions` in Arc, `edge://extensions` in Edge or `brave://extensions` in Brave.
+
+3. Turn on **Developer mode**.
+
+4. Click **Load unpacked**, then choose the **Ladle-Chrome-Extension** folder.
+
+5. Keep Ladle in your Applications folder and open it once, so the extension can reach it.
+
+</Steps>
+
+{/* Screenshot: the extensions page with Developer mode on and Ladle loaded. */}
+
+Your browser may remind you now and then that developer-mode extensions are on, and offer to turn them off. That’s expected for an early-access copy; keep Ladle’s on, or it stops catching downloads. This copy doesn’t update itself either: for a newer one, remove Ladle on the extensions page and repeat these steps.
+
+When Ladle is in the Chrome Web Store, the link will be right here, and the store version, which keeps itself up to date, replaces this copy.
+
+Rather not use developer mode? Copy, drag or paste links instead, as described in [Using another browser](#using-another-browser).
 
 </UnlessStore>
 
@@ -63,6 +74,8 @@ Until then, Ladle still works with these browsers. Instead of clicking the downl
 <StoreButton browser="chrome" />
 
 Arc, Edge and Brave use the same extension as Chrome. In Edge, turn on **Allow extensions from other stores** when Edge asks.
+
+**Using the early-access copy?** Remove it on your browser’s extensions page before you add Ladle from the store. Afterwards, you can turn off **Developer mode** and move the **Ladle-Chrome-Extension** folder to the Trash.
 
 {/* Screenshot: the Ladle extension page in the Chrome Web Store. */}
 

@@ -44,7 +44,7 @@ With both off, Ladle only looks for updates when you choose **Check for Updates�
 
 Only Ladle’s version and your macOS version, to fetch the update feed from this website. There’s no account, no identifier and no usage data. See [Privacy](/privacy/).
 
-Each update is signed, and Ladle checks that signature before it installs anything, so it only installs updates that really come from Ladle.
+Each update is signed with Ladle’s own update key, and Ladle checks that signature before it installs anything, so it only installs updates that really come from Ladle. Because Ladle downloads and checks updates itself, macOS doesn’t ask you to approve them the way it did on the [first launch](/docs/getting-started/install/#first-launch).
 
 ## What changed
 
@@ -54,7 +54,7 @@ Every version’s release notes are in the [changelog](/changelog/), newest firs
 
 - **Make sure Ladle is in your Applications folder.** Ladle can’t update itself while it runs from the disk image.
 - **If macOS asks for your password**, it’s checking that you’re allowed to change apps in the Applications folder.
-- **Install it by hand.** <a href={DMG_URL}>Download the latest Ladle</a>, quit Ladle, and drag the new version into Applications, replacing the old one. Your list of downloads and your settings stay as they are.
+- **Install it by hand.** <a href={DMG_URL}>Download the latest Ladle</a>, quit Ladle, and drag the new version into Applications, replacing the old one. Your list of downloads and your settings stay as they are. Because you downloaded this copy yourself, macOS asks you to approve it once more, as on the [first launch](/docs/getting-started/install/#first-launch).
 
 <Aside type="tip">
 Ladle never needs reinstalling to keep working, and there’s nothing to renew. Updates are free, like the rest of Ladle.

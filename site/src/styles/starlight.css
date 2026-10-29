@@ -361,6 +361,16 @@ site-search dialog {
 	font-size: 0.86em;
 }
 
+/* A file name inside a link sits on the code tint, where the light theme's link color drops
+   below 4.5:1, so it takes the deeper accent. */
+.sl-markdown-content a:not(:where(.not-content *)) code {
+	color: var(--ld-ink-strong);
+}
+
+.sl-markdown-content a:not(:where(.not-content *)):hover code {
+	color: inherit;
+}
+
 .sl-markdown-content ul:not(:where(.not-content *)) li::marker,
 .sl-markdown-content ol:not(:where(.not-content *)) li::marker {
 	color: var(--ld-text3);
@@ -387,6 +397,8 @@ site-search dialog {
 	color: var(--ld-text);
 	white-space: nowrap;
 	vertical-align: 0.05em;
+	/* Starlight spaces out a list item's last block child, and doesn't count <kbd> as inline. */
+	margin: 0;
 }
 
 /* Tables */
