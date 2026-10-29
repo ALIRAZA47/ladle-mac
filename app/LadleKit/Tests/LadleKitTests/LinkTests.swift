@@ -12,6 +12,23 @@ final class LinkTests: XCTestCase {
         XCTAssertNil(LinkParser.link(from: "big buck bunny"))
     }
 
+    func testLinkBarTakesALinkWithItsChecksum() throws {
+        let sha = String(repeating: "ab", count: 32)
+        let md5 = String(repeating: "cd", count: 16)
+        XCTAssertNil(LinkParser.singleLink(from: "https://a.org/f.zip")?.checksum)
+        let withSHA = try XCTUnwrap(LinkParser.singleLink(from: " https://a.org/f.zip sha256:\(sha.uppercased()) "))
+        XCTAssertEqual(withSHA.url.absoluteString, "https://a.org/f.zip")
+        XCTAssertEqual(withSHA.checksum, ExpectedChecksum(algorithm: .sha256, value: sha, source: .pasted))
+        XCTAssertEqual(LinkParser.singleLink(from: "https://a.org/f.zip \(md5)")?.checksum?.algorithm, .md5)
+        XCTAssertEqual(LinkParser.singleLink(from: "https://a.org/f.zip md5:\(md5)")?.checksum?.algorithm, .md5)
+        // Anything else is a search.
+        XCTAssertNil(LinkParser.singleLink(from: "https://a.org/f.zip md5:\(sha)"))
+        XCTAssertNil(LinkParser.singleLink(from: "https://a.org/f.zip notes"))
+        XCTAssertNil(LinkParser.singleLink(from: "https://a.org/f.zip\nhttps://a.org/g.zip"))
+        XCTAssertNil(LinkParser.singleLink(from: "holiday photos"))
+        XCTAssertNil(LinkParser.singleLink(from: ""))
+    }
+
     func testExpandsSeriesKeepingZeroPadding() {
         let episodes = LinkParser.expandSeries("https://cdn.example.fm/ep-[01-12].mp3")
         XCTAssertEqual(episodes.count, 12)

@@ -25,6 +25,9 @@ final class FormatTests: XCTestCase {
         XCTAssertEqual(Format.speed(18_400_000), "18.4 MB/s")
         XCTAssertEqual(Format.speed(640_400), "640 KB/s")
         XCTAssertEqual(Format.speed(0), "0 KB/s")
+        XCTAssertEqual(Format.speedLimit(10_000_000), "10 MB/s")
+        XCTAssertEqual(Format.speedLimit(2_500_000), "2.5 MB/s")
+        XCTAssertEqual(Format.speedLimit(500_000), "500 KB/s")
         XCTAssertEqual(Format.eta(40.2), "41 s")
         XCTAssertEqual(Format.eta(150), "3 min")
         XCTAssertEqual(Format.eta(4320), "1 h 12 min")
@@ -130,8 +133,20 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(details.stats.map(\.value), ["1:00 AM", "8", "2.10 GB"])
         XCTAssertEqual(details.note, "Waits for the Tonight queue, 1:00 to 7:00 AM. Ladle can put your Mac to sleep when it’s done.")
 
-        let held = make("x.zip", status: .queued, total: 1_000_000_000, received: 500_000_000)
-        XCTAssertEqual(ItemPresentation.meta(held, live: nil, wait: .hold(.battery), settings: Settings(), now: now), "Paused on battery power · 500 MB of 1.00 GB")
+        let held = make("x.zip", status: .queued, total: 1_000_000_000, received: 500_000_000, queue: .tonight)
+        XCTAssertEqual(ItemPresentation.meta(held, live: nil, wait: .hold(.battery), settings: Settings(), now: now), "Waiting until you plug in · 500 MB of 1.00 GB")
+        XCTAssertEqual(
+            ItemPresentation.details(held, live: nil, wait: .hold(.lowData), settings: Settings(), now: now).note,
+            "This network is in Low Data Mode, so the Tonight queue waits. It carries on by itself on a regular network."
+        )
+
+        let later = make("later.zip", status: .paused, total: 3_000_000)
+        XCTAssertEqual(ItemPresentation.meta(later, live: nil, wait: nil, settings: Settings(), now: now), "Not started · 3.0 MB")
+        XCTAssertEqual(ItemPresentation.chip(later, wait: nil)?.text, "Later")
+        XCTAssertEqual(ItemPresentation.primaryAction(later), .start)
+        let laterDetails = ItemPresentation.details(later, live: nil, wait: nil, settings: Settings(), now: now)
+        XCTAssertEqual(laterDetails.centerSub, "Not started")
+        XCTAssertEqual(laterDetails.primary.title, "Start")
     }
 
     func testFailedRow() {
@@ -225,7 +240,9 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(ListPresentation.subtitle(selection: .all, search: "zip", snapshot: snapshot), "2 matches")
         snapshot.items = [make("b.zip", status: .queued)]
         snapshot.holds = [.battery]
-        XCTAssertEqual(ListPresentation.subtitle(selection: .all, search: "", snapshot: snapshot), "Paused on battery power")
+        XCTAssertEqual(ListPresentation.subtitle(selection: .all, search: "", snapshot: snapshot), "Nothing downloading right now", "battery only holds Tonight")
+        snapshot.holds = [.offline]
+        XCTAssertEqual(ListPresentation.subtitle(selection: .all, search: "", snapshot: snapshot), "Waiting for the network")
         XCTAssertTrue(ListPresentation.pauseAllPauses(snapshot.items))
     }
 

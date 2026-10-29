@@ -9,14 +9,14 @@ import FoundationNetworking
 public final class URLSessionTransport: NSObject, HTTPTransport, @unchecked Sendable {
     public static let poolSize = 32
 
-    private let configuration: URLSessionConfiguration
+    private let configuration: Locked<URLSessionConfiguration>
     private let userAgent: String
     private let sessions = Locked<[Int: URLSession]>([:])
     private let streams = Locked<[ObjectIdentifier: TransportStream]>([:])
     private let delegateQueue: OperationQueue
 
     public init(configuration: URLSessionConfiguration = URLSessionTransport.defaultConfiguration(), userAgent: String = "Ladle/1.0") {
-        self.configuration = configuration
+        self.configuration = Locked(configuration)
         self.userAgent = userAgent
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
@@ -39,6 +39,18 @@ public final class URLSessionTransport: NSObject, HTTPTransport, @unchecked Send
         return config
     }
 
+    /// Uses `configuration` (for example a new proxy choice) for new connections. Transfers in
+    /// progress finish on their old sessions.
+    public func replaceConfiguration(_ configuration: URLSessionConfiguration) {
+        self.configuration.withLock { $0 = configuration }
+        let retired = sessions.withLock { (map: inout [Int: URLSession]) -> [URLSession] in
+            let values = Array(map.values)
+            map.removeAll()
+            return values
+        }
+        for session in retired { session.finishTasksAndInvalidate() }
+    }
+
     /// Cancels everything and releases the sessions (they keep their delegate alive until then).
     public func invalidate() {
         let all = sessions.withLock { (map: inout [Int: URLSession]) -> [URLSession] in
@@ -53,7 +65,7 @@ public final class URLSessionTransport: NSObject, HTTPTransport, @unchecked Send
         let key = abs(slot) % URLSessionTransport.poolSize
         return sessions.withLock { (map: inout [Int: URLSession]) -> URLSession in
             if let existing = map[key] { return existing }
-            let created = URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
+            let created = URLSession(configuration: configuration.current, delegate: self, delegateQueue: delegateQueue)
             map[key] = created
             return created
         }

@@ -82,11 +82,12 @@ public struct SegmentState: Equatable, Sendable {
 }
 
 public enum PrimaryAction: Sendable {
-    case pause, resume, startNow, retry, startOver, open
+    case pause, start, resume, startNow, retry, startOver, open
 
     public var title: String {
         switch self {
         case .pause: return "Pause"
+        case .start: return "Start"
         case .resume: return "Resume"
         case .startNow: return "Start now"
         case .retry: return "Retry"
@@ -143,8 +144,8 @@ public struct ItemGroup: Identifiable, Equatable, Sendable {
 public enum ItemPresentation {
     public static func holdText(_ hold: Hold) -> String {
         switch hold {
-        case .battery: return "Paused on battery power"
-        case .lowData: return "Paused on a Low Data network"
+        case .battery: return "Waiting until you plug in"
+        case .lowData: return "Waiting for a regular network"
         case .offline: return "Waiting for the network"
         case .sleeping: return "Paused while the Mac sleeps"
         }
@@ -210,7 +211,7 @@ public enum ItemPresentation {
     public static func chip(_ item: DownloadItem, wait: WaitReason?) -> Chip? {
         switch item.status {
         case .paused:
-            return Chip(text: "Paused", style: .neutral)
+            return Chip(text: item.neverStarted ? "Later" : "Paused", style: .neutral)
         case .queued:
             switch wait {
             case .tonight?: return Chip(text: "Tonight", style: .neutral)
@@ -263,6 +264,9 @@ public enum ItemPresentation {
             }
             return item.receivedBytes > 0 ? Format.pair(item.receivedBytes, of: total) : "Connecting…"
         case .paused:
+            if item.neverStarted {
+                return item.totalBytes.map { "Not started · \(Format.size($0))" } ?? "Not started"
+            }
             let progress = sizeOrProgress(item) ?? "Not started"
             if item.resumable == false && item.receivedBytes > 0 {
                 return "\(progress) · this server can’t resume"
@@ -299,7 +303,7 @@ public enum ItemPresentation {
     public static func primaryAction(_ item: DownloadItem) -> PrimaryAction {
         switch item.status {
         case .downloading: return .pause
-        case .paused: return .resume
+        case .paused: return item.neverStarted ? .start : .resume
         case .queued: return .startNow
         case .failed: return item.failure?.needsStartOver == true ? .startOver : .retry
         case .completed: return .open
@@ -343,7 +347,11 @@ public enum ItemPresentation {
                 Stat(label: "Left", value: item.totalBytes.map { Format.size(max(0, $0 - item.receivedBytes)) } ?? "—"),
                 Stat(label: "Size", value: size),
             ]
-            if item.resumable == false && item.receivedBytes > 0 {
+            if item.neverStarted {
+                center = "Later"
+                sub = "Not started"
+                note = "Added to your list without starting. Start it whenever you’re ready."
+            } else if item.resumable == false && item.receivedBytes > 0 {
                 note = "This server can’t resume, so the file has to start over."
             } else if slots == 1 {
                 note = "The connection is paused. Resume picks up exactly where it stopped."
@@ -373,8 +381,8 @@ public enum ItemPresentation {
                     Stat(label: "Size", value: size),
                 ]
                 switch hold {
-                case .battery: note = "Ladle pauses downloads on battery power. They pick up when you plug in."
-                case .lowData: note = "This network is in Low Data Mode. Downloads pick up on another network."
+                case .battery: note = "On battery power the Tonight queue waits. It carries on by itself once you plug in."
+                case .lowData: note = "This network is in Low Data Mode, so the Tonight queue waits. It carries on by itself on a regular network."
                 case .offline: note = "Downloads pick up when your Mac is back online."
                 case .sleeping: note = "Downloads pick up when your Mac wakes."
                 }
@@ -516,8 +524,10 @@ public enum ListPresentation {
         case .all, .active:
             let downloading = snapshot.items.filter { $0.status == .downloading }.count
             if downloading > 0 { return "\(downloading) downloading · \(Format.speed(snapshot.totalSpeed))" }
-            for hold in [Hold.sleeping, .offline, .battery, .lowData] where snapshot.holds.contains(hold) {
-                if snapshot.items.contains(where: { $0.status == .queued }) { return ItemPresentation.holdText(hold) }
+            for item in snapshot.items where item.status == .queued {
+                if case .hold(let hold)? = Scheduler.waitReason(for: item, settings: settings, holds: snapshot.holds, now: snapshot.date) {
+                    return ItemPresentation.holdText(hold)
+                }
             }
             return "Nothing downloading right now"
         default:

@@ -59,6 +59,15 @@ final class BridgeTests: XCTestCase {
         let l = try XCTUnwrap(links.handOff(source: "Safari"))
         XCTAssertEqual(l.urls.count, 2)
         XCTAssertTrue(l.isBatch)
+
+        // A page with one file link still opens the Add sheet, and the choice survives ladle://.
+        links.links = ["https://a.org/only.pdf"]
+        let one = try XCTUnwrap(links.handOff(source: "Safari"))
+        XCTAssertEqual(one.mode, .choose)
+        XCTAssertTrue(one.isBatch)
+        let back = try XCTUnwrap(LadleURL.make(one).flatMap(LadleURL.parse))
+        XCTAssertEqual(back.mode, .choose)
+        XCTAssertTrue(back.isBatch)
     }
 
     func testSettingsSnapshotForTheExtension() throws {

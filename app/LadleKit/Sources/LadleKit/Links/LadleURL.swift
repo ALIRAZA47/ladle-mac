@@ -8,6 +8,8 @@ public struct HandOff: Equatable, Sendable {
         case caught
         /// Chosen in the browser ("Download with Ladle", video button): starts right away.
         case direct
+        /// "Download All Links with Ladle…": opens the Add sheet to choose from.
+        case choose
     }
 
     public var urls: [URL]
@@ -62,13 +64,13 @@ public struct HandOff: Equatable, Sendable {
         self.token = token
     }
 
-    /// More than one link opens the add sheet with the list.
-    public var isBatch: Bool { urls.count > 1 }
+    /// Opens the Add sheet with the list: a page's links, or several links at once.
+    public var isBatch: Bool { mode == .choose || urls.count > 1 }
 }
 
 /// `ladle://add?url=<percent-encoded>&referrer=…&filename=…&cookies=…`
 /// Extra optional parameters: `url` repeated (a list), `size`, `mime`, `sha256`, `md5`, `source`,
-/// `mode` (caught|direct), `kind` (file|hls), `audio`, `title`, `quality`, `bandwidth`, `token`.
+/// `mode` (caught|direct|choose), `kind` (file|hls), `audio`, `title`, `quality`, `bandwidth`, `token`.
 public enum LadleURL {
     public static let scheme = "ladle"
 

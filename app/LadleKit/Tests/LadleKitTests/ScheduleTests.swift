@@ -84,14 +84,38 @@ final class ScheduleTests: XCTestCase {
         )
     }
 
-    func testHoldsStopEverythingButHandStartedDownloads() {
+    func testSleepAndNoNetworkHoldEverythingButHandStartedDownloads() {
         let auto = item("a", .downloading)
         let manual = item("b", .downloading, manual: true)
         let waiting = item("c", .queued)
-        let plan = Scheduler.plan(items: [auto, manual, waiting], settings: Settings(), holds: [.battery], now: date(28, 12), calendar: calendar)
+        let plan = Scheduler.plan(items: [auto, manual, waiting], settings: Settings(), holds: [.offline], now: date(28, 12), calendar: calendar)
         XCTAssertEqual(plan.stop, [auto.id])
         XCTAssertTrue(plan.start.isEmpty)
-        XCTAssertEqual(Scheduler.waitReason(for: waiting, settings: Settings(), holds: [.battery, .lowData], now: date(28, 12), calendar: calendar), .hold(.battery))
+        XCTAssertEqual(Scheduler.waitReason(for: waiting, settings: Settings(), holds: [.offline, .sleeping], now: date(28, 12), calendar: calendar), .hold(.sleeping))
+    }
+
+    func testBatteryAndLowDataHoldOnlyTheTonightQueue() {
+        let night = date(29, 2)
+        let mainRunning = item("a", .downloading)
+        let mainWaiting = item("b", .queued)
+        let tonightRunning = item("c", .downloading, queue: .tonight)
+        let tonightWaiting = item("d", .queued, queue: .tonight)
+        let startedByHand = item("e", .queued, queue: .tonight, manual: true)
+        let items = [mainRunning, mainWaiting, tonightRunning, tonightWaiting, startedByHand]
+        for hold in [Hold.battery, .lowData] {
+            let plan = Scheduler.plan(items: items, settings: Settings(), holds: [hold], now: night, calendar: calendar)
+            XCTAssertEqual(plan.stop, [tonightRunning.id], "\(hold)")
+            XCTAssertEqual(plan.start, [mainWaiting.id, startedByHand.id], "\(hold)")
+            XCTAssertEqual(Scheduler.waitReason(for: tonightWaiting, settings: Settings(), holds: [hold], now: night, calendar: calendar), .hold(hold))
+            XCTAssertEqual(Scheduler.waitReason(for: mainWaiting, settings: Settings(), holds: [hold], now: night, calendar: calendar), .nextInLine)
+        }
+        // Before the window opens, a Tonight download is waiting for tonight, whatever the power source.
+        XCTAssertEqual(
+            Scheduler.waitReason(for: tonightWaiting, settings: Settings(), holds: [.battery], now: date(28, 22), calendar: calendar),
+            .tonight(startMinute: 60)
+        )
+        // Plugged in again: the queue carries on by itself.
+        XCTAssertEqual(Scheduler.plan(items: [tonightWaiting], settings: Settings(), holds: [], now: night, calendar: calendar).start, [tonightWaiting.id])
     }
 
     func testHandStartedRunsPastTheLimit() {

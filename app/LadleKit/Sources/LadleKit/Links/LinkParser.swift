@@ -31,6 +31,18 @@ public enum LinkParser {
         return url
     }
 
+    /// What the link bar holds when it's a link: one link, optionally followed on the same line by
+    /// its checksum. A numbered series counts as one here; the Add sheet expands it.
+    public static func singleLink(from text: String) -> ParsedLink? {
+        let line = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !line.contains(where: { $0.isNewline }) else { return nil }
+        let tokens = line.split(whereSeparator: { $0 == " " || $0 == "\t" }).map(String.init)
+        guard let first = tokens.first, tokens.count <= 2, let url = link(from: first) else { return nil }
+        guard tokens.count == 2 else { return ParsedLink(url: url) }
+        guard let checksum = ExpectedChecksum.parse(tokens[1], source: .pasted) else { return nil }
+        return ParsedLink(url: url, checksum: checksum)
+    }
+
     /// Expands the first `[a-b]` numeric range in `text`, then the rest, recursively.
     /// `ep-[01-12].mp3` keeps the zero padding; `img[1-20].jpg` doesn't add any.
     public static func expandSeries(_ text: String, limit: Int = maxSeriesExpansion) -> [String] {

@@ -83,7 +83,7 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
             mimeType: mime,
             checksum: checksum,
             source: browser ?? source,
-            mode: isVideo ? .direct : (mode.flatMap(HandOff.Mode.init(rawValue:)) ?? .caught),
+            mode: isVideo ? .direct : (type == "links" ? .choose : (mode.flatMap(HandOff.Mode.init(rawValue:)) ?? .caught)),
             kind: isVideo && kind == "hls" ? .hls : .file,
             audioURL: audio.flatMap(LinkParser.link(from:)),
             title: title,

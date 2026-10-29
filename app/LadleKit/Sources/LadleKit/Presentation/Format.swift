@@ -49,6 +49,16 @@ public enum Format {
         return "\(Int((v / 1e3).rounded())) KB/s"
     }
 
+    /// A speed limit as chosen in Settings: "10 MB/s", "2.5 MB/s", "500 KB/s".
+    public static func speedLimit(_ bytesPerSecond: Int64) -> String {
+        let value = Double(max(0, bytesPerSecond))
+        if value >= 1e6 {
+            let mb = value / 1e6
+            return (mb.rounded() == mb ? String(Int(mb)) : String(format: "%.1f", mb)) + " MB/s"
+        }
+        return "\(Int((value / 1e3).rounded())) KB/s"
+    }
+
     /// Time left: "40 s", "3 min", "1 h 12 min", or "—" when unknown.
     public static func eta(_ seconds: Double) -> String {
         guard seconds.isFinite, seconds > 0 else { return "—" }

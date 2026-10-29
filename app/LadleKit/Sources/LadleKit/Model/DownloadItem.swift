@@ -310,6 +310,9 @@ public struct DownloadItem: Codable, Identifiable, Equatable, Sendable {
         URL(fileURLWithPath: directory, isDirectory: true).appendingPathComponent(fileName + FileNaming.partSuffix)
     }
 
+    /// Added without starting (the catch panel's "Later") and not run since.
+    public var neverStarted: Bool { startedAt == nil && receivedBytes == 0 }
+
     /// 0…1, or nil while the size is unknown.
     public var fractionDone: Double? {
         if status == .completed { return 1 }

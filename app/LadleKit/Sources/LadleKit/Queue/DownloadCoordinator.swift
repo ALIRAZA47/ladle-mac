@@ -283,6 +283,7 @@ public actor DownloadCoordinator {
             item.totalBytes = request.size
             item.checksum = request.checksum
             item.connectionCount = settings.connectionsPerDownload
+            if start == .later { item.status = .paused }
             if request.kind == .hls {
                 var info = HLSInfo(playlistURL: request.url, audioPlaylistURL: request.audioURL, qualityLabel: request.quality, bandwidth: request.bandwidth)
                 info.completedSegments = []

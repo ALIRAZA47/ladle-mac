@@ -119,7 +119,12 @@ public struct AddPlan: Identifiable, Equatable, Sendable {
 }
 
 public enum StartChoice: String, Sendable {
-    case now, tonight
+    /// The Main queue.
+    case now
+    /// The Tonight queue.
+    case tonight
+    /// Into the list without starting it (the catch panel's "Later").
+    case later
 }
 
 public enum ConflictChoice: String, Sendable {

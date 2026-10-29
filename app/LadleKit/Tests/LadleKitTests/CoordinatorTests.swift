@@ -266,25 +266,48 @@ final class CoordinatorTests: XCTestCase {
         await coordinator.prepareForQuit()
     }
 
-    func testBatteryHoldPausesAndResumes() async throws {
+    func testBatteryHoldsTheTonightQueueOnly() async throws {
+        clock.date.withLock { $0 = self.calendar.date(from: DateComponents(year: 2026, month: 10, day: 30, hour: 1, minute: 5))! }
         let data = TestData.bytes(1_000_000)
         server.serve(URL(string: "https://a.org/z.zip")!, FakeFile(data: data, chunkSize: 16 * 1024, chunkDelay: 0.003))
+        server.serve(URL(string: "https://a.org/mine.zip")!, FakeFile(data: data, chunkSize: 16 * 1024, chunkDelay: 0.003))
         let coordinator = makeCoordinator()
         await coordinator.start()
-        let id = await add(coordinator, "https://a.org/z.zip")
+        let id = await add(coordinator, "https://a.org/z.zip", start: .tonight)
         try await waitUntil("progress") { (await coordinator.item(id)?.receivedBytes ?? 0) > 50_000 }
         await coordinator.setHold(.battery, active: true)
         let v17 = await coordinator.item(id)?.status
         XCTAssertEqual(v17, .queued)
         let snapshot = await coordinator.snapshot()
         XCTAssertEqual(snapshot.holds, [.battery])
-        try await Task.sleep(nanoseconds: 100_000_000)
+        // Downloads you start yourself always run.
+        let mine = await add(coordinator, "https://a.org/mine.zip")
+        try await waitUntil("own download") { await coordinator.item(mine)?.status == .completed }
         let v18 = await coordinator.item(id)?.status
-        XCTAssertEqual(v18, .queued, "stays put while on battery")
+        XCTAssertEqual(v18, .queued, "the Tonight queue stays put while on battery")
         await coordinator.setHold(.battery, active: false)
         try await waitUntil("completion") { await coordinator.item(id)?.status == .completed }
         let v19 = await coordinator.item(id)
         XCTAssertEqual(try Data(contentsOf: try XCTUnwrap(v19).finalURL), data)
+        await coordinator.prepareForQuit()
+    }
+
+    func testLaterAddsWithoutStarting() async throws {
+        let data = TestData.bytes(200_000)
+        server.serve(URL(string: "https://a.org/later.zip")!, FakeFile(data: data))
+        let coordinator = makeCoordinator()
+        await coordinator.start()
+        let id = await add(coordinator, "https://a.org/later.zip", start: .later)
+        try await Task.sleep(nanoseconds: 150_000_000)
+        let waiting = await coordinator.item(id)
+        XCTAssertEqual(waiting?.status, .paused)
+        XCTAssertEqual(waiting?.queue, .main)
+        XCTAssertEqual(waiting?.neverStarted, true)
+        XCTAssertEqual(waiting.map(ItemPresentation.primaryAction), .start)
+        await coordinator.resume(id)
+        try await waitUntil("completion") { await coordinator.item(id)?.status == .completed }
+        let done = await coordinator.item(id)
+        XCTAssertEqual(done?.neverStarted, false)
         await coordinator.prepareForQuit()
     }
 
