@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Xcode / Swift
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+.build/
+.swiftpm/
+build/
+*.xcarchive
+*.dmg
+
+# Node / Astro
+node_modules/
+dist/
+.astro/
+
+# Editors
+.vscode/
+.idea/
