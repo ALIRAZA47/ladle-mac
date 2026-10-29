@@ -44,10 +44,12 @@ jobs:
         run: xcodegen generate
 
       # Signed to run locally only; the release workflow signs with Developer ID.
+      # Keeps compiling past the first error, so one run reports every error.
       - name: Build and test the app (unsigned)
         working-directory: app
         run: |
           set -o pipefail
+          defaults write com.apple.dt.Xcode IDEBuildingContinueBuildingAfterErrors -bool YES
           xcodebuild \
             -project Ladle.xcodeproj \
             -scheme Ladle \
