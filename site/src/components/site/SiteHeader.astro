@@ -1,0 +1,118 @@
+---
+import AppIcon from '../AppIcon.astro';
+import Icon from '../Icon.astro';
+import ThemeToggle from '../ThemeToggle.astro';
+
+interface Props {
+	/** Highlights the matching nav item. */
+	current?: 'home' | 'download' | 'changelog' | 'privacy' | 'other';
+}
+const { current = 'other' } = Astro.props;
+
+const links = [
+	{ href: '/#features', label: 'Features' },
+	{ href: '/#how', label: 'How it works' },
+	{ href: '/docs/', label: 'Docs' },
+	{ href: '/#faq', label: 'FAQ' },
+];
+---
+
+<header class="site-header container">
+	<a href="/" class="brand" aria-label="Ladle home" aria-current={current === 'home' ? 'page' : undefined}>
+		<span class="brand-icon"><AppIcon size={32} detail="small" /></span>
+		<span class="disp brand-name" aria-hidden="true">Ladle</span>
+	</a>
+	<nav aria-label="Main" class="site-nav">
+		{links.map((link) => <a href={link.href}>{link.label}</a>)}
+	</nav>
+	<div class="actions">
+		<ThemeToggle />
+		<a
+			class="btn btn-primary"
+			href="/download/"
+			aria-current={current === 'download' ? 'page' : undefined}
+		>
+			<Icon name="download" size={15} strokeWidth={2.3} />
+			Download
+		</a>
+	</div>
+</header>
+
+<style>
+	.site-header {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		grid-template-areas: 'brand nav actions';
+		align-items: center;
+		gap: 12px 28px;
+		padding-block: 18px;
+	}
+	.brand {
+		grid-area: brand;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		border-radius: 10px;
+	}
+	.brand-icon {
+		display: block;
+		border-radius: 8px;
+		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+	}
+	.brand-name {
+		font-size: 23px;
+		font-weight: 800;
+		letter-spacing: -0.035em;
+	}
+	.site-nav {
+		grid-area: nav;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 6px 26px;
+		font-size: 14.5px;
+		font-weight: 500;
+	}
+	.site-nav a {
+		color: var(--ld-text2);
+		border-radius: 8px;
+		padding: 4px 2px;
+	}
+	.site-nav a:hover {
+		color: var(--ld-text);
+	}
+	.actions {
+		grid-area: actions;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	@media (max-width: 760px) {
+		.site-header {
+			grid-template-columns: auto 1fr;
+			grid-template-areas:
+				'brand actions'
+				'nav nav';
+			gap: 10px 16px;
+			padding-block: 14px 6px;
+		}
+		.actions {
+			justify-self: end;
+		}
+		.site-nav {
+			justify-content: space-between;
+			gap: 6px 18px;
+			padding-top: 4px;
+			border-top: 1px solid var(--ld-line);
+		}
+		.site-nav a {
+			padding-block: 8px;
+		}
+	}
+	@media (max-width: 360px) {
+		.site-nav {
+			justify-content: center;
+		}
+	}
+</style>

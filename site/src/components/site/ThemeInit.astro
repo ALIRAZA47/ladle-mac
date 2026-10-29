@@ -1,0 +1,13 @@
+{/* Sets the theme before first paint, exactly like Starlight's ThemeProvider does on docs pages. */}
+<script is:inline>
+	(() => {
+		let stored = null;
+		try {
+			stored = localStorage.getItem('starlight-theme');
+		} catch {}
+		const light =
+			stored === 'light' ||
+			(stored !== 'dark' && window.matchMedia('(prefers-color-scheme: light)').matches);
+		document.documentElement.dataset.theme = light ? 'light' : 'dark';
+	})();
+</script>

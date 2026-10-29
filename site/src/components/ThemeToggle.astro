@@ -1,0 +1,94 @@
+---
+/**
+ * Light/dark switch used on the site and in the docs. It stores the choice under Starlight's own
+ * `starlight-theme` key, so both halves of the site agree. Until you pick, it follows macOS.
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+	class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<button
+	type="button"
+	class:list={['theme-toggle', className]}
+	data-theme-toggle
+	aria-label="Dark theme"
+	aria-pressed="true"
+	title="Switch to light theme"
+>
+	<Icon name="sun" size={16} class="when-dark" />
+	<Icon name="moon" size={16} class="when-light" />
+</button>
+
+<script>
+	const KEY = 'starlight-theme';
+	const root = document.documentElement;
+	const current = () => (root.dataset.theme === 'light' ? 'light' : 'dark');
+	const stored = () => {
+		try {
+			return localStorage.getItem(KEY);
+		} catch {
+			return null;
+		}
+	};
+
+	function apply(theme: 'light' | 'dark', remember: boolean) {
+		root.dataset.theme = theme;
+		if (remember) {
+			try {
+				localStorage.setItem(KEY, theme);
+			} catch {
+				/* Private mode: the choice lasts for this page only. */
+			}
+		}
+		document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((button) => {
+			button.setAttribute('aria-pressed', String(theme === 'dark'));
+			button.title = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+		});
+	}
+
+	document.addEventListener('click', (event) => {
+		const button = (event.target as Element | null)?.closest('[data-theme-toggle]');
+		if (button) apply(current() === 'dark' ? 'light' : 'dark', true);
+	});
+
+	matchMedia('(prefers-color-scheme: light)').addEventListener('change', (event) => {
+		const choice = stored();
+		if (choice !== 'light' && choice !== 'dark') apply(event.matches ? 'light' : 'dark', false);
+	});
+
+	apply(current(), false);
+</script>
+
+<style>
+	.theme-toggle {
+		width: 38px;
+		height: 38px;
+		flex: none;
+		display: grid;
+		place-items: center;
+		padding: 0;
+		border-radius: 999px;
+		border: 1px solid var(--ld-line2);
+		background: var(--ld-btn-ghost);
+		color: var(--ld-text);
+		box-shadow: inset 0 1px 0 var(--ld-hi);
+		cursor: pointer;
+		transition: background-color 0.15s;
+	}
+	.theme-toggle:hover {
+		background: var(--ld-btn-ghost-hover);
+	}
+	.theme-toggle :global(.when-light) {
+		display: none;
+	}
+	:global(:root[data-theme='light']) .theme-toggle :global(.when-light) {
+		display: block;
+	}
+	:global(:root[data-theme='light']) .theme-toggle :global(.when-dark) {
+		display: none;
+	}
+</style>
