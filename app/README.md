@@ -175,7 +175,7 @@ downloads API, so there the content script takes clicks on links to watched file
   streams; with MPEG-TS it's saved next to the video as its own "<title> (audio)" file.
 - Safari: only clicks on links are caught (not downloads started by scripts or forms), and only
   cookies visible to the page (`document.cookie`, not HttpOnly) are passed along.
-- Downloads in private windows aren't caught unless the extension is allowed there. The
+- Downloads in private windows are never caught, on purpose, so they stay out of Ladle's list. The
   extension only catches downloads while Ladle answers or has answered before, so without Ladle
   the browser downloads as usual.
 - The Chrome Web Store, Edge Add-ons and AMO listings don't exist yet; their IDs need adding to
