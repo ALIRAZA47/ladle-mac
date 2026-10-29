@@ -653,7 +653,9 @@ starlight-toc a:hover {
 	color: var(--ld-text) !important;
 }
 
-starlight-toc a[aria-current='true'] {
+starlight-toc a[aria-current='true'],
+/* Before the reader reaches a section, the first entry is highlighted, as in the design. */
+starlight-toc nav:not(:has(a[aria-current='true'])) > ul > li:first-child > a {
 	border-inline-start-color: var(--ld-ink);
 	color: var(--ld-text) !important;
 	font-weight: 600;
