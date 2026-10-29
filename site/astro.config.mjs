@@ -44,6 +44,8 @@ export default defineConfig({
 			],
 			expressiveCode: {
 				themes: ['github-dark-default', 'github-light-default'],
+				// Wrap long lines (URLs) instead of scrolling sideways on phones.
+				defaultProps: { wrap: true },
 				styleOverrides: {
 					borderRadius: '1rem',
 					borderColor: 'var(--ld-line)',

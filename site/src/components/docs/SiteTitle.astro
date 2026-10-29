@@ -2,10 +2,11 @@
 import AppIcon from '../AppIcon.astro';
 ---
 
-<a href="/docs/" class="docs-title" aria-label="Ladle Docs home">
+<a href="/docs/" class="docs-title">
 	<AppIcon size={26} detail="small" />
-	<span class="name" aria-hidden="true">Ladle</span>
-	<span class="pill" aria-hidden="true">Docs</span>
+	<span class="name">Ladle</span>{' '}
+	<span class="pill">Docs</span>
+	<span class="sr-only"> home</span>
 </a>
 
 <style>

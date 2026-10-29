@@ -408,11 +408,9 @@ site-search dialog {
 	color: var(--ld-text);
 }
 
-@media (max-width: 49.99rem) {
-	.sl-markdown-content table:not(:where(.not-content *)) {
-		display: block;
-		overflow-x: auto;
-	}
+/* Long values wrap inside their cell rather than making the table scroll sideways. */
+.sl-markdown-content :is(th, td) code:not(:where(.not-content *)) {
+	overflow-wrap: anywhere;
 }
 
 /* Asides: a rounded tint with the icon in its own tile, as in the design's tip callout. */
