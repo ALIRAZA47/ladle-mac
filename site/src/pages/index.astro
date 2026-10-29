@@ -3,10 +3,8 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import ProductShot from '../components/site/ProductShot.astro';
 import AppIcon from '../components/AppIcon.astro';
 import Icon from '../components/Icon.astro';
-import { DMG_URL, REQUIREMENTS, CHIPS } from '../config/site.mjs';
-import { hasChromeExtension, hasFirefoxExtension } from '../config/stores.mjs';
-
-const otherBrowsersReady = hasChromeExtension && hasFirefoxExtension;
+import { DMG_URL, SOURCE_URL, REQUIREMENTS, CHIPS } from '../config/site.mjs';
+import { extensionBrowsers, hasChromeExtension, hasFirefoxExtension } from '../config/stores.mjs';
 
 const howPoints = [
 	'Resumes after sleep, restarts and dropped Wi-Fi',
@@ -15,15 +13,22 @@ const howPoints = [
 ];
 const howSegs = [78, 56, 64, 38, 49, 27, 44, 36];
 
-const catchCopy = otherBrowsersReady
-	? 'Click a download in Safari, Chrome, Arc, Edge, Brave or Firefox and Ladle takes over. Hold ⌥ Option to let the browser keep it.'
-	: 'Click a download in Safari and Ladle takes over, with Chrome, Arc, Edge, Brave and Firefox on the way. Hold ⌥ Option to let the browser keep it.';
+const catchCopy = `Click a download in ${extensionBrowsers} and Ladle takes over${hasFirefoxExtension ? '' : ', with Firefox on the way'}. Hold ⌥ Option to let the browser keep it.`;
 
-const browsersAnswer = otherBrowsersReady
-	? 'Safari, Chrome, Arc, Edge, Brave and Firefox. For anything else, copy the link and Ladle offers to download it.'
-	: 'Safari, right out of the box. Extensions for Chrome, Arc, Edge, Brave and Firefox are on their way to the Chrome Web Store and Firefox Add-ons. In any browser, copy a link and Ladle offers to download it.';
+const browsersAnswer = [
+	hasChromeExtension
+		? 'Chrome, Arc, Edge and Brave, with Ladle’s extension from the Chrome Web Store.'
+		: 'Chrome, Arc, Edge and Brave, with an early-access extension you add in developer mode until it’s in the Chrome Web Store.',
+	hasFirefoxExtension
+		? 'Firefox too, with Ladle’s add-on from Firefox Add-ons.'
+		: 'The Firefox add-on is on its way to Firefox Add-ons.',
+	'Safari can’t run Ladle’s extension, because it only loads extensions from apps signed by a registered Apple developer.',
+	'In any browser, copy a link and Ladle offers to download it.',
+].join(' ');
 
-const faqs = [
+type Faq = { q: string; a: string; links?: { href: string; text: string; external?: boolean }[] };
+
+const faqs: Faq[] = [
 	{
 		q: 'Is it really free?',
 		a: 'Yes. There’s no price, trial, subscription or license key, and nothing to sign up for. Every feature works from the first launch, and updates are free too.',
@@ -32,7 +37,11 @@ const faqs = [
 		q: 'Is it really faster?',
 		a: 'On servers that allow several connections, usually yes, because Ladle pulls eight pieces at once instead of one. When a server allows only one, Ladle still beats a browser at retrying and picking up where it stopped.',
 	},
-	{ q: 'Which browsers does it work with?', a: browsersAnswer },
+	{
+		q: 'Which browsers does it work with?',
+		a: browsersAnswer,
+		links: [{ href: '/docs/getting-started/set-up-your-browser/', text: 'Set up your browser' }],
+	},
 	{
 		q: 'Can it save any video?',
 		a: 'It saves videos a site serves as a normal file or stream. It won’t get around copy protection, and some sites’ terms don’t allow downloading, so check before you save.',
@@ -47,7 +56,11 @@ const faqs = [
 	},
 	{
 		q: 'Is it safe to install?',
-		a: 'Ladle is signed with an Apple Developer ID and notarized by Apple, so macOS checks it before it opens. It isn’t on the Mac App Store; download it from this site.',
+		a: 'Ladle isn’t notarized by Apple, which takes a paid developer account, so macOS asks you to approve it the first time you open it. Its source code is public on GitHub, each release is built from that code by GitHub Actions, and Ladle checks every update against its own signing key before installing it.',
+		links: [
+			{ href: '/docs/getting-started/install/#first-launch', text: 'First launch steps' },
+			{ href: SOURCE_URL, text: 'Source code on GitHub', external: true },
+		],
 	},
 	{
 		q: 'What do I need to run it?',
@@ -149,7 +162,7 @@ const freePoints = [
 					<div class="pop catch">
 						<div class="catch-file">
 							<span class="mini-ext">DMG</span>
-							<span class="catch-text"><span class="strong">HandBrake-1.8.2.dmg</span><span class="sub">84.6 MB · from Safari</span></span>
+							<span class="catch-text"><span class="strong">HandBrake-1.8.2.dmg</span><span class="sub">84.6 MB · from Chrome</span></span>
 						</div>
 						<div class="catch-actions"><span class="mini-btn ghost">Later</span><span class="mini-btn primary">Download</span></div>
 					</div>
@@ -259,6 +272,16 @@ const freePoints = [
 					<article class="faq glass">
 						<h3>{item.q}</h3>
 						<p>{item.a}</p>
+						{item.links && (
+							<p class="faq-links">
+								{item.links.map((link) => (
+									<a href={link.href}>
+										{link.text}
+										<Icon name={link.external ? 'external' : 'arrow-right'} size={15} />
+									</a>
+								))}
+							</p>
+						)}
 					</article>
 				))
 			}
@@ -813,6 +836,25 @@ const freePoints = [
 		line-height: 1.6;
 		color: var(--ld-text2);
 		text-wrap: pretty;
+	}
+	.faq .faq-links {
+		margin-top: auto;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 22px;
+	}
+	.faq-links a {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 14.5px;
+		font-weight: 600;
+		color: var(--ld-ink);
+		border-radius: 6px;
+	}
+	.faq-links a:hover {
+		text-decoration: underline;
+		text-underline-offset: 3px;
 	}
 
 	/* Closing call to action */

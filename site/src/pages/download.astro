@@ -2,25 +2,28 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 import AppIcon from '../components/AppIcon.astro';
 import Icon from '../components/Icon.astro';
-import { DMG_URL, RELEASES_URL, REQUIREMENTS } from '../config/site.mjs';
+import { DMG_URL, LATEST_RELEASE_URL, RELEASES_URL, REQUIREMENTS } from '../config/site.mjs';
+import { extensionBrowsers } from '../config/stores.mjs';
 import { latestRelease } from '../lib/release';
 
 const release = await latestRelease();
+const FIRST_LAUNCH = '/docs/getting-started/install/#first-launch';
 
-const steps = [
+const steps: { title: string; text: string; link?: { href: string; text: string } }[] = [
 	{ title: 'Open the download', text: 'Open Ladle.dmg from your Downloads folder.' },
 	{ title: 'Drag it to Applications', text: 'In the window that opens, drag Ladle onto the Applications folder.' },
 	{
 		title: 'Open Ladle',
-		text: 'Open it from Applications. It’s notarized by Apple, so click Open if macOS asks.',
+		text: 'Open it from Applications. The first time, macOS asks you to approve it, because Ladle isn’t notarized by Apple.',
+		link: { href: FIRST_LAUNCH, text: 'First launch steps' },
 	},
 ];
 
 const requirements = [
 	{ icon: 'laptop', text: REQUIREMENTS },
 	{ icon: 'chip', text: 'Apple silicon or Intel, natively' },
-	{ icon: 'globe', text: 'Safari for one-click hand-off, or any browser by copying a link' },
-	{ icon: 'shield', text: 'Signed with an Apple Developer ID and notarized by Apple' },
+	{ icon: 'globe', text: `${extensionBrowsers} for one-click hand-off, or any browser by copying a link` },
+	{ icon: 'shield', text: 'A one-time approval when you first open it' },
 ] as const;
 ---
 
@@ -43,12 +46,26 @@ const requirements = [
 			<span aria-hidden="true">·</span>
 			<a href={release.notesHref}>Release notes</a>
 		</p>
+		<div class="first-launch glass" role="note">
+			<span class="fl-icon" aria-hidden="true"><Icon name="shield" size={18} /></span>
+			<div class="fl-body">
+				<p class="fl-title">The first time you open Ladle</p>
+				<p>
+					Ladle is free and isn’t notarized by Apple, so macOS asks you to approve it once. Updates don’t
+					ask again.
+				</p>
+				<p class="fl-links">
+					<a href={FIRST_LAUNCH}>First launch steps <Icon name="arrow-right" size={15} /></a>
+					<a href={LATEST_RELEASE_URL}>Latest release on GitHub <Icon name="external" size={15} /></a>
+				</p>
+			</div>
+		</div>
 	</section>
 
 	<section class="container section" aria-labelledby="install-title">
 		<div class="head">
 			<p class="eyebrow">Install</p>
-			<h2 id="install-title" class="disp">Ready in about a minute.</h2>
+			<h2 id="install-title" class="disp">Ready in a couple of minutes.</h2>
 		</div>
 		<ol class="steps">
 			{
@@ -59,13 +76,18 @@ const requirements = [
 						</span>
 						<h3>{step.title}</h3>
 						<p>{step.text}</p>
+						{step.link && (
+							<a class="more" href={step.link.href}>
+								{step.link.text} <Icon name="arrow-right" size={15} />
+							</a>
+						)}
 					</li>
 				))
 			}
 			<li class="glass step next">
 				<span class="num disp" aria-hidden="true">4</span>
 				<h3>Set up your browser</h3>
-				<p>Turn on Ladle’s Safari extension, and clicking a download sends it straight to Ladle.</p>
+				<p>Add Ladle’s extension to {extensionBrowsers}, and clicking a download sends it straight to Ladle.</p>
 				<a class="more" href="/docs/getting-started/set-up-your-browser/">
 					Browser setup guide <Icon name="arrow-right" size={15} />
 				</a>
@@ -96,7 +118,8 @@ const requirements = [
 			<h2 class="disp">Stays up to date</h2>
 			<p>
 				Ladle checks for a new version once a day and installs it in the background, so this is the only
-				time you’ll need this page.
+				time you’ll need this page. Each update is checked against Ladle’s own signing key, and macOS
+				won’t ask you to approve it.
 			</p>
 			<p>No account, no license key, nothing to renew. It’s free.</p>
 			<div class="links">
@@ -164,6 +187,50 @@ const requirements = [
 		text-decoration: underline;
 		text-underline-offset: 3px;
 	}
+	.first-launch {
+		margin-top: 28px;
+		width: min(560px, 100%);
+		display: flex;
+		align-items: flex-start;
+		gap: 14px;
+		padding: 18px 20px;
+		border-radius: 22px;
+		text-align: left;
+		box-shadow: inset 0 1px 0 var(--ld-hi), var(--ld-shadow-card);
+	}
+	.fl-icon {
+		width: 36px;
+		height: 36px;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 12px;
+		background: var(--ld-tint);
+		color: var(--ld-ink-strong);
+	}
+	.fl-body {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		min-width: 0;
+	}
+	.fl-body p {
+		margin: 0;
+		font-size: 14.5px;
+		line-height: 1.55;
+		color: var(--ld-text2);
+	}
+	.fl-body .fl-title {
+		font-size: 15.5px;
+		font-weight: 600;
+		color: var(--ld-text);
+	}
+	.fl-body .fl-links {
+		margin-top: 4px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 22px;
+	}
 
 	.section {
 		padding-block: 40px;
@@ -226,7 +293,8 @@ const requirements = [
 		color: var(--ld-text2);
 	}
 	.more,
-	.links a {
+	.links a,
+	.fl-links a {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
@@ -240,7 +308,8 @@ const requirements = [
 		padding-top: 4px;
 	}
 	.more:hover,
-	.links a:hover {
+	.links a:hover,
+	.fl-links a:hover {
 		text-decoration: underline;
 		text-underline-offset: 3px;
 	}
@@ -321,6 +390,9 @@ const requirements = [
 		}
 		.card {
 			padding: 22px;
+		}
+		.first-launch {
+			padding: 16px;
 		}
 	}
 </style>

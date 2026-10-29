@@ -40,7 +40,7 @@ npm run check      # broken links, missing #anchors, pages SPEC.md requires
 | --- | --- |
 | `src/pages/` | Landing page, `/download/`, `/changelog/`, `/privacy/` and the 404 page. |
 | `src/content/docs/docs/` | Every docs page, as MDX. The folder path is the URL. |
-| `src/content/changelog/` | One Markdown file per release, such as `1.0.0.md`. |
+| `src/content/changelog/` | One Markdown file per release, such as `0.1.0.md`. |
 | `src/config/site.mjs` | URLs from the spec: downloads, releases, source, support, appcast. |
 | `src/config/docs-nav.mjs` | Docs sidebar order, the docs home topic cards and breadcrumbs. |
 | `src/config/stores.mjs` | Browser extension store links. See below. |
