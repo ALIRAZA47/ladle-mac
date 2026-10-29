@@ -1,0 +1,54 @@
+---
+import Icon from '../Icon.astro';
+import { docsLinks } from './links.mjs';
+---
+
+<div class="mobile-footer">
+	<nav aria-label="Site">
+		<a href="/">Home</a>
+		{docsLinks.filter((link) => link.id !== 'guides').map((link) => <a href={link.href}>{link.label}</a>)}
+		<a href="/privacy/">Privacy</a>
+	</nav>
+	<a class="download" href="/download/">
+		<Icon name="download" size={15} strokeWidth={2.3} />
+		Download Ladle
+	</a>
+</div>
+
+<style>
+	.mobile-footer {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		margin-top: 8px;
+		padding: 16px 0 20px;
+		border-top: 1px solid var(--ld-line);
+	}
+	nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 18px;
+		font-size: 15px;
+	}
+	nav a {
+		color: var(--ld-text2);
+		text-decoration: none;
+		padding: 6px 0;
+	}
+	nav a:hover {
+		color: var(--ld-text);
+	}
+	.download {
+		height: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		border-radius: 999px;
+		background: var(--ld-accent);
+		color: var(--ld-on-accent);
+		font-size: 15px;
+		font-weight: 600;
+		text-decoration: none;
+	}
+</style>

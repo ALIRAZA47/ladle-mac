@@ -1,0 +1,652 @@
+/*
+ * Molten theme for Starlight. Starlight's own styles live in cascade layers, so these unlayered
+ * rules win without !important. Colors come from tokens.css, shared with the marketing pages.
+ */
+@import './fonts.css';
+@import './tokens.css';
+
+/* ---------- Starlight variables ---------- */
+
+:root,
+::backdrop {
+	--sl-font: var(--ld-font-body);
+	--sl-font-mono: var(--ld-font-mono);
+
+	--sl-color-white: #f6f2ec;
+	--sl-color-gray-1: #e8e2da;
+	--sl-color-gray-2: #bdb5aa;
+	--sl-color-gray-3: #a0978b;
+	--sl-color-gray-4: #6f675e;
+	--sl-color-gray-5: #34302b;
+	--sl-color-gray-6: #1e1c1a;
+	--sl-color-black: #0c0b0a;
+
+	--sl-color-accent-low: #3b230d;
+	--sl-color-accent: #ff8a1f;
+	--sl-color-accent-high: #ff9a3d;
+
+	--sl-color-text: #e8e2da;
+	--sl-color-text-accent: var(--ld-ink);
+	--sl-color-text-invert: var(--ld-on-accent);
+	--sl-color-bg: var(--ld-bg);
+	--sl-color-bg-nav: rgba(12, 11, 10, 0.82);
+	--sl-color-bg-sidebar: var(--ld-bg);
+	--sl-color-bg-inline-code: var(--ld-kbd);
+	--sl-color-hairline-light: var(--ld-line2);
+	--sl-color-hairline: var(--ld-line);
+	--sl-color-hairline-shade: var(--ld-line);
+	--sl-color-backdrop-overlay: rgba(6, 5, 4, 0.62);
+
+	--sl-content-width: 47.5rem;
+	--sl-sidebar-width: 17.5rem;
+	--sl-menu-button-size: 2.375rem;
+	--sl-line-height: 1.7;
+	--sl-line-height-headings: 1.2;
+	--sl-text-h2: 1.75rem;
+	--sl-text-h3: 1.3125rem;
+	--sl-text-h4: 1.125rem;
+}
+
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+	--sl-color-white: #1a1714;
+	--sl-color-gray-1: #2b2621;
+	--sl-color-gray-2: #4f4841;
+	--sl-color-gray-3: #625a52;
+	--sl-color-gray-4: #8c837a;
+	--sl-color-gray-5: #ddd5cb;
+	--sl-color-gray-6: #f0ebe4;
+	--sl-color-gray-7: #f5f1ec;
+	--sl-color-black: #ffffff;
+
+	--sl-color-accent-low: #fde6cf;
+	--sl-color-accent: #ff8a1f;
+	--sl-color-accent-high: #8f3f0b;
+
+	--sl-color-text: #2b2621;
+	--sl-color-text-accent: var(--ld-ink);
+	--sl-color-text-invert: var(--ld-on-accent);
+	--sl-color-bg: var(--ld-bg);
+	--sl-color-bg-nav: rgba(250, 248, 245, 0.86);
+	--sl-color-bg-sidebar: var(--ld-bg);
+	--sl-color-bg-inline-code: var(--ld-kbd);
+	--sl-color-hairline-light: var(--ld-line2);
+	--sl-color-hairline: var(--ld-line);
+	--sl-color-hairline-shade: var(--ld-line);
+	--sl-color-backdrop-overlay: rgba(40, 30, 20, 0.3);
+}
+
+@media (min-width: 50em) {
+	:root {
+		--sl-nav-height: 4rem;
+	}
+}
+
+/* ---------- Page ---------- */
+
+body {
+	background: var(--ld-docs-glow), var(--ld-bg);
+	background-repeat: no-repeat;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+:focus-visible {
+	outline: 2px solid var(--ld-focus);
+	outline-offset: 3px;
+}
+
+.page > .header {
+	background-color: var(--sl-color-bg-nav);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	backdrop-filter: blur(20px) saturate(150%);
+	border-bottom: 1px solid var(--ld-line);
+}
+
+/* The title block flows straight into the article, without Starlight's divider. */
+.content-panel + .content-panel {
+	border-top: 0;
+	padding-top: 0.5rem;
+}
+
+/* Docs home and other sidebar-less pages get a wider column. */
+html:not([data-has-sidebar]) {
+	--sl-content-width: 75rem;
+}
+
+/* ---------- Sidebar ---------- */
+
+@media (min-width: 50rem) {
+	.sidebar-pane {
+		background: transparent;
+		border-inline-end: 1px solid var(--ld-line);
+	}
+}
+
+.sidebar-content {
+	padding-top: 1.75rem;
+}
+
+.sidebar-content ul.top-level > li + li {
+	margin-top: 1.25rem;
+}
+
+.sidebar-content summary {
+	padding: 0 12px 6px;
+	cursor: pointer;
+}
+
+.sidebar-content .group-label .large {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--ld-text3);
+}
+
+.sidebar-content summary .caret {
+	width: 1rem;
+	height: 1rem;
+	color: var(--ld-text3);
+}
+
+.sidebar-content ul ul li {
+	margin-inline-start: 0;
+	border-inline-start: 0;
+	padding-inline-start: 0;
+}
+
+.sidebar-content ul ul li + li {
+	margin-top: 2px;
+}
+
+.sidebar-content a {
+	display: flex;
+	align-items: center;
+	min-height: 32px;
+	padding: 4px 12px;
+	border-radius: 10px;
+	font-size: 14px;
+	line-height: 1.35;
+	color: var(--ld-text2);
+}
+
+.sidebar-content a:hover,
+.sidebar-content a:focus-visible {
+	color: var(--ld-text);
+	background: var(--ld-card);
+}
+
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus-visible {
+	font-weight: 600;
+	color: var(--ld-ink-strong);
+	background: var(--ld-tint);
+}
+
+@media (max-width: 49.99rem) {
+	.sidebar-content a {
+		min-height: 40px;
+		font-size: 15px;
+	}
+}
+
+/* Mobile menu button */
+.sl-menu-button {
+	border: 1px solid var(--ld-line2) !important;
+	background: var(--ld-btn-ghost) !important;
+	color: var(--ld-text) !important;
+	box-shadow: inset 0 1px 0 var(--ld-hi) !important;
+	padding: 0.5625rem !important;
+}
+
+/* ---------- Search ---------- */
+
+site-search button[data-open-modal] {
+	width: 100%;
+	height: 38px;
+	padding: 0 8px 0 13px;
+	gap: 8px;
+	border-radius: 999px;
+	border: 1px solid var(--ld-line2);
+	background: var(--ld-card);
+	box-shadow: inset 0 1px 0 var(--ld-hi), var(--ld-shadow-card);
+	color: var(--ld-text3);
+	font-size: 14px;
+	max-width: none;
+}
+
+site-search button[data-open-modal]:hover {
+	border-color: var(--ld-line2);
+	color: var(--ld-text);
+}
+
+site-search button[data-open-modal] > svg {
+	width: 15px;
+	height: 15px;
+	color: var(--ld-text3);
+}
+
+site-search button[data-open-modal] > kbd {
+	height: 22px;
+	padding: 0 8px;
+	gap: 0;
+	align-items: center;
+	border-radius: 999px;
+	background: var(--ld-kbd);
+	color: var(--ld-text3);
+	font-family: var(--ld-font-body);
+	font-size: 11.5px;
+}
+
+site-search button[data-open-modal] > kbd kbd {
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+	font: inherit;
+	color: inherit;
+	vertical-align: baseline;
+}
+
+site-search button[data-open-modal] > kbd kbd + kbd {
+	margin-inline-start: 3px;
+}
+
+@media (max-width: 49.99rem) {
+	site-search button[data-open-modal] {
+		width: 38px;
+		padding: 0;
+		justify-content: center;
+	}
+}
+
+site-search dialog {
+	background: var(--ld-pop);
+	border: 1px solid var(--ld-line2);
+	box-shadow: var(--ld-shadow-pop);
+	color: var(--ld-text);
+}
+
+@media (min-width: 50rem) {
+	site-search dialog {
+		border-radius: 24px;
+	}
+}
+
+#starlight__search {
+	--pagefind-ui-border-radius: 14px;
+	--pagefind-ui-background: var(--ld-card);
+	--pagefind-ui-border: var(--ld-line2);
+}
+
+#starlight__search .pagefind-ui__search-input {
+	border-radius: 999px;
+}
+
+#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)),
+#starlight__search .pagefind-ui__result-nested {
+	background-color: var(--ld-card);
+}
+
+#starlight__search mark {
+	color: var(--ld-ink);
+}
+
+/* ---------- Article content ---------- */
+
+.sl-markdown-content {
+	font-size: 1.03125rem;
+	line-height: 1.7;
+	color: var(--sl-color-text);
+}
+
+.sl-markdown-content :is(p, li) {
+	text-wrap: pretty;
+}
+
+.sl-markdown-content :is(h2, h3, h4):not(:where(.not-content *)) {
+	color: var(--ld-text);
+}
+
+.sl-markdown-content h2:not(:where(.not-content *)) {
+	font-family: var(--ld-font-display);
+	font-weight: 700;
+	letter-spacing: -0.025em;
+}
+
+.sl-markdown-content h3:not(:where(.not-content *)) {
+	font-weight: 650;
+	letter-spacing: -0.015em;
+}
+
+.sl-markdown-content .sl-heading-wrapper.level-h2 {
+	margin-top: 2.25rem;
+}
+
+.sl-markdown-content .sl-anchor-link {
+	color: var(--ld-text3);
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+	color: var(--ld-ink);
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)):hover {
+	color: var(--ld-text);
+}
+
+.sl-markdown-content strong {
+	color: var(--ld-text);
+	font-weight: 600;
+}
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+	border-radius: 6px;
+	background: var(--ld-kbd);
+	font-size: 0.86em;
+}
+
+.sl-markdown-content ul:not(:where(.not-content *)) li::marker,
+.sl-markdown-content ol:not(:where(.not-content *)) li::marker {
+	color: var(--ld-text3);
+}
+
+.sl-markdown-content hr:not(:where(.not-content *)) {
+	border-bottom-color: var(--ld-line);
+}
+
+/* Keycaps, like ⌥ Option. Scoped to article text so Starlight's own <kbd> UI keeps its styles. */
+.sl-markdown-content kbd:not(:where(.not-content *)) {
+	display: inline-flex;
+	align-items: center;
+	min-height: 22px;
+	padding: 0 7px;
+	border-radius: 7px;
+	background: var(--ld-kbd);
+	border: 1px solid var(--ld-line);
+	box-shadow: 0 1px 0 var(--ld-line);
+	font-family: var(--ld-font-body);
+	font-size: 0.85em;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--ld-text);
+	white-space: nowrap;
+	vertical-align: 0.05em;
+}
+
+/* Tables */
+.sl-markdown-content table:not(:where(.not-content *)) {
+	width: 100%;
+	display: table;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: 0.95em;
+	line-height: 1.55;
+}
+
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) {
+	padding: 0.7rem 1rem 0.7rem 0;
+	border-bottom: 1px solid var(--ld-line);
+}
+
+.sl-markdown-content th:not(:where(.not-content *)) {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--ld-text3);
+}
+
+.sl-markdown-content td:first-child:not(:where(.not-content *)) {
+	color: var(--ld-text);
+}
+
+@media (max-width: 49.99rem) {
+	.sl-markdown-content table:not(:where(.not-content *)) {
+		display: block;
+		overflow-x: auto;
+	}
+}
+
+/* Asides: a rounded tint with the icon in its own tile, as in the design's tip callout. */
+.starlight-aside {
+	display: grid;
+	grid-template-columns: 36px minmax(0, 1fr);
+	gap: 14px;
+	align-items: start;
+	padding: 18px 20px;
+	border: 1px solid var(--ld-line);
+	border-radius: 22px;
+	background: var(--ld-tint);
+	color: var(--ld-text);
+	font-size: 0.97em;
+	line-height: 1.6;
+}
+
+.starlight-aside__title {
+	width: 36px;
+	height: 36px;
+	display: grid;
+	place-items: center;
+	border-radius: 12px;
+	background: var(--ld-card);
+	color: var(--ld-ink-strong);
+	font-size: 0;
+}
+
+.starlight-aside__icon {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+}
+
+/* Tips use the lightbulb from the design instead of Starlight's rocket. */
+.starlight-aside--tip .starlight-aside__icon {
+	display: none;
+}
+
+.starlight-aside--tip .starlight-aside__title::before {
+	content: '';
+	width: 18px;
+	height: 18px;
+	background-color: currentColor;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z'/%3E%3C/svg%3E")
+		center / contain no-repeat;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z'/%3E%3C/svg%3E")
+		center / contain no-repeat;
+}
+
+.starlight-aside__title + .starlight-aside__content {
+	margin-top: 0;
+	padding-top: 6px;
+}
+
+.starlight-aside__content a {
+	color: var(--ld-ink-strong);
+}
+
+.starlight-aside--note {
+	background: var(--ld-card);
+	--sl-color-asides-text-accent: var(--ld-ink);
+}
+
+.starlight-aside--caution {
+	--sl-color-asides-text-accent: var(--ld-ink-strong);
+}
+
+.starlight-aside--danger {
+	background: color-mix(in srgb, var(--ld-danger) 12%, transparent);
+	border-color: color-mix(in srgb, var(--ld-danger) 30%, transparent);
+}
+
+.starlight-aside--danger .starlight-aside__title {
+	color: var(--ld-danger);
+}
+
+/* Tabs: a pill-shaped segmented control. */
+starlight-tabs .tablist-wrapper {
+	overflow-x: auto;
+	/* Room for the pill's shadow inside the scroll container. */
+	margin: 0 -6px;
+	padding: 4px 6px 8px;
+}
+
+starlight-tabs [role='tablist'] {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	padding: 4px;
+	border: 1px solid var(--ld-line);
+	border-radius: 22px;
+	background: var(--ld-card);
+	box-shadow: var(--ld-shadow-card);
+}
+
+starlight-tabs .tab > [role='tab'] {
+	min-height: 36px;
+	padding: 0 16px;
+	border-radius: 999px;
+	box-shadow: none;
+	color: var(--ld-text2);
+	font-size: 14px;
+	font-weight: 600;
+	outline-offset: 0;
+}
+
+starlight-tabs .tab > [role='tab']:hover {
+	color: var(--ld-text);
+}
+
+starlight-tabs .tab [role='tab'][aria-selected='true'] {
+	color: var(--ld-text);
+	box-shadow:
+		inset 0 0 0 999px var(--ld-tint),
+		inset 0 0 0 1px var(--ld-tint-ring);
+}
+
+starlight-tabs .tablist-wrapper ~ [role='tabpanel'] {
+	margin-top: 1.25rem;
+}
+
+/* Steps: numbered badges from the design, without the connecting line. */
+.sl-steps {
+	--bullet-size: 32px;
+	--bullet-margin: 0.875rem;
+}
+
+.sl-steps > li {
+	padding-inline-start: calc(var(--bullet-size) + 14px);
+	padding-bottom: 0;
+}
+
+.sl-steps > li + li {
+	margin-top: 14px;
+}
+
+.sl-steps > li::before {
+	font-family: var(--ld-font-display);
+	font-size: 15px;
+	font-weight: 800;
+	color: var(--ld-ink-strong);
+	background: var(--ld-tint);
+	box-shadow: none;
+}
+
+.sl-steps > li::after {
+	display: none;
+}
+
+/* Expressive Code */
+.expressive-code {
+	margin-top: 1rem;
+}
+
+/* ---------- On this page ---------- */
+
+.right-sidebar {
+	border-inline-start: 0;
+}
+
+.right-sidebar-panel {
+	padding-top: 2.25rem;
+}
+
+starlight-toc h2 {
+	margin-bottom: 0.75rem;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--ld-text3) !important;
+}
+
+starlight-toc ul {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+starlight-toc a {
+	padding: 0 0 0 12px !important;
+	border-radius: 0 !important;
+	border-inline-start: 2px solid var(--ld-line);
+	font-size: 14px !important;
+	line-height: 1.35 !important;
+	color: var(--ld-text2) !important;
+}
+
+starlight-toc a:hover {
+	color: var(--ld-text) !important;
+}
+
+starlight-toc a[aria-current='true'] {
+	border-inline-start-color: var(--ld-ink);
+	color: var(--ld-text) !important;
+	font-weight: 600;
+}
+
+starlight-toc ul ul {
+	margin-top: 10px;
+}
+
+starlight-toc ul ul a {
+	padding-inline-start: 24px !important;
+}
+
+mobile-starlight-toc nav {
+	background-color: var(--sl-color-bg-nav);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	backdrop-filter: blur(20px) saturate(150%);
+	border-top-color: var(--ld-line);
+}
+
+mobile-starlight-toc .toggle {
+	border-radius: 999px;
+	border-color: var(--ld-line2);
+	background: var(--ld-card);
+}
+
+mobile-starlight-toc .dropdown {
+	border-color: var(--ld-line2);
+	background: var(--ld-pop);
+}
+
+/* ---------- Motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		scroll-behavior: auto !important;
+	}
+}

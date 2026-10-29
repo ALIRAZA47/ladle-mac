@@ -1,0 +1,108 @@
+---
+/**
+ * "Was this page helpful?" Nothing is sent anywhere: the site has no analytics. A "No" answer
+ * offers a GitHub issue with the page already filled in.
+ */
+import { newIssueUrl, SITE_URL } from '../../config/site.mjs';
+
+const { entry } = Astro.locals.starlightRoute;
+const pageUrl = new URL(Astro.url.pathname, SITE_URL).href;
+const issueUrl = newIssueUrl(
+	`Docs: ${entry.data.title}`,
+	`Page: ${pageUrl}\n\nWhat was missing or unclear?\n\n`
+);
+---
+
+<div class="feedback" data-feedback data-pagefind-ignore>
+	<div class="ask" data-ask>
+		<span class="question" id="feedback-question">Was this page helpful?</span>
+		<div class="buttons" role="group" aria-labelledby="feedback-question">
+			<button type="button" data-answer="yes">Yes</button>
+			<button type="button" data-answer="no">No</button>
+		</div>
+	</div>
+	<p class="reply" data-reply="yes" tabindex="-1" hidden>Thanks! Glad it helped.</p>
+	<p class="reply" data-reply="no" tabindex="-1" hidden>
+		Sorry about that. <a href={issueUrl}>Tell us what was missing</a> and we’ll make this page clearer.
+	</p>
+	<noscript>
+		<p class="reply">Something missing or unclear? <a href={issueUrl}>Tell us on GitHub</a>.</p>
+	</noscript>
+</div>
+
+<script>
+	document.querySelectorAll<HTMLElement>('[data-feedback]').forEach((box) => {
+		box.querySelectorAll<HTMLButtonElement>('[data-answer]').forEach((button) => {
+			button.addEventListener('click', () => {
+				const reply = box.querySelector<HTMLElement>(`[data-reply="${button.dataset.answer}"]`);
+				if (!reply) return;
+				box.querySelector<HTMLElement>('[data-ask]')?.setAttribute('hidden', '');
+				reply.hidden = false;
+				reply.focus();
+			});
+		});
+	});
+</script>
+
+<style>
+	.feedback {
+		display: flex;
+		align-items: center;
+		min-height: 74px;
+		padding: 18px 20px;
+		border-radius: 22px;
+		background: var(--ld-card);
+		border: 1px solid var(--ld-line);
+		box-shadow: var(--ld-shadow-card);
+	}
+	.ask {
+		flex: 1;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 12px 16px;
+	}
+	.ask[hidden] {
+		display: none;
+	}
+	.question {
+		flex: 1 1 200px;
+		font-size: 15px;
+		font-weight: 600;
+		color: var(--ld-text);
+	}
+	.buttons {
+		display: flex;
+		gap: 8px;
+	}
+	button {
+		height: 38px;
+		padding: 0 18px;
+		border-radius: 999px;
+		border: 1px solid var(--ld-line2);
+		background: var(--ld-btn-ghost);
+		box-shadow: inset 0 1px 0 var(--ld-hi);
+		color: var(--ld-text);
+		font: inherit;
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	button:hover {
+		background: var(--ld-btn-ghost-hover);
+	}
+	.reply {
+		margin: 0;
+		font-size: 15px;
+		font-weight: 600;
+		color: var(--ld-text);
+	}
+	.reply:focus {
+		outline: none;
+	}
+	.reply a {
+		color: var(--ld-ink);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+</style>
