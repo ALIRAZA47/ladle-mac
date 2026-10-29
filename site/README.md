@@ -103,16 +103,21 @@ Releases follow the release flow in [`SPEC.md`](../SPEC.md#updates):
    `version` and `title` in the front matter. The changelog page turns the version into its
    anchor, such as `#v1-2-0`, which each update feed item links to.
 2. Push the tag. The app's release workflow fails early if that file is missing, publishes
-   `Ladle.dmg`, fills in the entry's `date`, rewrites `public/appcast.xml`, commits both to
-   `main`, and then calls `site-deploy.yml`. It has to call it: a push made with the default
-   `GITHUB_TOKEN` doesn't start other workflows. Called that way, the deploy builds the latest
-   `main`:
+   `Ladle.dmg` and `Ladle-Chrome-Extension.zip`, fills in the entry's `date`, rewrites
+   `public/appcast.xml`, commits both to `main`, and then starts `site-deploy.yml` on `main`.
+   It has to start it: a push made with the default `GITHUB_TOKEN` doesn't start other workflows,
+   but a `workflow_dispatch` does, and a run on `main` passes the `github-pages` environment's
+   branch rule:
 
    ```yaml
    deploy-site:
-     needs: publish            # the job that commits appcast.xml
-     permissions: { contents: read, pages: write, id-token: write }
-     uses: ./.github/workflows/site-deploy.yml
+     needs: update-site        # the job that commits appcast.xml
+     runs-on: ubuntu-latest
+     permissions: { actions: write }
+     steps:
+       - run: gh workflow run site-deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
+         env:
+           GH_TOKEN: ${{ github.token }}
    ```
 
 The release assets have version-less names, so the site links to them through GitHub's

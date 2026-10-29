@@ -1,15 +1,13 @@
 # Builds the website and publishes it to GitHub Pages at https://ladle.alirazakhan.me.
 #
-# Runs on pushes to main that touch site/, by hand from the Actions tab, or from another
-# workflow. Pushes made with the default GITHUB_TOKEN don't start other workflows, so the app's
-# release workflow should call this one after it commits a new site/public/appcast.xml:
+# Runs on pushes to main that touch site/, and by hand from the Actions tab. Pushes made with the
+# default GITHUB_TOKEN don't start other workflows, so after the app's release workflow commits a
+# new site/public/appcast.xml to main, it starts this one on main (that job needs actions: write):
 #
-#   deploy-site:
-#     needs: <the job that commits appcast.xml>
-#     permissions: { contents: read, pages: write, id-token: write }
-#     uses: ./.github/workflows/site-deploy.yml
+#   gh workflow run site-deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
 #
-# When called this way it checks out the latest main, which includes the new appcast.
+# A run on main passes the github-pages environment's branch rule. This workflow can also be
+# called as a reusable workflow, in which case it checks out the latest main.
 name: Site deploy
 
 on:
@@ -48,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # Empty for pushes and manual runs (the triggering commit); `main` when called by a release.
+          # Empty for pushes and dispatches (the triggering commit); `main` when called as a reusable workflow.
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
