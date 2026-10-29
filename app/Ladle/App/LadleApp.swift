@@ -10,9 +10,14 @@ struct LadleApp: App {
         MenuBarExtra(isInserted: Binding(
             get: { menuBar.isInserted },
             set: { newValue in
+                guard newValue != menuBar.isInserted else { return }
                 menuBar.isInserted = newValue
-                if AppModel.shared.settings.showInMenuBar != newValue {
-                    AppModel.shared.settings.showInMenuBar = newValue
+                // Removed from the menu bar by hand (⌘-drag): keep the setting in step, after
+                // this scene update rather than during it.
+                Task { @MainActor in
+                    if AppModel.shared.settings.showInMenuBar != newValue {
+                        AppModel.shared.settings.showInMenuBar = newValue
+                    }
                 }
             }
         )) {

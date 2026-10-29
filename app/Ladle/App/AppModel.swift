@@ -8,7 +8,14 @@ import SwiftUI
 @MainActor
 final class MenuBarVisibility: ObservableObject {
     static let shared = MenuBarVisibility()
-    @Published var isInserted = true
+
+    /// Announces real changes only. MenuBarExtra writes its `isInserted` binding back while the
+    /// scene updates; publishing every write would update the scene again, forever.
+    var isInserted = true {
+        willSet {
+            if newValue != isInserted { objectWillChange.send() }
+        }
+    }
 }
 
 /// A link Ladle found on the clipboard.
