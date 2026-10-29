@@ -139,9 +139,9 @@ downloads API, so there the content script takes clicks on links to watched file
 
 ## Known gaps
 
-- **Not compiled yet.** The app, LadleBridge and Safari extension targets were written without
-  Xcode and have not been built; LadleKit and the extension are tested. Expect a first round of
-  compile fixes on a Mac.
+- **Not run signed yet.** CI builds every target unsigned and runs the tests, but Developer ID
+  signing, notarization and a real Sparkle update have only been written, not run; the first
+  tagged release will be their first run.
 - Ladle can't wake a sleeping Mac. The Tonight queue starts at 1:00 AM only if the Mac is awake;
   while something downloads, Ladle keeps the Mac from idling to sleep.
 - Live HLS streams aren't offered. A separate audio track is merged into the video for fMP4
