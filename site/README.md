@@ -89,27 +89,27 @@ tag is removed. Write `{' '}` where a space has to survive, as in `version from{
 
 ## Releases, the changelog and the update feed
 
-The app's release workflow rewrites `public/appcast.xml` and points each item's
-`sparkle:releaseNotesLink` at `/changelog/#v<version with dashes>`, such as `#v1-2-0`. For every
-release:
+Releases follow the release flow in [`SPEC.md`](../SPEC.md#updates):
 
-- Add `src/content/changelog/<version>.md` with `version`, `title` and, once it's out, `date`.
-  The page creates the anchor from the version.
-- The download page reads the newest version from `appcast.xml`, falling back to the newest
-  changelog entry before the first release.
+1. Before tagging `vX.Y.Z`, write the release notes in `src/content/changelog/X.Y.Z.md` with
+   `version` and `title` in the front matter. The changelog page turns the version into its
+   anchor, such as `#v1-2-0`, which each update feed item links to.
+2. Push the tag. The app's release workflow fails early if that file is missing, publishes
+   `Ladle.dmg`, fills in the entry's `date`, rewrites `public/appcast.xml`, commits both to
+   `main`, and then calls `site-deploy.yml`. It has to call it: a push made with the default
+   `GITHUB_TOKEN` doesn't start other workflows. Called that way, the deploy builds the latest
+   `main`:
 
-Commits pushed with the default `GITHUB_TOKEN` don't start other workflows, so a release that
-commits `appcast.xml` won't trigger the deploy on its own. Call the deploy workflow from the
-release workflow (it checks out the latest `main` when called):
+   ```yaml
+   deploy-site:
+     needs: publish            # the job that commits appcast.xml
+     permissions: { contents: read, pages: write, id-token: write }
+     uses: ./.github/workflows/site-deploy.yml
+   ```
 
-```yaml
-deploy-site:
-  needs: publish            # the job that commits appcast.xml
-  permissions: { contents: read, pages: write, id-token: write }
-  uses: ./.github/workflows/site-deploy.yml
-```
-
-Or run **Site deploy** by hand from the repository's **Actions** tab.
+The download page shows the newest version in `appcast.xml`, or the newest changelog entry
+before the first release. To redeploy by hand, run **Site deploy** from the repository's
+**Actions** tab.
 
 ## Deploy
 

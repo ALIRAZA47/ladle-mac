@@ -13,7 +13,7 @@ export const collections = {
 		schema: z.object({
 			version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Use a plain version number like 1.2.0'),
 			title: z.string(),
-			/** Release day. Leave it out until the release is published. */
+			/** Release day. The app's release workflow fills it in when it publishes the release. */
 			date: z.coerce.date().optional(),
 		}),
 	}),

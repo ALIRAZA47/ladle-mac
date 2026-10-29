@@ -18,10 +18,12 @@ With **Verify checksums** on in **Ladle › Settings › Downloads**, which it i
 
 Ladle finds a checksum in any of these ways:
 
-- **You paste it.** In the Add sheet, put the checksum after the link on the same line, with a space in between:
+- **You paste it.** When you paste links into the Add sheet, put the checksum on the same line after the link, separated by a space. Use the hex digest, optionally starting with `sha256:` or `md5:`. Ladle tells them apart by length: 64 hex characters is SHA-256, 32 is MD5.
 
   ```text title="Add sheet"
   https://example.com/files/tool-2.4.dmg 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+  https://example.com/files/tool-2.4.dmg sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+  https://example.com/files/notes.pdf md5:5d41402abc4b2a76b9719d911017c592
   ```
 
 - **The browser extension passes it along** when it has one for the download.
