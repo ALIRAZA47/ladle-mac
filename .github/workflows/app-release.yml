@@ -1,12 +1,15 @@
-# Releases Ladle when a version tag like v1.2.0 is pushed. app/RELEASING.md has the steps,
-# the secrets and the one-time setup.
+# Releases Ladle when a version tag like v1.2.0 is pushed. app/RELEASING.md has the steps and the
+# one-time setup. The workflow never commits: main requires pull requests.
 #
-#   1. check:       the tag, the release notes (site/src/content/changelog/X.Y.Z.md), the Sparkle
-#                   key and the secrets. Fails before any build if something is missing.
-#   2. release:     universal build, Developer ID signing, notarization, Ladle.dmg, Sparkle's
-#                   EdDSA signature, and the GitHub Release.
-#   3. update-site: dates the release notes and rewrites site/public/appcast.xml, committed to main.
-#   4. deploy-site: deploys the website, since a push made with GITHUB_TOKEN starts no workflows.
+#   1. check:       the tag, the release notes (site/src/content/changelog/X.Y.Z.md), and Sparkle's
+#                   keys: a real SUPublicEDKey and the SPARKLE_ED_PRIVATE_KEY secret that belongs to
+#                   it. Picks the signing: ad hoc, or Developer ID when all six Apple secrets exist.
+#                   Fails before any build if something is missing.
+#   2. release:     app/scripts/package-app.sh builds for Apple silicon and Intel, signs, makes
+#                   Ladle.dmg and Ladle-Chrome-Extension.zip, and signs the DMG for Sparkle;
+#                   verify-package.sh checks the result; then the GitHub Release vX.Y.Z gets
+#                   Ladle.dmg, Ladle-Chrome-Extension.zip and sparkle.json.
+#   3. deploy-site: starts Site deploy on main, which rebuilds the update feed from the releases.
 name: App release
 
 on:
@@ -27,6 +30,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       build: ${{ steps.version.outputs.build }}
+      signing: ${{ steps.signing.outputs.signing }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -59,7 +63,32 @@ jobs:
           fi
           python3 app/scripts/publish_release.py check-notes "$notes" "$VERSION"
 
-      - name: Check the Sparkle key and the secrets
+      - name: Check Sparkle's keys
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          public_key=$(python3 -c 'import plistlib; print(plistlib.load(open("app/Ladle/Info.plist", "rb"))["SUPublicEDKey"])')
+          case "$public_key" in
+            "" | REPLACE_WITH*)
+              echo "::error file=app/Ladle/Info.plist::Put your Sparkle public key in SUPublicEDKey first. See app/RELEASING.md."
+              exit 1 ;;
+          esac
+          if [ -z "$SPARKLE_ED_PRIVATE_KEY" ]; then
+            echo "::error::The SPARKLE_ED_PRIVATE_KEY secret isn't set. See app/RELEASING.md."
+            exit 1
+          fi
+          if ! derived=$(printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | python3 app/scripts/sparkle_ed.py public-key -); then
+            echo "::error::SPARKLE_ED_PRIVATE_KEY isn't a Sparkle private key (export it with generate_keys -x)."
+            exit 1
+          fi
+          if [ "$derived" != "$public_key" ]; then
+            echo "::error file=app/Ladle/Info.plist::SPARKLE_ED_PRIVATE_KEY doesn't belong to SUPublicEDKey, so Ladle would refuse the update."
+            exit 1
+          fi
+          echo "Sparkle's keys match: $public_key"
+
+      - name: Choose the signing
+        id: signing
         env:
           DEVELOPER_ID_CERT_P12_BASE64: ${{ secrets.DEVELOPER_ID_CERT_P12_BASE64 }}
           DEVELOPER_ID_CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
@@ -67,37 +96,34 @@ jobs:
           ASC_API_KEY_P8_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
           ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
           ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
-          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
         run: |
-          failed=0
-          if grep -q REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY app/Ladle/Info.plist; then
-            echo "::error file=app/Ladle/Info.plist::Put your Sparkle public key in SUPublicEDKey first. See app/RELEASING.md."
-            failed=1
-          fi
+          missing=()
           for name in DEVELOPER_ID_CERT_P12_BASE64 DEVELOPER_ID_CERT_PASSWORD APPLE_TEAM_ID \
-                      ASC_API_KEY_P8_BASE64 ASC_API_KEY_ID ASC_API_ISSUER_ID SPARKLE_ED_PRIVATE_KEY; do
-            if [ -z "${!name}" ]; then
-              echo "::error::The $name secret isn't set. See app/RELEASING.md."
-              failed=1
-            fi
+                      ASC_API_KEY_P8_BASE64 ASC_API_KEY_ID ASC_API_ISSUER_ID; do
+            if [ -z "${!name}" ]; then missing+=("$name"); fi
           done
-          exit $failed
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "Signing with Developer ID and notarizing."
+            echo "signing=developer-id" >> "$GITHUB_OUTPUT"
+          else
+            if [ "${#missing[@]}" -lt 6 ]; then
+              echo "::warning::Some Developer ID secrets are set, but not ${missing[*]}, so this release is signed ad hoc."
+            fi
+            echo "Signing ad hoc; people approve the first launch once."
+            echo "signing=adhoc" >> "$GITHUB_OUTPUT"
+          fi
 
   release:
-    name: Build, sign, notarize and publish
+    name: Build, sign and publish
     needs: check
     runs-on: macos-latest
     permissions:
       contents: write
     env:
-      VERSION: ${{ needs.check.outputs.version }}
-      BUILD: ${{ needs.check.outputs.build }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
-      ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
-    outputs:
-      length: ${{ steps.sparkle.outputs.length }}
-      signature: ${{ steps.sparkle.outputs.signature }}
+      LADLE_VERSION: ${{ needs.check.outputs.version }}
+      LADLE_BUILD: ${{ needs.check.outputs.build }}
+      LADLE_OUT: ${{ github.workspace }}/app/build/package
+      SIGNING: ${{ needs.check.outputs.signing }}
     steps:
       - uses: actions/checkout@v7
 
@@ -105,14 +131,22 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      - name: Set up signing and notarization
+      - name: Set up Developer ID signing and notarization
+        if: needs.check.outputs.signing == 'developer-id'
         env:
           DEVELOPER_ID_CERT_P12_BASE64: ${{ secrets.DEVELOPER_ID_CERT_P12_BASE64 }}
           DEVELOPER_ID_CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           ASC_API_KEY_P8_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
         run: |
           keychain="$RUNNER_TEMP/signing.keychain-db"
           password="$(openssl rand -hex 24)"
@@ -130,116 +164,32 @@ jobs:
             echo "::error::DEVELOPER_ID_CERT_P12_BASE64 holds no Developer ID Application certificate."
             exit 1
           fi
-          echo "Signing as $identity"
-          echo "SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
-          echo "KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+          case "$identity" in
+            *"($APPLE_TEAM_ID)") ;;
+            *) echo "::error::The Developer ID certificate ($identity) isn't for the team in APPLE_TEAM_ID."; exit 1 ;;
+          esac
           echo "$ASC_API_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
-          echo "ASC_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+          {
+            echo "LADLE_SIGN_IDENTITY=$identity"
+            echo "LADLE_KEYCHAIN=$keychain"
+            echo "LADLE_NOTARIZE=1"
+            echo "ASC_KEY_PATH=$RUNNER_TEMP/AuthKey.p8"
+            echo "ASC_API_KEY_ID=$ASC_API_KEY_ID"
+            echo "ASC_API_ISSUER_ID=$ASC_API_ISSUER_ID"
+          } >> "$GITHUB_ENV"
+          echo "Signing as $identity"
 
-      - name: Generate the Xcode project
-        working-directory: app
-        run: xcodegen generate
-
-      - name: Archive for Apple silicon and Intel
-        working-directory: app
-        run: |
-          xcodebuild archive \
-            -project Ladle.xcodeproj \
-            -scheme Ladle \
-            -configuration Release \
-            -destination 'generic/platform=macOS' \
-            -archivePath "$RUNNER_TEMP/Ladle.xcarchive" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
-            ARCHS='arm64 x86_64' \
-            ONLY_ACTIVE_ARCH=NO \
-            MARKETING_VERSION="$VERSION" \
-            CURRENT_PROJECT_VERSION="$BUILD" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="$SIGNING_IDENTITY" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            OTHER_CODE_SIGN_FLAGS="--timestamp --keychain $KEYCHAIN" \
-            ENABLE_HARDENED_RUNTIME=YES
-
-      - name: Export with Developer ID
-        run: |
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>developer-id</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>teamID</key>
-            <string>${APPLE_TEAM_ID}</string>
-            <key>signingCertificate</key>
-            <string>Developer ID Application</string>
-          </dict>
-          </plist>
-          EOF
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/Ladle.xcarchive" \
-            -exportPath "$RUNNER_TEMP/export" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
-          app="$RUNNER_TEMP/export/Ladle.app"
-          codesign --verify --deep --strict --verbose=2 "$app"
-          archs=$(lipo -archs "$app/Contents/MacOS/Ladle")
-          echo "Architectures: $archs"
-          [[ "$archs" == *arm64* && "$archs" == *x86_64* ]] || { echo "::error::Ladle isn't universal ($archs)."; exit 1; }
-          test -x "$app/Contents/MacOS/LadleBridge"
-          test -d "$app/Contents/PlugIns/SafariExtension.appex"
-          [ "$(plutil -extract CFBundleShortVersionString raw "$app/Contents/Info.plist")" = "$VERSION" ]
-          [ "$(plutil -extract CFBundleVersion raw "$app/Contents/Info.plist")" = "$BUILD" ]
-
-      - name: Notarize the app
-        run: |
-          app="$RUNNER_TEMP/export/Ladle.app"
-          ditto -c -k --keepParent "$app" "$RUNNER_TEMP/Ladle.zip"
-          app/scripts/notarize.sh "$RUNNER_TEMP/Ladle.zip"
-          xcrun stapler staple "$app"
-
-      - name: Make, sign and notarize Ladle.dmg
-        run: |
-          staging="$RUNNER_TEMP/dmg"
-          dmg="$RUNNER_TEMP/Ladle.dmg"
-          mkdir -p "$staging"
-          ditto "$RUNNER_TEMP/export/Ladle.app" "$staging/Ladle.app"
-          ln -s /Applications "$staging/Applications"
-          # hdiutil sometimes finds the volume busy on hosted runners; try again.
-          for attempt in 1 2 3; do
-            if hdiutil create -volname Ladle -srcfolder "$staging" -fs HFS+ -format UDZO -ov "$dmg"; then break; fi
-            [ "$attempt" = 3 ] && exit 1
-            sleep 10
-          done
-          codesign --sign "$SIGNING_IDENTITY" --timestamp --keychain "$KEYCHAIN" "$dmg"
-          app/scripts/notarize.sh "$dmg"
-          xcrun stapler staple "$dmg"
-          spctl --assess --type open --context context:primary-signature --verbose "$dmg"
-
-      - name: Sign the update for Sparkle
-        id: sparkle
+      - name: Build and package
         env:
           SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
         run: |
-          # Sparkle's tools come with its Swift package, next to the framework.
-          sign_update=$(find "$RUNNER_TEMP/SourcePackages/artifacts" -type f -name sign_update | head -n 1)
-          if [ -z "$sign_update" ]; then
-            echo "::error::Sparkle's sign_update tool isn't in the resolved packages."
-            exit 1
-          fi
           key="$RUNNER_TEMP/sparkle_ed_private_key"
-          printf '%s' "$SPARKLE_ED_PRIVATE_KEY" > "$key"
-          attributes=$("$sign_update" --ed-key-file "$key" "$RUNNER_TEMP/Ladle.dmg")
-          rm -f "$key"
-          signature=$(echo "$attributes" | sed -nE 's/.*sparkle:edSignature="([^"]+)".*/\1/p')
-          length=$(echo "$attributes" | sed -nE 's/.*length="([0-9]+)".*/\1/p')
-          if [ -z "$signature" ] || [ -z "$length" ]; then
-            echo "::error::sign_update gave no signature: $attributes"
-            exit 1
-          fi
-          echo "signature=$signature" >> "$GITHUB_OUTPUT"
-          echo "length=$length" >> "$GITHUB_OUTPUT"
+          (umask 077 && printf '%s' "$SPARKLE_ED_PRIVATE_KEY" > "$key")
+          trap 'rm -f "$key"' EXIT
+          LADLE_SPARKLE_KEY_FILE="$key" app/scripts/package-app.sh
+
+      - name: Check the package
+        run: app/scripts/verify-package.sh
 
       - name: Publish the GitHub Release
         env:
@@ -247,79 +197,36 @@ jobs:
         run: |
           notes="$RUNNER_TEMP/release-notes.md"
           # The release notes without their front matter.
-          awk 'n >= 2 { print } /^---[[:space:]]*$/ && n < 2 { n++ }' "site/src/content/changelog/${VERSION}.md" > "$notes"
-          echo "" >> "$notes"
-          echo "Full notes: https://ladle.alirazakhan.me/changelog/#v${VERSION//./-}" >> "$notes"
+          awk 'n >= 2 { print } /^---[[:space:]]*$/ && n < 2 { n++ }' "site/src/content/changelog/${LADLE_VERSION}.md" > "$notes"
+          if [ "$SIGNING" = adhoc ]; then
+            printf '\nOpening Ladle for the first time? macOS asks you to approve it once: https://ladle.alirazakhan.me/docs/getting-started/install/#first-launch\n' >> "$notes"
+          fi
+          assets=("$LADLE_OUT/Ladle.dmg" "$LADLE_OUT/Ladle-Chrome-Extension.zip" "$LADLE_OUT/sparkle.json")
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/Ladle.dmg" --clobber
+            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
+            gh release edit "$GITHUB_REF_NAME" --title "Ladle $LADLE_VERSION" --notes-file "$notes" \
+              --draft=false --prerelease=false --latest
           else
-            gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/Ladle.dmg" \
-              --verify-tag --title "Ladle $VERSION" --notes-file "$notes"
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+              --verify-tag --title "Ladle $LADLE_VERSION" --notes-file "$notes" --latest
           fi
 
       - name: Remove the signing keychain
-        if: always()
+        if: always() && needs.check.outputs.signing == 'developer-id'
         run: |
-          [ -n "${KEYCHAIN:-}" ] && security delete-keychain "$KEYCHAIN" || true
+          if [ -n "${LADLE_KEYCHAIN:-}" ]; then security delete-keychain "$LADLE_KEYCHAIN" || true; fi
           rm -f "$RUNNER_TEMP/AuthKey.p8"
-
-  update-site:
-    name: Date the release notes and update the feed
-    needs: [check, release]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    env:
-      VERSION: ${{ needs.check.outputs.version }}
-      BUILD: ${{ needs.check.outputs.build }}
-      LENGTH: ${{ needs.release.outputs.length }}
-      SIGNATURE: ${{ needs.release.outputs.signature }}
-      DMG_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/Ladle.dmg
-    steps:
-      # The tag, for the scripts and the release notes as they were tagged.
-      - uses: actions/checkout@v7
-        with:
-          path: tagged
-
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-          path: main
-
-      - name: Commit the feed and the release date to main
-        working-directory: main
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          notes="site/src/content/changelog/${VERSION}.md"
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git reset --hard origin/main
-            if [ ! -f "$notes" ]; then
-              mkdir -p "$(dirname "$notes")"
-              cp "../tagged/$notes" "$notes"
-            fi
-            python3 ../tagged/app/scripts/publish_release.py set-date "$notes" "$(date -u +%F)"
-            python3 ../tagged/app/scripts/publish_release.py appcast site/public/appcast.xml \
-              --version "$VERSION" --build "$BUILD" --url "$DMG_URL" --length "$LENGTH" --signature "$SIGNATURE"
-            git add "$notes" site/public/appcast.xml
-            if git diff --cached --quiet; then
-              echo "main already has Ladle $VERSION in the feed."
-              exit 0
-            fi
-            git commit -m "Release Ladle $VERSION" \
-              -m "Adds it to the update feed (site/public/appcast.xml) and dates its release notes."
-            if git push origin HEAD:main; then exit 0; fi
-            echo "main moved on; trying again."
-            sleep 5
-          done
-          exit 1
 
   deploy-site:
     name: Deploy the website
-    needs: update-site
+    needs: release
+    runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/site-deploy.yml
+      actions: write
+    steps:
+      # A workflow_dispatch made with GITHUB_TOKEN starts a run (a push wouldn't). The deploy runs
+      # on main and rebuilds appcast.xml from the published releases, this one included.
+      - name: Start Site deploy on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run site-deploy.yml --ref main -R "$GITHUB_REPOSITORY"

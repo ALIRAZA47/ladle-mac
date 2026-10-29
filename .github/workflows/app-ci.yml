@@ -1,6 +1,7 @@
 # Builds and tests the app on every push and pull request that touches app/:
 # LadleKit's tests on Linux and macOS, an unsigned build of the app with its tests, the
-# browser extension's tests in Chromium, and the release scripts' tests.
+# browser extension's tests in Chromium, and the release scripts' tests. On main and on pull
+# requests it also packages Ladle exactly the way a release does, as a dry run.
 name: App CI
 
 on:
@@ -43,8 +44,8 @@ jobs:
         working-directory: app
         run: xcodegen generate
 
-      # Signed to run locally only; the release workflow signs with Developer ID.
-      # Keeps compiling past the first error, so one run reports every error.
+      # Signed to run locally only. Keeps compiling past the first error, so one run reports
+      # every error.
       - name: Build and test the app (unsigned)
         working-directory: app
         run: |
@@ -108,5 +109,59 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Test publish_release.py
+      - name: Test publish_release.py and sparkle_ed.py
         run: python3 -m unittest discover -s app/scripts -p 'test_*.py' -v
+      - name: Check the packaging scripts' syntax
+        run: for script in app/scripts/*.sh; do bash -n "$script"; done
+
+  # The release's packaging path (app/scripts/package-app.sh), with a throwaway Sparkle key made
+  # here: a universal Release build signed ad hoc inside out, Ladle.dmg, the Chrome extension zip
+  # and the update's EdDSA signature, then verify-package.sh checks it all from the mounted DMG.
+  package:
+    name: Packaging dry run
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+    env:
+      LADLE_OUT: ${{ github.workspace }}/app/build/package
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Pick a version and a throwaway Sparkle key
+        run: |
+          version=$(sed -nE 's/^ *MARKETING_VERSION: *"?([0-9]+\.[0-9]+\.[0-9]+)"?.*/\1/p' app/project.yml | head -n 1)
+          key="$RUNNER_TEMP/throwaway_sparkle_key"
+          public_key=$(python3 app/scripts/sparkle_ed.py generate "$key")
+          {
+            echo "LADLE_VERSION=$version"
+            echo "LADLE_BUILD=$GITHUB_RUN_NUMBER"
+            echo "LADLE_SPARKLE_KEY_FILE=$key"
+            echo "LADLE_PUBLIC_ED_KEY_OVERRIDE=$public_key"
+          } >> "$GITHUB_ENV"
+          echo "Ladle $version ($GITHUB_RUN_NUMBER), throwaway SUPublicEDKey $public_key"
+
+      - name: Build and package, ad hoc like a release
+        run: app/scripts/package-app.sh
+
+      - name: Check the package
+        run: app/scripts/verify-package.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Ladle-dry-run-${{ github.run_number }}
+          path: |
+            app/build/package/Ladle.dmg
+            app/build/package/Ladle-Chrome-Extension.zip
+            app/build/package/sparkle.json
+          retention-days: 3
+          if-no-files-found: error
