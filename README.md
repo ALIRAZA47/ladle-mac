@@ -23,4 +23,4 @@ everything into folders, and updates itself.
 
 - To use Ladle: macOS 14 Sonoma or later, Apple silicon or Intel.
 - To build the app: Xcode 16 or later on macOS, plus [XcodeGen](https://github.com/yonaskolb/XcodeGen).
-- To build the site: Node.js 20 or later.
+- To build the site: Node.js 22.23.4 or later (24 recommended).

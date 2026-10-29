@@ -36,6 +36,7 @@ the site creates it, and the app's release workflow rewrites it on every release
 | Safari extension bundle ID | `me.alirazakhan.Ladle.SafariExtension` |
 | Native messaging host (Chrome, Firefox) | `me.alirazakhan.ladle` |
 | URL scheme | `ladle://` |
+| App data folder | `~/Library/Application Support/Ladle` (download list, resume state, settings) |
 | Version | 1.0.0 (build 1) |
 | Minimum macOS | 14.0 |
 | Distribution | Developer ID–signed, notarized `Ladle.dmg` on GitHub Releases. Not sandboxed, hardened runtime on. Not on the Mac App Store. |
@@ -63,6 +64,7 @@ The site must publish every one of these; the app opens them from Help and Setti
 /docs/getting-started/install/
 /docs/getting-started/set-up-your-browser/        anchors: #safari #chrome #firefox
 /docs/getting-started/first-download/
+/docs/getting-started/menu-bar-dock-and-notifications/
 /docs/adding-downloads/paste-drop-or-shortcut/
 /docs/adding-downloads/many-links/
 /docs/adding-downloads/video-button/
@@ -96,6 +98,7 @@ molten glow, rounded corners, pill-shaped controls. Dark first, with a full ligh
 | Text / secondary / tertiary | `#F6F2EC` / `#B8B0A6` / `#9C9489` | `#1A1714` / `#554E46` / `#675F57` |
 | Accent (Molten) | `#FF8A1F` | `#FF8A1F` fills, `#B4500E` text |
 | Accent text on fills | `#1E1206` | `#1E1206` |
+| Accent text on orange tints | `#FF9A3D` | `#9C440B` (`#B4500E` drops below 4.5:1 there) |
 | Pour gradient (progress) | `#FF4F1A` → `#FF8A1F` → `#FFC46B` | same |
 | Finished (Steel) | `#C9CDD3` | `#7B8491` |
 | Danger | `#FF6B5E` | `#C4321F` |
@@ -115,8 +118,9 @@ The app must behave like this and the docs must describe exactly this.
 ### Adding downloads
 
 - **Link bar** at the top of the main window: pasting a link shows the file's name, size and
-  destination with **Download now** and **More options**. Typing anything else searches the
-  list. `⌘K` focuses it.
+  destination with **Download now** and **More options** (opens the Add sheet with the link
+  filled in, to pick a folder or start it tonight). Typing anything else searches the list.
+  `⌘K` focuses it.
 - **Add sheet** (`⌘N` or the **+** button): one link, or many links, one per line.
   A numbered series like `ep-[01-12].mp3` or `img[1-20].jpg` expands to every number; zero
   padding is kept. Links already downloaded are listed but unchecked ("Already downloaded").
@@ -127,10 +131,12 @@ The app must behave like this and the docs must describe exactly this.
 - **Drag and drop** links or `.webloc` files onto the window or the Dock icon.
 - **URL scheme**: `ladle://add?url=<percent-encoded>&referrer=<…>&filename=<…>&cookies=<…>`.
 - **Browser hand-off**: the extension catches downloads of watched file types and Ladle shows
-  the catch panel — **Download**, **Later**, **Let the browser handle it**, and "Always download
-  .<ext> files without asking". Setting: *Ask before downloading* (on). Holding **⌥ Option**
-  while clicking a link lets the browser download it instead, that once.
-- Context menu items: **Download with Ladle**, **Download All Links with Ladle…**.
+  the catch panel — **Download**, **Later** (adds it to the list without starting it),
+  **Let the browser handle it**, and "Always download .<ext> files without asking".
+  Setting: *Ask before downloading* (on). Holding **⌥ Option** while clicking a link lets the
+  browser download it instead, that once.
+- Context menu items: **Download with Ladle**, and **Download All Links with Ladle…**, which
+  opens the Add sheet listing the page's file links, checked, to choose from.
 
 ### The engine
 
@@ -157,7 +163,9 @@ The app must behave like this and the docs must describe exactly this.
 - **Tonight**: starts at 1:00 AM, stops at 7:00 AM (unfinished items wait for the next night),
   runs every day by default. *When the queue finishes*: **Do nothing** or **Put the Mac to sleep**
   (default).
-- *Pause when running on battery* (on) and *Pause on Low Data networks* (on, macOS Low Data Mode).
+- *Pause when running on battery* (on) and *Pause on Low Data networks* (on, macOS Low Data Mode)
+  apply to the **Tonight queue only**: they hold it and let it carry on by itself once the Mac
+  is plugged in or on a regular network. Downloads you start yourself always run.
 
 ### Files and folders
 
@@ -177,9 +185,11 @@ The app must behave like this and the docs must describe exactly this.
 - *If a file with the same name exists*: **Keep both** (default — adds " 2", " 3"…),
   **Replace**, **Ask**.
 - *When a download finishes*: **Just notify me** (default), **Open the file**, **Show in Finder**.
-- **Checksums** (*Verify checksums*, on): when a SHA-256 or MD5 is known (pasted after the link,
-  passed by the extension, or published as `<file>.sha256` next to it), Ladle verifies the file
-  and marks it **Verified** or warns that it doesn't match.
+- **Checksums** (*Verify checksums*, on): when a SHA-256 or MD5 is known, Ladle verifies the file
+  and marks it **Verified** or warns that it doesn't match. Ways it's known: pasted on the same
+  line after the link, separated by a space — the hex digest, optionally prefixed `sha256:` or
+  `md5:` (64 hex characters = SHA-256, 32 = MD5); passed by the extension; or published as
+  `<file>.sha256` next to the file.
 
 ### Video button
 
@@ -213,6 +223,17 @@ Ladle updates itself with Sparkle 2.
   pause and resume after the restart.
 - App menu: **Check for Updates…**. Settings has an **Updates** tab.
 - Each appcast item's `sparkle:releaseNotesLink` points to the changelog anchor for that version.
+
+**Release flow.** Before tagging `vX.Y.Z`, the owner writes the release notes in
+`site/src/content/changelog/X.Y.Z.md` (front matter: `version`, `title`, optional `date`). The
+app's release workflow, on the tag:
+
+1. fails early if that changelog file is missing;
+2. builds, signs, notarizes and publishes `Ladle.dmg` to the GitHub Release;
+3. sets the changelog `date`, rewrites `site/public/appcast.xml`, and commits both to `main`;
+4. calls `.github/workflows/site-deploy.yml` as a reusable workflow (permissions
+   `contents: read`, `pages: write`, `id-token: write`), because a push made with the default
+   `GITHUB_TOKEN` doesn't start other workflows. Called that way it deploys the latest `main`.
 
 ### Settings
 
