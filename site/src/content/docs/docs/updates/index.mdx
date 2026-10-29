@@ -1,0 +1,61 @@
+---
+title: Updating Ladle
+description: Ladle keeps itself up to date. It checks once a day, downloads new versions in the background and installs them when you restart or quit.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import { DMG_URL } from '~/config/site.mjs';
+
+## How updates arrive
+
+You don’t need to do anything to stay up to date:
+
+<Steps>
+
+1. Once a day, Ladle checks whether there’s a new version.
+
+2. If there is, Ladle downloads it in the background while you carry on.
+
+3. A banner in Ladle’s window tells you it’s ready, for example “Ladle 1.1 is ready”, with **Restart to Update** and **Later**.
+
+</Steps>
+
+- **Restart to Update** installs the new version and reopens Ladle. If files are downloading, Ladle tells you first: they pause for the restart and pick up where they left off afterwards.
+- **Later** leaves it for now. The update installs the next time you quit Ladle.
+
+{/* Screenshot: the "Ladle 1.1 is ready" banner with Restart to Update and Later. */}
+
+## Check for updates now
+
+Choose **Ladle › Check for Updates…**, or open **Ladle › Settings › Updates** and click **Check Now**. The Updates tab also shows which version you have and when Ladle last checked.
+
+## Update settings
+
+Both are in **Ladle › Settings › Updates** and are on out of the box:
+
+| Setting | What it does |
+| --- | --- |
+| Check for updates automatically | Ladle looks for a new version once a day. |
+| Download and install updates automatically | New versions download in the background and install when you restart or quit Ladle. Turn it off and Ladle asks you before installing anything. |
+
+With both off, Ladle only looks for updates when you choose **Check for Updates…**.
+
+## What an update check sends
+
+Only Ladle’s version and your macOS version, to fetch the update feed from this website. There’s no account, no identifier and no usage data. See [Privacy](/privacy/).
+
+Each update is signed, and Ladle checks that signature before it installs anything, so it only installs updates that really come from Ladle.
+
+## What changed
+
+Every version’s release notes are in the [changelog](/changelog/), newest first.
+
+## If an update won’t install
+
+- **Make sure Ladle is in your Applications folder.** Ladle can’t update itself while it runs from the disk image.
+- **If macOS asks for your password**, it’s checking that you’re allowed to change apps in the Applications folder.
+- **Install it by hand.** <a href={DMG_URL}>Download the latest Ladle</a>, quit Ladle, and drag the new version into Applications, replacing the old one. Your list of downloads and your settings stay as they are.
+
+<Aside type="tip">
+Ladle never needs reinstalling to keep working, and there’s nothing to renew. Updates are free, like the rest of Ladle.
+</Aside>

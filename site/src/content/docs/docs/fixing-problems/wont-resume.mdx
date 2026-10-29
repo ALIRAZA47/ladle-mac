@@ -1,0 +1,40 @@
+---
+title: A download won’t resume
+description: Ladle resumes downloads after a pause, a quit, sleep or a network change, as long as the server allows it and the file hasn’t changed. Here’s what to do when it can’t.
+---
+
+## How resuming works
+
+Ladle saves each connection’s place at least every 2 seconds, and again whenever you pause, quit Ladle or your Mac goes to sleep. When the download carries on, each connection picks up from its saved place.
+
+That works when two things are true:
+
+1. **The server lets Ladle ask for part of a file.** Most big download sites do.
+2. **The file on the server hasn’t changed.** Ladle checks the file’s tag from the server, or its date and size when there’s no tag, before it carries on.
+
+If either isn’t true, Ladle can’t safely join the new data to what you already have, so it asks you before starting the download over.
+
+## Why a download starts over
+
+### The server doesn’t support resuming
+
+Some servers only send whole files. Ladle downloads those over a single connection, and if the download stops, the only way to finish it is to start over. Nothing in Ladle can change that, but it only affects those servers.
+
+### The file changed on the server
+
+If the site published a new version under the same link, the old part and the new file don’t fit together. Starting over gets you the new version in one piece.
+
+### The link expired
+
+Temporary links, like ones from file-sharing services or links signed for your account, stop working after a while. Go back to the page you got it from, start the download again, and Ladle fetches it with the new link.
+
+## If a download stays paused
+
+- **Resume it.** Select it and press <kbd>Space</kbd>, or press <kbd>⌥⌘P</kbd> to resume everything.
+- **Is your Mac on battery?** With **Pause when running on battery** on, Ladle holds downloads until you plug in.
+- **Are you on a Low Data network?** With **Pause on Low Data networks** on, Ladle waits until you join a regular network. Both settings are in **Ladle › Settings › Schedule**.
+- **Is it in the Tonight queue?** Tonight downloads only run between 1:00 AM and 7:00 AM. Select one and click **Start now** to run it immediately. See [The Tonight queue](/docs/queues-and-speed/tonight-queue/).
+
+## Keep the part file where it is
+
+While a download is in progress, its folder holds a `.ladle-part` file with everything downloaded so far. Moving, renaming or deleting it loses that progress, so leave it until Ladle renames it when the download is complete.

@@ -1,0 +1,69 @@
+---
+title: Settings
+description: Every setting in Ladle, tab by tab, with what it does and how it starts out.
+---
+
+Open Settings with <kbd>⌘,</kbd>, or choose **Ladle › Settings**. There are six tabs: General, Downloads, Speed, Browsers, Schedule and Updates.
+
+## General
+
+| Setting | Out of the box | What it does |
+| --- | --- | --- |
+| Open Ladle at login | On | Opens Ladle when you log in, so it’s ready for the Tonight queue. |
+| Show Ladle in the menu bar | On | Shows Ladle’s speed and menu in the menu bar. See [Menu bar, Dock and notifications](/docs/getting-started/menu-bar-dock-and-notifications/). |
+| Watch the clipboard for links | On | Offers to download file links you copy. The clipboard is only read on your Mac. |
+| Appearance | Auto | **Auto** follows macOS, or choose **Light** or **Dark**. |
+| Notify me when downloads finish | On | Sends a notification with **Open** and **Show in Finder**. |
+| Play a sound too | Off | Adds a sound to that notification. |
+
+## Downloads
+
+| Setting | Out of the box | What it does |
+| --- | --- | --- |
+| Save downloads to | `~/Downloads/Ladle` | The folder Ladle saves into. |
+| Sort into category folders | On | Puts each file in a folder for its type: Video, Music, Documents, Archives, Apps or Images. See [Categories and folders](/docs/files-and-folders/categories-and-folders/). |
+| If a file with the same name exists | Keep both | **Keep both** adds a number to the new file’s name, **Replace** swaps the old file for the new one, **Ask** lets you decide each time. See [Duplicate file names](/docs/files-and-folders/duplicate-file-names/). |
+| When a download finishes | Just notify me | Or **Open the file**, or **Show in Finder**. |
+| Verify checksums | On | Checks files against a published SHA-256 or MD5. See [Checksums](/docs/files-and-folders/checksums/). |
+
+## Speed
+
+| Setting | Out of the box | What it does |
+| --- | --- | --- |
+| Downloads at the same time | 3 | How many downloads run at once, from 1 to 8. The rest wait in the [main queue](/docs/queues-and-speed/main-queue/). |
+| Connections per download | 8 (recommended) | How many pieces each download is split into, from 1 to 32. See [Connections and speed limits](/docs/queues-and-speed/connections-and-speed-limits/). |
+| Limit total speed | Off, 10 MB/s | One speed cap across all downloads. |
+| Retry failed downloads | 3 times | **Never**, **1**, **3**, **5** or **10** times. |
+| Proxy | Same as macOS | Uses the proxy from your macOS network settings. |
+
+## Browsers
+
+| Setting | Out of the box | What it does |
+| --- | --- | --- |
+| Safari | — | Shows whether Ladle’s Safari extension is on, with **Manage**. |
+| Chrome, Arc, Edge and Brave | — | **Get extension** takes you to [the setup guide](/docs/getting-started/set-up-your-browser/#chrome). |
+| Firefox | — | **Get extension** takes you to [the setup guide](/docs/getting-started/set-up-your-browser/#firefox). |
+| Everything else | — | Any other browser works by copying a link. |
+| Catch these file types | dmg, pkg, zip, iso, mp4, mov, mkv, mp3, flac, pdf | The file types the extension hands to Ladle. Click **Edit…** to change the list. |
+| Ask before downloading | On | Shows the catch panel before each download. Hold <kbd>⌥ Option</kbd> while clicking to skip Ladle. |
+
+## Schedule
+
+| Setting | Out of the box | What it does |
+| --- | --- | --- |
+| Tonight queue | 1:00 AM to 7:00 AM | When the [Tonight queue](/docs/queues-and-speed/tonight-queue/) starts and stops. Your Mac needs to be awake at the start time. |
+| Run on | Every day | The nights the queue runs. |
+| When the queue finishes | Put the Mac to sleep | Or **Do nothing**. |
+| Pause when running on battery | On | Holds Ladle’s queues while your Mac runs on battery. |
+| Pause on Low Data networks | On | Holds them on networks with macOS Low Data Mode on. |
+
+## Updates
+
+| Setting | Out of the box | What it does |
+| --- | --- | --- |
+| Check for updates automatically | On | Looks for a new version once a day. |
+| Download and install updates automatically | On | Downloads updates in the background and installs them when you restart or quit Ladle. |
+| Current version | — | The version you have, with **Check Now** to look for an update right away. |
+| Last checked | — | When Ladle last looked for an update. |
+
+More in [Updating Ladle](/docs/updates/).
