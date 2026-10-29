@@ -31,7 +31,7 @@ npm run check      # broken links, missing #anchors, pages SPEC.md requires
 | `npm run dev` | Dev server with hot reload. |
 | `npm run build` | Static build into `dist/`, plus the search index and sitemap. |
 | `npm run preview` | Serves the build. |
-| `npm run check` | Crawls `dist/` for broken internal links and anchors, checks every URL and docs page in `SPEC.md`, the changelog anchor for the spec's version, and that `appcast.xml` is a Sparkle feed. |
+| `npm run check` | Crawls `dist/` for broken internal links and anchors, checks every URL and docs page in `SPEC.md`, the changelog anchor for the spec's version, that download links are version-less, and that `appcast.xml` is a Sparkle feed. |
 | `npm run images` | Regenerates `favicon.ico`, `apple-touch-icon.png` and `og.png` in `public/`. See [Images](#images). |
 
 ## Where things are
@@ -114,6 +114,10 @@ Releases follow the release flow in [`SPEC.md`](../SPEC.md#updates):
      permissions: { contents: read, pages: write, id-token: write }
      uses: ./.github/workflows/site-deploy.yml
    ```
+
+The release assets have version-less names, so the site links to them through GitHub's
+`releases/latest/download/…` URLs and never needs a new link per release. `npm run check` fails
+if a download link names a version or an asset that `SPEC.md` doesn't list.
 
 The download page shows the newest version in `appcast.xml`, or the newest changelog entry
 before the first release. To redeploy by hand, run **Site deploy** from the repository's

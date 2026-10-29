@@ -2,7 +2,8 @@
 //   1. every internal link and #anchor resolves to a real page and element;
 //   2. every URL and docs path that SPEC.md says the app links to exists, with its anchors;
 //   3. the changelog has an anchor for the version in SPEC.md;
-//   4. the update feed is a Sparkle RSS file.
+//   4. the update feed is a Sparkle RSS file;
+//   5. release downloads use version-less releases/latest/download/ links to assets SPEC.md lists.
 // Run after `npm run build`:  npm run check
 
 import { readFile, readdir, stat } from 'node:fs/promises';
@@ -121,8 +122,12 @@ for (const [path, { links }] of pages) {
 
 // SPEC.md: URLs, the docs pages the app opens, and the changelog anchor format.
 let specChecks = 0;
+const specDownloads = new Set();
 if (existsSync(specPath)) {
 	const spec = await readFile(specPath, 'utf8');
+	for (const m of spec.matchAll(/https:\/\/github\.com\/[^\s`)|]+\/releases\/latest\/download\/[^\s`)|]+/g)) {
+		specDownloads.add(m[0]);
+	}
 	const required = new Map();
 	const add = (path, anchor) => {
 		const set = required.get(path) ?? new Set();
@@ -160,6 +165,27 @@ if (existsSync(specPath)) {
 	console.warn(`Skipped SPEC.md checks: ${specPath} not found.`);
 }
 
+// Release downloads: a link to a versioned asset goes stale with the next release, so every one
+// must be GitHub's releases/latest/download/<asset> form, for an asset SPEC.md lists.
+let downloadLinks = 0;
+for (const [path, { links }] of pages) {
+	for (const raw of links) {
+		let url;
+		try {
+			url = new URL(raw, `https://ladle.alirazakhan.me${path}`);
+		} catch {
+			continue;
+		}
+		if (url.host !== 'github.com' || !/\/releases\/(?:.+\/)?download\//.test(url.pathname)) continue;
+		downloadLinks++;
+		if (!/^\/[^/]+\/[^/]+\/releases\/latest\/download\/[^/]+$/.test(url.pathname)) {
+			errors.push(`${path}: download link ${raw} names a version; link to releases/latest/download/ instead`);
+		} else if (specDownloads.size && !specDownloads.has(`${url.origin}${url.pathname}`)) {
+			errors.push(`${path}: download link ${raw} is not a release asset listed in SPEC.md`);
+		}
+	}
+}
+
 // The update feed must stay a Sparkle RSS file the app can read.
 const appcast = await readFile(join(dist, 'appcast.xml'), 'utf8').catch(() => '');
 if (!/<rss[^>]*version="2\.0"/.test(appcast) || !appcast.includes('xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"') || !/<channel>[\s\S]*<title>/.test(appcast)) {
@@ -167,7 +193,9 @@ if (!/<rss[^>]*version="2\.0"/.test(appcast) || !appcast.includes('xmlns:sparkle
 }
 
 const assetCount = files.length - htmlFiles.length;
-console.log(`Checked ${htmlFiles.length} pages (${assetCount} other files) and ${specChecks} SPEC.md requirements.`);
+console.log(
+	`Checked ${htmlFiles.length} pages (${assetCount} other files), ${specChecks} SPEC.md requirements and ${downloadLinks} release download links.`
+);
 console.log(`External links (not fetched): ${external.size}`);
 for (const [href, from] of [...external].sort()) console.log(`  ${href}  (${from.size} page${from.size === 1 ? '' : 's'})`);
 
@@ -176,4 +204,4 @@ if (errors.length) {
 	for (const error of errors) console.error(`  ✗ ${error}`);
 	process.exit(1);
 }
-console.log('\nAll internal links, anchors and SPEC.md pages resolve.');
+console.log('\nAll internal links, anchors and SPEC.md pages resolve, and every download link is version-less.');
