@@ -41,37 +41,31 @@ public enum Checksums {
     }
 
     /// Reads a `<file>.sha256` sidecar. Accepts a bare digest or `sha256sum` lines ("<hex>  <name>"),
-    /// preferring the line that names `fileName`.
+    /// and BSD lines ("SHA256 (name) = hex"). With several entries, only the one naming `fileName` counts.
     public static func parseSidecar(_ text: String, fileName: String, algorithm: ChecksumAlgorithm = .sha256) -> ExpectedChecksum? {
-        var fallback: ExpectedChecksum?
-        var lines = 0
-        for rawLine in text.components(separatedBy: .newlines) {
+        var entries: [(sum: ExpectedChecksum, name: String?)] = []
+        for rawLine in text.components(separatedBy: .newlines).prefix(5000) {
             let line = rawLine.trimmingCharacters(in: .whitespaces)
             guard !line.isEmpty, !line.hasPrefix("#") else { continue }
-            lines += 1
-            if lines > 2000 { break }
-            // BSD style: "SHA256 (name) = hex"
             if line.uppercased().hasPrefix("SHA256 ("), let eq = line.range(of: ") = ") {
                 let name = String(line[line.index(line.startIndex, offsetBy: 8)..<eq.lowerBound])
-                let digest = String(line[eq.upperBound...])
-                if let sum = ExpectedChecksum.parse(digest, source: .sidecar), sum.algorithm == algorithm {
-                    if name == fileName { return sum }
-                    if fallback == nil { fallback = sum }
+                if let sum = ExpectedChecksum.parse(String(line[eq.upperBound...]), source: .sidecar), sum.algorithm == algorithm {
+                    entries.append((sum, name))
                 }
                 continue
             }
             let tokens = line.split(whereSeparator: { $0 == " " || $0 == "\t" }).map(String.init)
             guard let first = tokens.first, let sum = ExpectedChecksum.parse(first, source: .sidecar), sum.algorithm == algorithm else { continue }
+            var name: String?
             if tokens.count >= 2 {
-                var name = tokens[1...].joined(separator: " ")
-                if name.hasPrefix("*") { name.removeFirst() }
-                if name == fileName || (name as NSString).lastPathComponent == fileName { return sum }
-                if fallback == nil && lines == 1 { fallback = sum }
-            } else if fallback == nil {
-                fallback = sum
+                var joined = tokens[1...].joined(separator: " ")
+                if joined.hasPrefix("*") { joined.removeFirst() }
+                name = (joined as NSString).lastPathComponent
             }
+            entries.append((sum, name))
         }
-        return fallback
+        if let match = entries.first(where: { $0.name == fileName }) { return match.sum }
+        return entries.count == 1 ? entries[0].sum : nil
     }
 }
 

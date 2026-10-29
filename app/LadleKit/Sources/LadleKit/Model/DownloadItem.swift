@@ -214,6 +214,8 @@ public struct DownloadItem: Codable, Identifiable, Equatable, Sendable {
     public var referrer: URL?
     /// Cookie header from the browser. Sent only to `url`'s host.
     public var cookies: String?
+    /// The browser's user agent, so sites that tie cookies to it keep working.
+    public var userAgent: String?
     /// Where it came from, for the catch panel and details: "Safari", "Clipboard"…
     public var source: String?
 
@@ -223,6 +225,10 @@ public struct DownloadItem: Codable, Identifiable, Equatable, Sendable {
     public var nameIsFinal: Bool
     /// Absolute folder path.
     public var directory: String
+    /// The folder was picked by hand, so a better name from the server doesn't move the file.
+    public var directoryIsFinal: Bool
+    /// The person chose "Replace" for an existing file with this name.
+    public var replaceExisting: Bool
     public var category: FileCategory
     public var queue: QueueKind
     public var status: DownloadStatus
@@ -264,10 +270,13 @@ public struct DownloadItem: Codable, Identifiable, Equatable, Sendable {
         self.hls = nil
         self.referrer = nil
         self.cookies = nil
+        self.userAgent = nil
         self.source = nil
         self.fileName = fileName
         self.nameIsFinal = false
         self.directory = directory
+        self.directoryIsFinal = false
+        self.replaceExisting = false
         self.category = FileCategory.forFileName(fileName)
         self.queue = queue
         self.status = .queued
