@@ -1,0 +1,70 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import Icon from '../components/Icon.astro';
+import { SUPPORT_URL } from '../config/site.mjs';
+---
+
+<SiteLayout
+	title="Page not found — Ladle"
+	description="This page doesn’t exist. Try the Ladle home page, the docs or the download page."
+	index={false}
+>
+	<section class="container page" aria-labelledby="nf-title">
+		<p class="eyebrow">404</p>
+		<h1 id="nf-title" class="disp">Nothing poured here.</h1>
+		<p class="lead">The page you’re looking for has moved, or never existed.</p>
+		<nav class="links" aria-label="Places to go">
+			<a class="btn btn-lg btn-primary" href="/"><Icon name="ladle" size={18} />Ladle home</a>
+			<a class="btn btn-lg btn-ghost" href="/docs/">Docs</a>
+			<a class="btn btn-lg btn-ghost" href="/download/">Download</a>
+		</nav>
+		<p class="note">
+			Followed a link from inside Ladle? Please <a href={SUPPORT_URL}>let us know on GitHub Issues</a> so we can
+			fix it.
+		</p>
+	</section>
+</SiteLayout>
+
+<style>
+	.page {
+		max-width: 760px;
+		min-height: 60vh;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 16px;
+		padding-top: 72px;
+		padding-bottom: 96px;
+		text-align: center;
+	}
+	h1 {
+		margin: 0;
+		font-size: clamp(44px, 7vw, 88px);
+		font-weight: 800;
+		line-height: 0.95;
+		letter-spacing: -0.045em;
+	}
+	.lead {
+		margin: 6px 0 0;
+		font-size: 19px;
+		color: var(--ld-text2);
+	}
+	.links {
+		margin-top: 18px;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 12px;
+	}
+	.note {
+		margin: 18px 0 0;
+		font-size: 15px;
+		color: var(--ld-text3);
+	}
+	.note a {
+		color: var(--ld-ink);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+</style>

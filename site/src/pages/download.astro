@@ -1,0 +1,325 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import AppIcon from '../components/AppIcon.astro';
+import Icon from '../components/Icon.astro';
+import { DMG_URL, RELEASES_URL, REQUIREMENTS } from '../config/site.mjs';
+import { latestRelease } from '../lib/release';
+
+const release = await latestRelease();
+
+const steps = [
+	{ title: 'Open the download', text: 'Open Ladle.dmg from your Downloads folder.' },
+	{ title: 'Drag it to Applications', text: 'In the window that opens, drag Ladle onto the Applications folder.' },
+	{
+		title: 'Open Ladle',
+		text: 'Open it from Applications. It’s notarized by Apple, so click Open if macOS asks.',
+	},
+];
+
+const requirements = [
+	{ icon: 'laptop', text: REQUIREMENTS },
+	{ icon: 'chip', text: 'Apple silicon or Intel, natively' },
+	{ icon: 'globe', text: 'Safari for one-click hand-off, or any browser by copying a link' },
+	{ icon: 'shield', text: 'Signed with an Apple Developer ID and notarized by Apple' },
+] as const;
+---
+
+<SiteLayout
+	title="Download Ladle for Mac"
+	description={`Download Ladle ${release.version}, the free download manager for Mac. For ${REQUIREMENTS}, on Apple silicon and Intel.`}
+	current="download"
+>
+	<section class="container hero" aria-labelledby="dl-title">
+		<span class="icon"><AppIcon size={104} /></span>
+		<h1 id="dl-title" class="disp">Download Ladle</h1>
+		<p class="lead">Free for {REQUIREMENTS}. One download runs natively on Apple silicon and Intel.</p>
+		<a class="btn btn-lg btn-primary big" href={DMG_URL}>
+			<Icon name="download" size={20} strokeWidth={2.3} />Download for Mac
+		</a>
+		<p class="meta">
+			<span>Version {release.version}</span>
+			<span aria-hidden="true">·</span>
+			<span>Ladle.dmg</span>
+			<span aria-hidden="true">·</span>
+			<a href={release.notesHref}>Release notes</a>
+		</p>
+	</section>
+
+	<section class="container section" aria-labelledby="install-title">
+		<div class="head">
+			<p class="eyebrow">Install</p>
+			<h2 id="install-title" class="disp">Ready in about a minute.</h2>
+		</div>
+		<ol class="steps">
+			{
+				steps.map((step, i) => (
+					<li class="glass step">
+						<span class="num disp" aria-hidden="true">
+							{i + 1}
+						</span>
+						<h3>{step.title}</h3>
+						<p>{step.text}</p>
+					</li>
+				))
+			}
+			<li class="glass step next">
+				<span class="num disp" aria-hidden="true">4</span>
+				<h3>Set up your browser</h3>
+				<p>Turn on Ladle’s Safari extension, and clicking a download sends it straight to Ladle.</p>
+				<a class="more" href="/docs/getting-started/set-up-your-browser/">
+					Browser setup guide <Icon name="arrow-right" size={15} />
+				</a>
+			</li>
+		</ol>
+		<p class="help">
+			Need more detail? Read <a href="/docs/getting-started/install/">Install Ladle</a> in the docs.
+		</p>
+	</section>
+
+	<section class="container section cards" aria-label="Requirements and updates">
+		<div class="glass card">
+			<h2 class="disp">What you need</h2>
+			<ul class="reqs">
+				{
+					requirements.map((item) => (
+						<li>
+							<span class="req-icon" aria-hidden="true">
+								<Icon name={item.icon} size={18} />
+							</span>
+							{item.text}
+						</li>
+					))
+				}
+			</ul>
+		</div>
+		<div class="glass card">
+			<h2 class="disp">Stays up to date</h2>
+			<p>
+				Ladle checks for a new version once a day and installs it in the background, so this is the only
+				time you’ll need this page.
+			</p>
+			<p>No account, no license key, nothing to renew. It’s free.</p>
+			<div class="links">
+				<a href="/docs/updates/">How updates work <Icon name="arrow-right" size={15} /></a>
+				<a href={RELEASES_URL}>All releases on GitHub <Icon name="external" size={15} /></a>
+			</div>
+		</div>
+	</section>
+</SiteLayout>
+
+<style>
+	.hero {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		padding-top: 64px;
+		padding-bottom: 72px;
+	}
+	.icon {
+		display: block;
+		border-radius: 24px;
+		box-shadow:
+			0 24px 60px rgba(0, 0, 0, 0.45),
+			0 0 70px rgba(255, 138, 31, 0.25);
+	}
+	:global(:root[data-theme='light']) .icon {
+		box-shadow:
+			0 24px 50px rgba(60, 40, 20, 0.25),
+			0 0 60px rgba(255, 138, 31, 0.2);
+	}
+	h1 {
+		margin: 28px 0 0;
+		font-size: clamp(44px, 6vw, 80px);
+		font-weight: 800;
+		line-height: 0.98;
+		letter-spacing: -0.045em;
+	}
+	.lead {
+		margin: 18px 0 0;
+		max-width: 560px;
+		font-size: clamp(17px, 1.6vw, 20px);
+		line-height: 1.55;
+		color: var(--ld-text2);
+		text-wrap: balance;
+	}
+	.big {
+		margin-top: 34px;
+		height: 60px;
+		padding: 0 32px;
+		font-size: 17px;
+	}
+	.meta {
+		margin: 16px 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 4px 8px;
+		font-size: 14px;
+		color: var(--ld-text3);
+	}
+	.meta a {
+		color: var(--ld-ink);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.section {
+		padding-block: 40px;
+	}
+	.head {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin-bottom: 28px;
+	}
+	.head h2 {
+		margin: 0;
+		font-size: clamp(30px, 3.6vw, 44px);
+		font-weight: 800;
+		line-height: 1.05;
+		letter-spacing: -0.035em;
+	}
+	.steps {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+		gap: 16px;
+	}
+	.step {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 22px;
+		border-radius: 24px;
+	}
+	.step.next {
+		box-shadow:
+			inset 0 1px 0 var(--ld-hi),
+			inset 0 0 0 1px rgba(255, 138, 31, 0.4),
+			var(--ld-shadow-panel);
+	}
+	.num {
+		width: 32px;
+		height: 32px;
+		display: grid;
+		place-items: center;
+		border-radius: 999px;
+		background: var(--ld-tint);
+		font-size: 16px;
+		font-weight: 800;
+		color: var(--ld-ink-strong);
+	}
+	.step h3 {
+		margin: 0;
+		font-size: 18px;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+	}
+	.step p {
+		margin: 0;
+		font-size: 15px;
+		line-height: 1.55;
+		color: var(--ld-text2);
+	}
+	.more,
+	.links a {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 14.5px;
+		font-weight: 600;
+		color: var(--ld-ink);
+		border-radius: 6px;
+	}
+	.more {
+		margin-top: auto;
+		padding-top: 4px;
+	}
+	.more:hover,
+	.links a:hover {
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.help {
+		margin: 20px 0 0;
+		font-size: 15px;
+		color: var(--ld-text2);
+	}
+	.help a {
+		color: var(--ld-ink);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
+		gap: 16px;
+		padding-bottom: 96px;
+	}
+	.card {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		padding: 28px;
+		border-radius: 28px;
+	}
+	.card h2 {
+		margin: 0 0 4px;
+		font-size: 24px;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+	.card p {
+		margin: 0;
+		font-size: 15.5px;
+		line-height: 1.6;
+		color: var(--ld-text2);
+	}
+	.reqs {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.reqs li {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		font-size: 15.5px;
+	}
+	.req-icon {
+		width: 36px;
+		height: 36px;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 12px;
+		background: var(--ld-tint);
+		color: var(--ld-ink-strong);
+	}
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px 24px;
+		margin-top: auto;
+		padding-top: 6px;
+	}
+	@media (max-width: 600px) {
+		.hero {
+			padding-top: 36px;
+			padding-bottom: 48px;
+		}
+		.big {
+			width: 100%;
+		}
+		.card {
+			padding: 22px;
+		}
+	}
+</style>
