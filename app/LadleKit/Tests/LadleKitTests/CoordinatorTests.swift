@@ -269,7 +269,7 @@ final class CoordinatorTests: XCTestCase {
     func testBatteryHoldsTheTonightQueueOnly() async throws {
         clock.date.withLock { $0 = self.calendar.date(from: DateComponents(year: 2026, month: 10, day: 30, hour: 1, minute: 5))! }
         let data = TestData.bytes(1_000_000)
-        server.serve(URL(string: "https://a.org/z.zip")!, FakeFile(data: data, chunkSize: 16 * 1024, chunkDelay: 0.003))
+        server.serve(URL(string: "https://a.org/z.zip")!, FakeFile(data: data, chunkSize: 8 * 1024, chunkDelay: 0.01))
         server.serve(URL(string: "https://a.org/mine.zip")!, FakeFile(data: data, chunkSize: 16 * 1024, chunkDelay: 0.003))
         let coordinator = makeCoordinator()
         await coordinator.start()
@@ -323,12 +323,13 @@ final class CoordinatorTests: XCTestCase {
         try await waitUntil("retry succeeds") { await coordinator.item(missing)?.status == .completed }
 
         // A file that changes on the server while paused must be started over, by choice.
-        let data = TestData.bytes(800_000)
-        server.serve(URL(string: "https://a.org/changing.bin")!, FakeFile(data: data, chunkSize: 16 * 1024, chunkDelay: 0.003))
+        let data = TestData.bytes(1_600_000)
+        // Slow enough that the pause lands well before the last piece arrives.
+        server.serve(URL(string: "https://a.org/changing.bin")!, FakeFile(data: data, chunkSize: 8 * 1024, chunkDelay: 0.01))
         let id = await add(coordinator, "https://a.org/changing.bin")
         try await waitUntil("progress") { (await coordinator.item(id)?.receivedBytes ?? 0) > 50_000 }
         await coordinator.pause(id)
-        var changed = FakeFile(data: TestData.bytes(800_000, seed: 99))
+        var changed = FakeFile(data: TestData.bytes(1_600_000, seed: 99))
         changed.etag = "\"v2\""
         server.serve(URL(string: "https://a.org/changing.bin")!, changed)
         await coordinator.resume(id)
@@ -338,7 +339,7 @@ final class CoordinatorTests: XCTestCase {
         await coordinator.startOver(id)
         try await waitUntil("fresh download") { await coordinator.item(id)?.status == .completed }
         let v22 = await coordinator.item(id)
-        XCTAssertEqual(try Data(contentsOf: try XCTUnwrap(v22).finalURL), TestData.bytes(800_000, seed: 99))
+        XCTAssertEqual(try Data(contentsOf: try XCTUnwrap(v22).finalURL), TestData.bytes(1_600_000, seed: 99))
         await coordinator.prepareForQuit()
     }
 
