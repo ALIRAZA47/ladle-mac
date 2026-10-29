@@ -1,5 +1,6 @@
-# Releases Ladle when a version tag like v1.2.0 is pushed. app/RELEASING.md has the steps and the
-# one-time setup. The workflow never commits: main requires pull requests.
+# Releases Ladle when a version tag like v1.2.0 is pushed, or when it's run by hand from the Actions
+# tab on main with a version (the release then creates the tag). app/RELEASING.md has the steps and
+# the one-time setup. The workflow never commits: main requires pull requests.
 #
 #   1. check:       the tag, the release notes (site/src/content/changelog/X.Y.Z.md), and Sparkle's
 #                   keys: a real SUPublicEDKey and the SPARKLE_ED_PRIVATE_KEY secret that belongs to
@@ -15,6 +16,12 @@ name: App release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, like 1.2.0. Publishing tags this commit of main as v1.2.0.
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -28,6 +35,7 @@ jobs:
     name: Check the release can go out
     runs-on: ubuntu-latest
     outputs:
+      tag: ${{ steps.version.outputs.tag }}
       version: ${{ steps.version.outputs.version }}
       build: ${{ steps.version.outputs.build }}
       signing: ${{ steps.signing.outputs.signing }}
@@ -36,19 +44,47 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read the version from the tag
+      - name: Read the version
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            tag="v${INPUT_VERSION#v}"
+          else
+            tag="$GITHUB_REF_NAME"
+          fi
+          version="${tag#v}"
           if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Release tags look like v1.2.0, not ${GITHUB_REF_NAME}."
+            echo "::error::Release versions look like 1.2.0 (tag v1.2.0), not ${tag}."
             exit 1
+          fi
+          tags=$(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            # Run by hand: the release tags this commit when it's published, so check that's
+            # possible before building anything.
+            if [ "$GITHUB_REF" != refs/heads/main ]; then
+              echo "::error::Run App release on main, not ${GITHUB_REF_NAME}."
+              exit 1
+            fi
+            existing=$(git rev-parse -q --verify "refs/tags/${tag}^{commit}" || true)
+            if [ -n "$existing" ] && [ "$existing" != "$GITHUB_SHA" ]; then
+              echo "::error::${tag} already tags another commit (${existing}). Release a newer version."
+              exit 1
+            fi
+            newest=$(printf '%s\n' "$tags" | sed '/^$/d' | sort -V | tail -n 1)
+            if [ -z "$existing" ] && [ -n "$newest" ] \
+              && [ "$(printf '%s\n%s\n' "$newest" "$tag" | sort -V | tail -n 1)" != "$tag" ]; then
+              echo "::error::${tag} isn't newer than ${newest}. Versions go up, because the build number follows them."
+              exit 1
+            fi
           fi
           # The build number (CFBundleVersion, which Sparkle compares) is this tag's place among
           # the release tags in version order, so v0.1.0 is build 1.
-          build=$(git tag --list 'v*' --sort=v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
-            | awk -v tag="$GITHUB_REF_NAME" '{ n++ } $0 == tag { print n; exit }')
+          build=$(printf '%s\n%s\n' "$tags" "$tag" | sed '/^$/d' | sort -V -u \
+            | awk -v tag="$tag" '$0 == tag { print NR; exit }')
           echo "Ladle $version, build $build"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "build=$build" >> "$GITHUB_OUTPUT"
 
@@ -120,6 +156,7 @@ jobs:
     permissions:
       contents: write
     env:
+      TAG: ${{ needs.check.outputs.tag }}
       LADLE_VERSION: ${{ needs.check.outputs.version }}
       LADLE_BUILD: ${{ needs.check.outputs.build }}
       LADLE_OUT: ${{ github.workspace }}/app/build/package
@@ -202,13 +239,20 @@ jobs:
             printf '\nOpening Ladle for the first time? macOS asks you to approve it once: https://ladle.alirazakhan.me/docs/getting-started/install/#first-launch\n' >> "$notes"
           fi
           assets=("$LADLE_OUT/Ladle.dmg" "$LADLE_OUT/Ladle-Chrome-Extension.zip" "$LADLE_OUT/sparkle.json")
-          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
-            gh release edit "$GITHUB_REF_NAME" --title "Ladle $LADLE_VERSION" --notes-file "$notes" \
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" "${assets[@]}" --clobber
+            gh release edit "$TAG" --title "Ladle $LADLE_VERSION" --notes-file "$notes" \
               --draft=false --prerelease=false --latest
           else
-            gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
-              --verify-tag --title "Ladle $LADLE_VERSION" --notes-file "$notes" --latest
+            # A pushed tag must already exist; a run by hand creates it on this commit. A tag made
+            # with GITHUB_TOKEN starts no second run.
+            if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+              tag_args=(--target "$GITHUB_SHA")
+            else
+              tag_args=(--verify-tag)
+            fi
+            gh release create "$TAG" "${assets[@]}" "${tag_args[@]}" \
+              --title "Ladle $LADLE_VERSION" --notes-file "$notes" --latest
           fi
 
       - name: Remove the signing keychain

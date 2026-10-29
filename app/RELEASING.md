@@ -45,14 +45,20 @@ is the placeholder, while the secret is missing, and when the secret isn't the p
    ```
 
    Leave out `date:`; the website fills in the day the release was published.
-2. Tag that commit on `main` and push the tag. Tag versions in increasing order: the build
-   number (`CFBundleVersion`, which Sparkle compares) is the tag's place among all release tags,
-   so `v0.1.0` is build 1.
+2. Start the release, either way:
+   - **On GitHub:** **Actions › App release › Run workflow**. Leave the branch on `main`, enter the
+     version (`1.2.0`) and click **Run workflow**. The release tags that commit `v1.2.0` when it's
+     published, so a run that fails leaves no tag behind.
+   - **With git:** tag the commit on `main` and push the tag.
 
-   ```sh
-   git tag v1.2.0
-   git push origin v1.2.0
-   ```
+     ```sh
+     git tag v1.2.0
+     git push origin v1.2.0
+     ```
+
+   Versions go up: the build number (`CFBundleVersion`, which Sparkle compares) is the tag's place
+   among all release tags, so `v0.1.0` is build 1. A run from the Actions tab refuses a version
+   that isn't newer than the last release.
 
 3. Watch **Actions › App release**. It:
    1. checks the tag, that the release notes exist and match it, and Sparkle's keys, and stops
@@ -87,8 +93,9 @@ Copies of Ladle check the feed once a day, download the update in the background
 - **App release**: fix what the error says, then re-run the failed jobs (**Re-run jobs › Re-run
   failed jobs** on the run). Publishing can run again: it replaces the release's files. A secret
   takes effect on the re-run, but a fix in the repository, like the release notes or the public
-  key, has to be in the tagged commit. Merge it, and before the release is published, move the
-  tag to it, which starts a new run:
+  key, has to be in the released commit. Merge it, then run **App release** from the Actions tab
+  again with the same version (a run by hand creates the tag only when it publishes). If you
+  pushed a tag, move it to the fix before the release is published, which starts a new run:
 
   ```sh
   git fetch origin
