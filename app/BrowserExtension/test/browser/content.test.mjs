@@ -201,7 +201,8 @@ test('collects links for "Download All Links with Ladle…"', async () => {
   });
   assert.deepEqual(
     all.map((u) => new URL(u).pathname),
-    ['/files/HandBrake-1.8.2.dmg', '/files/archive.zip', '/other.html', '/files/report.pdf']
+    ['/files/HandBrake-1.8.2.dmg', '/files/archive.zip', '/files/report.pdf'],
+    'only links to files'
   );
   const selected = await page.evaluate(() => {
     const range = document.createRange();

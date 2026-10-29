@@ -63,6 +63,7 @@ test('ladle:// links use the same parameters as the app', () => {
   assert.equal(parsed.searchParams.get('mode'), 'direct');
   const list = new URL(C.ladleURL({ type: 'links', links: ['https://a.org/1', 'https://a.org/2'] }).replace('ladle://', 'http://'));
   assert.deepEqual(list.searchParams.getAll('url'), ['https://a.org/1', 'https://a.org/2']);
+  assert.equal(list.searchParams.get('mode'), 'choose', 'a page\'s links open the Add sheet');
   const video = new URL(C.ladleURL({ type: 'video', url: 'https://v.org/a.m3u8', kind: 'hls', title: 'Talk', quality: '1080p', audio: 'https://v.org/au.m3u8' }).replace('ladle://', 'http://'));
   assert.equal(video.searchParams.get('kind'), 'hls');
   assert.equal(video.searchParams.get('mode'), 'direct');

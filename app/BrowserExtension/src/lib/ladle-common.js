@@ -168,7 +168,10 @@
     add('sha256', msg.sha256);
     add('md5', msg.md5);
     add('source', msg.browser);
-    if (msg.type === 'video') {
+    if (msg.type === 'links') {
+      // "Download All Links with Ladle…" opens the Add sheet, even for one link.
+      add('mode', 'choose');
+    } else if (msg.type === 'video') {
       add('mode', 'direct');
       if (msg.kind && msg.kind !== 'file') add('kind', msg.kind);
       add('audio', msg.audio);

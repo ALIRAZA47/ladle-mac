@@ -95,7 +95,8 @@
         hrefs.push(media.src);
       }
     }
-    return C.uniqueLinks(hrefs);
+    // The page's file links: the Add sheet lists them, checked, to choose from.
+    return C.fileLinks(hrefs);
   }
 
   api.runtime.onMessage.addListener((message, sender, sendResponse) => {
