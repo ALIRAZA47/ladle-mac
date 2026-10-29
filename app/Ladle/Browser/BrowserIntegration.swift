@@ -129,7 +129,13 @@ final class BrowserIntegration: ObservableObject {
         lastSeen[family.rawValue] != nil
     }
 
+    var safariStatus: SafariExtensionStatus {
+        SafariExtensionStatus(teamIdentifier: CodeSignature.teamIdentifier, enabled: safariEnabled)
+    }
+
     func refreshSafariState() {
+        // Safari won't load the extension from a build without a team, so there's nothing to ask.
+        guard CodeSignature.teamIdentifier != nil else { return }
         SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: BrowserIntegration.safariExtensionID) { state, _ in
             let enabled = state?.isEnabled
             Task { @MainActor [weak self] in self?.safariEnabled = enabled }

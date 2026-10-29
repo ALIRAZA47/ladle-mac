@@ -427,13 +427,13 @@ private struct BrowserSettings: View {
 
     var body: some View {
         SettingsGroup {
-            browserRow(
-                "Safari",
-                status: browsers.safariEnabled == true ? "Extension on" : (browsers.safariEnabled == false ? "Turned off in Safari" : "Comes with Ladle"),
-                good: browsers.safariEnabled == true,
-                action: "Manage"
-            ) {
-                browsers.openSafariExtensionSettings()
+            let safari = browsers.safariStatus
+            if safari == .needsSignedBuild {
+                safariNeedsSignedBuildRow(safari)
+            } else {
+                browserRow("Safari", status: safari.text, good: safari == .on, action: "Manage") {
+                    browsers.openSafariExtensionSettings()
+                }
             }
             GroupDivider()
             browserRow(
@@ -485,6 +485,28 @@ private struct BrowserSettings: View {
             Themed { FileTypesEditor() }
                 .environmentObject(model)
         }
+    }
+
+    /// Free builds are ad-hoc signed, and Safari only loads extensions from signed apps: say so,
+    /// link to the docs, and offer no Manage button.
+    private func safariNeedsSignedBuildRow(_ status: SafariExtensionStatus) -> some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Safari")
+                    .font(Typeface.ui(13))
+                    .foregroundStyle(palette.text)
+                Text(status.text)
+                    .font(Typeface.ui(11.5))
+                    .foregroundStyle(palette.text3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Learn more") { NSWorkspace.shared.open(LadleLinks.setUpSafari) }
+                .buttonStyle(InkButtonStyle())
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .frame(minHeight: 52)
     }
 
     private func browserRow(_ name: String, status: String, good: Bool, action: String, perform: @escaping () -> Void) -> some View {

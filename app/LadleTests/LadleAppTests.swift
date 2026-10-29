@@ -20,6 +20,19 @@ final class LadleAppTests: XCTestCase {
         XCTAssertEqual(BrowserIntegration.family(forBrowser: "Edge"), .chrome)
     }
 
+    func testSafariNeedsADeveloperSignedBuild() {
+        XCTAssertEqual(SafariExtensionStatus(teamIdentifier: nil, enabled: true), .needsSignedBuild)
+        XCTAssertEqual(SafariExtensionStatus(teamIdentifier: "", enabled: nil), .needsSignedBuild)
+        XCTAssertEqual(SafariExtensionStatus(teamIdentifier: "ABCDE12345", enabled: true), .on)
+        XCTAssertEqual(SafariExtensionStatus(teamIdentifier: "ABCDE12345", enabled: false), .off)
+        XCTAssertEqual(SafariExtensionStatus(teamIdentifier: "ABCDE12345", enabled: nil), .unknown)
+        XCTAssertEqual(SafariExtensionStatus.needsSignedBuild.text, "The Safari extension needs a signed build of Ladle")
+        // CI's test host is ad-hoc signed; a build signed by a team has a 10-character team ID.
+        if let team = CodeSignature.teamIdentifier {
+            XCTAssertEqual(team.count, 10)
+        }
+    }
+
     func testInfoPlistCarriesTheUpdateSettings() throws {
         let info = try XCTUnwrap(Bundle(for: AppModel.self).infoDictionary)
         XCTAssertEqual(info["SUFeedURL"] as? String, "https://ladle.alirazakhan.me/appcast.xml")
