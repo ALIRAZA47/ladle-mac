@@ -52,7 +52,7 @@ private struct AskCard: View {
             HStack(spacing: 12) {
                 BrandMark(size: 36)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Ladle caught a download")
+                    Text(trusted ? "Ladle caught a download" : "A web page asked Ladle to download")
                         .font(Typeface.ui(14, .semibold))
                         .foregroundStyle(palette.text)
                     Text(source)
@@ -78,19 +78,28 @@ private struct AskCard: View {
                         .foregroundStyle(palette.text)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    HStack(spacing: 6) {
-                        Text(size.map(Format.size) ?? (inspection == nil ? "Checking…" : "Size unknown"))
-                        if inspection?.resumable == true {
-                            Text("·")
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
-                                Text("Resumable")
+                    if trusted {
+                        HStack(spacing: 6) {
+                            Text(size.map(Format.size) ?? (inspection == nil ? "Checking…" : "Size unknown"))
+                            if inspection?.resumable == true {
+                                Text("·")
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
+                                    Text("Resumable")
+                                }
+                                .foregroundStyle(palette.ink)
                             }
-                            .foregroundStyle(palette.ink)
                         }
+                        .font(Typeface.ui(12).monospacedDigit())
+                        .foregroundStyle(palette.text2)
+                    } else {
+                        // The page chose this address; show it, so the person knows what they're approving.
+                        Text(request.request.url.absoluteString)
+                            .font(Typeface.ui(12).monospacedDigit())
+                            .foregroundStyle(palette.text2)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
-                    .font(Typeface.ui(12).monospacedDigit())
-                    .foregroundStyle(palette.text2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -110,7 +119,7 @@ private struct AskCard: View {
             }
             .padding(.horizontal, 4)
 
-            if !ext.isEmpty {
+            if trusted && !ext.isEmpty {
                 Toggle(isOn: $controller.alwaysForType) {
                     Text("Always download .\(ext) files without asking")
                         .font(Typeface.ui(12.5))
@@ -135,6 +144,9 @@ private struct AskCard: View {
         .padding(16)
         .popPanel(radius: 24)
     }
+
+    /// Whether a browser Ladle knows handed this over. A web page's link gets no say over what the card claims.
+    private var trusted: Bool { request.origin.isTrusted }
 
     private var source: String {
         let site = request.site

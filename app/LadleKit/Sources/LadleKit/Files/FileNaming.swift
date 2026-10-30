@@ -36,9 +36,14 @@ public enum FileNaming {
             .replacingOccurrences(of: ":", with: "-")
             .replacingOccurrences(of: "\\", with: "-")
         name = String(name.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) }.map(Character.init))
-        name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        while name.hasPrefix(".") { name.removeFirst() }
-        name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Trim and strip leading dots until nothing changes, so ".. .." can't collapse into ".."
+        // (a name that would point at the parent folder) and no name starts with a dot.
+        var previous: String
+        repeat {
+            previous = name
+            name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            while name.hasPrefix(".") { name.removeFirst() }
+        } while name != previous
         if name.isEmpty { name = fallback }
         // Leave room for " 99" and ".ladle-part" inside the 255-byte limit.
         let limit = 200

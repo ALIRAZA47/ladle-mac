@@ -97,7 +97,10 @@ enum Bridge {
             return
         }
         if request.type == "hello" && !appIsListening() {
-            reply(BridgeReply(replyTo: request.id, ok: true, settings: storedSettings()))
+            // Without the trust token: that's for Safari's extension, which reads the file itself.
+            var stored = storedSettings()
+            stored?.token = ""
+            reply(BridgeReply(replyTo: request.id, ok: true, settings: stored))
             return
         }
         guard ensureApp() else {

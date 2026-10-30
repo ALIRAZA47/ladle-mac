@@ -39,7 +39,7 @@ rebuilds it from the published releases before every deploy.
 | Native messaging host (Chrome, Firefox) | `me.alirazakhan.ladle` |
 | URL scheme | `ladle://` |
 | App data folder | `~/Library/Application Support/Ladle` (download list, resume state, settings) |
-| Version | 0.1.0 (build 1) |
+| Version | 0.1.1 (build 2) |
 | Minimum macOS | 14.0 |
 | Distribution | `Ladle.dmg` on GitHub Releases, **ad-hoc signed and not notarized** (no paid Apple Developer account). Users approve the first launch once (see [First launch](#first-launch)). If Developer ID secrets are ever added, the release workflow signs and notarizes instead. Not sandboxed. Not on the Mac App Store. |
 
@@ -173,14 +173,18 @@ The app must behave like this and the docs must describe exactly this.
 - **URL scheme**: `ladle://add?url=<percent-encoded>&referrer=<…>&filename=<…>&cookies=<…>`.
   The extension and the bridge may also pass `size`, `mime`, `sha256` or `md5`, `source`,
   `mode` (`caught`, `direct` or `choose`), `kind`, `audio`, `title`, `quality`, `bandwidth` and `token`.
+  A link without Ladle's own `token` may come from any web page, so Ladle ignores its `cookies`,
+  `referrer`, `source` and `size`, always asks first (whatever `mode` says), contacts no server
+  before the person chooses Download, and shows the file's real address on the panel, titled
+  "A web page asked Ladle to download".
 - The **clipboard suggestion** shows the file's name and site but not its size: Ladle contacts
   no server until you choose Download.
 - The extension's **toolbar button** runs Download All Links with Ladle; its badge counts the
   page's file links.
 - **Browser hand-off**: the extension catches downloads of watched file types and Ladle shows
   the catch panel — **Download**, **Later** (adds it to the list without starting it),
-  **Let the browser handle it**, and "Always download .<ext> files without asking".
-  Setting: *Ask before downloading* (on). Holding **⌥ Option** while clicking a link lets the
+  **Let the browser handle it**, and "Always download .<ext> files without asking" (for browser
+  catches only; a web page's link never gets that toggle). Setting: *Ask before downloading* (on). Holding **⌥ Option** while clicking a link lets the
   browser download it instead, that once.
 - Context menu items: **Download with Ladle**, and **Download All Links with Ladle…**, which
   opens the Add sheet listing the page's file links, checked, to choose from.
@@ -205,7 +209,9 @@ The app must behave like this and the docs must describe exactly this.
 - **Speed limit**: one global limit across all downloads (*Limit total speed*, off; choices 1, 2,
   5, 10 (default), 25 and 50 MB/s). *Proxy*: **Same as macOS** (default) or **Don't use a proxy**.
 - While anything is downloading, Ladle keeps the Mac from going to sleep on its own.
-- **Cookies and referrer** from the browser are sent only to the download's own host.
+- **Cookies and referrer** from the browser are sent only to the download's own origin (scheme,
+  host and port), so never again after a redirect to plain http or to another port. Any other
+  host gets the referrer's origin alone ("https://site.example/"), as browsers send it.
 
 ### Queues
 
@@ -252,6 +258,12 @@ The app must behave like this and the docs must describe exactly this.
 - Never saves protected video: any `EXT-X-KEY` with a method other than `NONE`, or a page using
   Encrypted Media Extensions, shows a disabled pill: "Protected video can't be saved".
   No site-specific extractors.
+- The pill reacts only to the person's own pointer and clicks, never to a page's script. A
+  stream is looked at with the browser's cookies only when it comes from the page's own origin;
+  a stream from another origin is looked at without cookies (and only if the page itself loaded
+  it), so a page can learn nothing about the person's accounts elsewhere. If that cookie-less
+  look fails, the pill still offers "Download video", and Ladle picks the best quality itself,
+  with cookies, once the person clicks.
 - HLS with fMP4 segments is joined into `.mp4`; MPEG-TS segments are saved as `.ts`.
 
 ### Around the Mac

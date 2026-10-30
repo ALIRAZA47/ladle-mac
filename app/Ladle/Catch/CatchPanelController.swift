@@ -47,7 +47,9 @@ final class CatchPanelController: ObservableObject {
         folder = nil
         inspection = nil
         show(.ask(request))
-        guard let model else { return }
+        // A web page's ladle:// link is looked up only once the person chooses Download: nothing
+        // is fetched on the page's say-so.
+        guard request.origin.isTrusted, let model else { return }
         let coordinator = model.coordinator
         let url = request.request.url
         let referrer = request.request.referrer

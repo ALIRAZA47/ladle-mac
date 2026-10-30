@@ -40,9 +40,30 @@ public enum RetryAfter {
 }
 
 public enum RedirectPolicy {
-    /// Cookies and referrer from the browser go only to the download's own host (exact match).
-    public static func isSameHost(_ a: URL, _ b: URL) -> Bool {
-        guard let ha = a.host?.lowercased(), let hb = b.host?.lowercased() else { return false }
-        return ha == hb
+    /// Cookies and referrer from the browser go only to the download's own origin: same scheme,
+    /// host and port. The host alone isn't enough: a redirect from https to plain http on the same
+    /// host would send Secure cookies in the clear.
+    public static func isSameOrigin(_ a: URL, _ b: URL) -> Bool {
+        guard let schemeA = a.scheme?.lowercased(), let schemeB = b.scheme?.lowercased(), schemeA == schemeB,
+              let hostA = a.host?.lowercased(), let hostB = b.host?.lowercased(), hostA == hostB else { return false }
+        return port(of: a) == port(of: b)
+    }
+
+    /// The `Referer` to send to `target`: the page's full address on the page's own origin, and only
+    /// the origin ("https://site.example/") anywhere else, like a browser's default referrer policy.
+    public static func referer(_ referrer: URL, for target: URL) -> String? {
+        if isSameOrigin(referrer, target) { return referrer.absoluteString }
+        guard let scheme = referrer.scheme, let host = referrer.host else { return nil }
+        let port = referrer.port.map { ":\($0)" } ?? ""
+        return "\(scheme)://\(host)\(port)/"
+    }
+
+    private static func port(of url: URL) -> Int? {
+        if let port = url.port { return port }
+        switch url.scheme?.lowercased() {
+        case "https": return 443
+        case "http": return 80
+        default: return nil
+        }
     }
 }

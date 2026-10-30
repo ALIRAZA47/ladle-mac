@@ -13,7 +13,11 @@ extension AppModel {
             bridgePorts[BrowserIntegration.family(forBrowser: browser).rawValue] = port
         }
         if request.type == "hello" {
-            return BridgeReply(replyTo: request.id, ok: true, settings: browsers.snapshot(for: settings))
+            // The trust token is for Safari's extension, which reads the settings file itself; the
+            // other browsers' extension has no use for it, so it never leaves the Mac's own files.
+            var snapshot = browsers.snapshot(for: settings)
+            snapshot.token = ""
+            return BridgeReply(replyTo: request.id, ok: true, settings: snapshot)
         }
         guard let handOff = request.handOff(source: browser) else {
             return BridgeReply(replyTo: request.id, ok: false, error: "unsupported")
@@ -33,11 +37,21 @@ extension AppModel {
     /// Decides what a hand-off does: the catch panel, straight into the list, or the add sheet.
     func receive(_ handOff: HandOff, origin: HandOffOrigin, userAgent: String?) {
         lastHandOff = Date()
+        var handOff = handOff
+        if !origin.isTrusted {
+            // Any web page can open a ladle:// link. Its cookies and referrer would let the page choose
+            // the headers Ladle sends, and its source and size would be shown as if a browser said so.
+            handOff.cookies = nil
+            handOff.referrer = nil
+            handOff.source = nil
+            handOff.size = nil
+        }
         var requests = DownloadRequest.from(handOff, userAgent: userAgent)
         guard !requests.isEmpty else { return }
         if handOff.isBatch {
-            // "Download All Links with Ladle…": the page's file links, checked, to choose from.
-            let context = AddSheetContext(referrer: handOff.referrer, source: handOff.source, userAgent: userAgent)
+            // "Download All Links with Ladle…": the page's file links, checked, to choose from. For a
+            // web page's list, no server is contacted until the person adds the links.
+            let context = AddSheetContext(referrer: handOff.referrer, source: handOff.source, userAgent: userAgent, checksServers: origin.isTrusted)
             openAddSheet(text: handOff.urls.map(\.absoluteString).joined(separator: "\n"), context: context)
             return
         }

@@ -297,4 +297,21 @@ final class FileDownloaderTests: XCTestCase {
         XCTAssertNil(cdn["Referer"])
         XCTAssertEqual(cdn["Range"], "bytes=10-", "the range survives the redirect")
     }
+
+    func testCookiesStayOnTheirOrigin() {
+        let request = HTTPRequest(url: URL(string: "https://example.com/f.zip")!, cookies: "a=1", referrer: URL(string: "https://example.com/page")!)
+        let plain = request.headers(for: URL(string: "http://example.com/f.zip")!)
+        XCTAssertNil(plain["Cookie"], "a redirect to plain http must not carry the browser's cookies")
+        XCTAssertNil(plain["Referer"])
+        XCTAssertNil(request.headers(for: URL(string: "https://example.com:8443/f.zip")!)["Cookie"], "another port is another origin")
+        XCTAssertEqual(request.headers(for: URL(string: "https://example.com:443/f.zip")!)["Cookie"], "a=1", "the default port spelled out is the same origin")
+        XCTAssertEqual(request.headers(for: URL(string: "HTTPS://EXAMPLE.com/other")!)["Cookie"], "a=1")
+    }
+
+    func testReferrerShrinksToItsOriginOnOtherHosts() {
+        let cdn = HTTPRequest(url: URL(string: "https://cdn.example.net/f.zip")!, referrer: URL(string: "https://example.com/watch?v=1")!)
+        XCTAssertEqual(cdn.headers(for: cdn.url)["Referer"], "https://example.com/")
+        let own = HTTPRequest(url: URL(string: "https://example.com/f.zip")!, referrer: URL(string: "https://example.com/watch?v=1")!)
+        XCTAssertEqual(own.headers(for: own.url)["Referer"], "https://example.com/watch?v=1")
+    }
 }

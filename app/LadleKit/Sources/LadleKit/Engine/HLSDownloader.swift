@@ -141,13 +141,14 @@ public final class HLSDownloader: @unchecked Sendable {
     private func request(_ url: URL, range: HLSByteRange? = nil, slot: Int = 0) -> HTTPRequest {
         var headers: [String: String] = [:]
         if let ua = job.userAgent, !ua.isEmpty { headers["User-Agent"] = ua }
-        // Cookies and referrer belong to the page's host; keep them for requests to that host only.
-        let sameHost = RedirectPolicy.isSameHost(url, job.playlistURL)
+        // Cookies belong to the playlist's origin; keep them for requests to that origin only. The
+        // referrer shrinks to its origin on other hosts (HTTPRequest.headers(for:)).
+        let sameOrigin = RedirectPolicy.isSameOrigin(url, job.playlistURL)
         return HTTPRequest(
             url: url,
             rangeStart: range?.offset,
             rangeEnd: range?.lastByte,
-            cookies: sameHost ? job.cookies : nil,
+            cookies: sameOrigin ? job.cookies : nil,
             referrer: job.referrer,
             headers: headers,
             connectionSlot: slot

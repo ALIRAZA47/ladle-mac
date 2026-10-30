@@ -40,14 +40,14 @@ public struct HTTPRequest: Sendable {
         return "bytes=\(start)-"
     }
 
-    /// Headers to send to `target`: cookies and referrer only when `target` is the request's own host.
+    /// Headers to send to `target`: cookies and referrer only when `target` is the request's own origin.
     public func headers(for target: URL) -> [String: String] {
         var result = headers
         result["Accept-Encoding"] = "identity"
         if let range = rangeHeader { result["Range"] = range }
-        if RedirectPolicy.isSameHost(url, target) {
+        if RedirectPolicy.isSameOrigin(url, target) {
             if let cookies, !cookies.isEmpty { result["Cookie"] = cookies }
-            if let referrer { result["Referer"] = referrer.absoluteString }
+            if let referrer, let value = RedirectPolicy.referer(referrer, for: target) { result["Referer"] = value }
         }
         return result
     }

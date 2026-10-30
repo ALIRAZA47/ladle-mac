@@ -34,6 +34,12 @@ enum HandOffOrigin: Equatable {
     case safari
     /// A `ladle://` link from anywhere else. Untrusted ones always ask first.
     case link(trusted: Bool)
+
+    /// Whether a browser Ladle knows (or the person) asked for this, rather than any web page.
+    var isTrusted: Bool {
+        if case .link(let trusted) = self { return trusted }
+        return true
+    }
 }
 
 /// The app's state for every window: the download list from LadleKit, settings, selection and

@@ -8,6 +8,8 @@ struct AddSheetContext: Equatable {
     var referrer: URL?
     var source: String?
     var userAgent: String?
+    /// Off for a list a web page handed over: its servers are contacted only once the links are added.
+    var checksServers = true
 }
 
 /// The add sheet: one link with a preview, or many links (series expanded) with checkboxes.
@@ -207,7 +209,7 @@ final class AddSheetModel: ObservableObject, Identifiable {
 
     /// Asks each server for size and name, a few at a time.
     private func inspectMissing() {
-        guard let model else { return }
+        guard let model, context?.checksServers != false else { return }
         let pending = entries.map(\.url).filter { inspected[$0.absoluteString] == nil && !inspecting.contains($0.absoluteString) }
         let batch = Array(pending.prefix(max(0, 6 - inspecting.count)))
         for url in batch {

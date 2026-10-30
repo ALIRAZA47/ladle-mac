@@ -46,7 +46,7 @@ final class URLSessionTransportTests: XCTestCase {
         server.route("/file.zip", .init(body: data))
         // 127.0.0.1 redirects to localhost: a different host.
         server.route("/go", .init(body: Data(), redirect: server.url("/file.zip", host: "localhost").absoluteString))
-        let request = HTTPRequest(url: server.url("/go"), rangeStart: 2, cookies: "session=secret", referrer: URL(string: "http://127.0.0.1/page")!)
+        let request = HTTPRequest(url: server.url("/go"), rangeStart: 2, cookies: "session=secret", referrer: server.url("/page"))
         let response = try await transport.open(request)
         var body = Data()
         while let chunk = try await response.body.next() { body.append(chunk) }
@@ -55,7 +55,7 @@ final class URLSessionTransportTests: XCTestCase {
         let first = try XCTUnwrap(log.first { $0.path == "/go" })
         let second = try XCTUnwrap(log.first { $0.path == "/file.zip" })
         XCTAssertEqual(first.headers["cookie"], "session=secret")
-        XCTAssertEqual(first.headers["referer"], "http://127.0.0.1/page")
+        XCTAssertEqual(first.headers["referer"], server.url("/page").absoluteString)
         XCTAssertNil(second.headers["cookie"], "cookies are only for the download's own host")
         XCTAssertNil(second.headers["referer"])
         XCTAssertEqual(second.headers["range"], "bytes=2-", "the range survives the redirect")

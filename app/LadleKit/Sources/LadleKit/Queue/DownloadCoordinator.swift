@@ -265,7 +265,9 @@ public actor DownloadCoordinator {
             var name = plan.fileName
             let folder = URL(fileURLWithPath: plan.directory, isDirectory: true)
             let wantsReplace = (conflict ?? (settings.duplicatePolicy == .replace ? .replace : .keepBoth)) == .replace
-            let onDisk = FileManager.default.fileExists(atPath: folder.appendingPathComponent(name).path)
+            // Only a plain file right inside the folder can be replaced: never a folder, such as a
+            // category folder a link happens to be named after, or the parent through a stray "..".
+            let onDisk = DownloadCoordinator.isReplaceableFile(folder.appendingPathComponent(name), in: folder)
             var replace = false
             if wantsReplace && onDisk && !isReservedByAnotherItem(name, in: plan.directory, except: nil) {
                 replace = true
@@ -780,11 +782,13 @@ public actor DownloadCoordinator {
         let folder = URL(fileURLWithPath: item.directory, isDirectory: true)
         try fm.createDirectory(at: folder, withIntermediateDirectories: true)
         var target = folder.appendingPathComponent(item.fileName)
+        // Whatever the name was made from, the file must land as one entry in this folder.
+        guard DownloadCoordinator.isDirectlyInside(target, folder) else { throw DownloadFailure(.writeFailed) }
         if fm.fileExists(atPath: target.path) {
-            if item.replaceExisting || settings.duplicatePolicy == .replace {
+            if (item.replaceExisting || settings.duplicatePolicy == .replace) && DownloadCoordinator.isReplaceableFile(target, in: folder) {
                 try env.recycler.recycle(target)
             } else {
-                // A file with this name appeared while downloading: keep both.
+                // A file with this name appeared while downloading, or the name is a folder's: keep both.
                 let name = availableName(item.fileName, in: item.directory, except: item.id)
                 target = folder.appendingPathComponent(name)
             }
@@ -843,6 +847,20 @@ public actor DownloadCoordinator {
     }
 
     // MARK: - Names and files
+
+    /// Whether `target` is `folder/<name>` with a real name: not `.`, `..` or anything that resolves elsewhere.
+    static func isDirectlyInside(_ target: URL, _ folder: URL) -> Bool {
+        let name = target.lastPathComponent
+        guard !name.isEmpty, name != ".", name != "..", name != "/" else { return false }
+        return target.standardizedFileURL.deletingLastPathComponent().path == folder.standardizedFileURL.path
+    }
+
+    /// Whether `target` is an existing plain file right inside `folder`: the only thing a download may replace.
+    static func isReplaceableFile(_ target: URL, in folder: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: target.path, isDirectory: &isDirectory), !isDirectory.boolValue else { return false }
+        return isDirectlyInside(target, folder)
+    }
 
     private func isReservedByAnotherItem(_ name: String, in directory: String, except id: UUID?) -> Bool {
         items.contains { other in

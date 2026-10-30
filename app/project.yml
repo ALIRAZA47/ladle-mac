@@ -11,7 +11,7 @@ options:
 
 settings:
   base:
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.1.1"
     CURRENT_PROJECT_VERSION: "1"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
     SWIFT_VERSION: "5.0"
@@ -36,7 +36,9 @@ packages:
     path: LadleKit
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
-    from: "2.6.0"
+    # Pinned: the release build runs this package's sign_update with the update-signing key, so a
+    # new upstream version must be reviewed here first.
+    exactVersion: "2.10.1"
 
 targets:
   Ladle:

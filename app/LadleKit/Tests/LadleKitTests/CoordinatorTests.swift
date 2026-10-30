@@ -175,6 +175,34 @@ final class CoordinatorTests: XCTestCase {
         await second.prepareForQuit()
     }
 
+    func testNeverReplacesAFolder() async throws {
+        // A link named like the Video category folder, with Replace: the folder and its files must stay.
+        let base = folder.url.appendingPathComponent("Downloads/Ladle")
+        let video = base.appendingPathComponent("Video")
+        try FileManager.default.createDirectory(at: video, withIntermediateDirectories: true)
+        try Data("keep".utf8).write(to: video.appendingPathComponent("clip.mp4"))
+        server.serve(URL(string: "https://a.org/Video")!, FakeFile(data: Data("new".utf8)))
+        var settings = Settings()
+        settings.duplicatePolicy = .replace
+        let coordinator = makeCoordinator(settings: settings)
+        await coordinator.start()
+        let id = await coordinator.add(await coordinator.plan([DownloadRequest(url: URL(string: "https://a.org/Video")!)]), conflict: .replace)[0]
+        try await waitUntil("download next to the folder") { await coordinator.item(id)?.status == .completed }
+        let name = await coordinator.item(id)?.fileName
+        XCTAssertEqual(name, "Video 2")
+        XCTAssertEqual(try String(contentsOf: video.appendingPathComponent("clip.mp4"), encoding: .utf8), "keep")
+        XCTAssertEqual(try String(contentsOf: base.appendingPathComponent("Video 2"), encoding: .utf8), "new")
+        await coordinator.prepareForQuit()
+    }
+
+    func testTargetsStayInsideTheFolder() {
+        let folder = URL(fileURLWithPath: "/tmp/Ladle", isDirectory: true)
+        XCTAssertTrue(DownloadCoordinator.isDirectlyInside(folder.appendingPathComponent("a.zip"), folder))
+        XCTAssertFalse(DownloadCoordinator.isDirectlyInside(folder.appendingPathComponent(".."), folder))
+        XCTAssertFalse(DownloadCoordinator.isDirectlyInside(folder.appendingPathComponent("."), folder))
+        XCTAssertFalse(DownloadCoordinator.isDirectlyInside(URL(fileURLWithPath: "/tmp/Ladle/x/../../y"), folder))
+    }
+
     func testKeepBothAndReplace() async throws {
         let target = folder.url.appendingPathComponent("Downloads/Ladle/Documents")
         try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)

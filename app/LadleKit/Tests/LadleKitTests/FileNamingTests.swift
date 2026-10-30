@@ -18,6 +18,12 @@ final class FileNamingTests: XCTestCase {
         XCTAssertEqual(FileNaming.sanitize("  ..secret.txt "), "secret.txt")
         XCTAssertEqual(FileNaming.sanitize("\u{0007}bell\n.txt"), "bell.txt")
         XCTAssertEqual(FileNaming.sanitize("   "), "download")
+        // Dots, blanks, dots must not collapse into a name that points at another folder.
+        XCTAssertEqual(FileNaming.sanitize(".. .."), "download")
+        XCTAssertEqual(FileNaming.sanitize(". ."), "download")
+        XCTAssertEqual(FileNaming.sanitize("..\u{00A0}.."), "download")
+        XCTAssertEqual(FileNaming.sanitize(" . .hidden.txt"), "hidden.txt")
+        XCTAssertNil(FileNaming.nameFromURL(URL(string: "https://a.org/..%20..")!))
         let long = String(repeating: "x", count: 400) + ".mp4"
         let cut = FileNaming.sanitize(long)
         XCTAssertLessThanOrEqual(cut.utf8.count, 200)
