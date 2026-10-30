@@ -32,11 +32,12 @@ async function open(path, answers) {
   await page.addInitScript((answersArg) => {
     window.__sent = [];
     window.__listeners = [];
+    window.__answers = answersArg;
     window.browser = {
       runtime: {
         sendMessage(message) {
           window.__sent.push(message);
-          const answer = answersArg[message.type];
+          const answer = window.__answers[message.type];
           return Promise.resolve(answer === undefined ? null : answer);
         },
         onMessage: { addListener: (fn) => window.__listeners.push(fn) },
@@ -56,8 +57,14 @@ const shadow = (page, selector) =>
     return el ? el.textContent.replace(/\s+/g, ' ').trim() : null;
   }, selector);
 
-const clickShadow = (page, selector) =>
-  page.evaluate((sel) => document.querySelector('ladle-video-button').shadowRoot.querySelector(sel).click(), selector);
+/** A real click on an element of the button's shadow root: the content script ignores synthetic ones. */
+async function clickShadow(page, selector) {
+  const { x, y } = await page.evaluate((sel) => {
+    const r = document.querySelector('ladle-video-button').shadowRoot.querySelector(sel).getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, selector);
+  await page.mouse.click(x, y);
+}
 
 const sent = (page, type) => page.evaluate((t) => window.__sent.filter((m) => m.type === t), type);
 
@@ -153,6 +160,26 @@ test('nothing to save means no pill', async () => {
   await page.waitForFunction(() => window.__sent.some((m) => m.type === 'inspectVideo'));
   await page.waitForTimeout(100);
   assert.equal(await shadow(page, '.pill'), null);
+  await page.close();
+});
+
+test('a source the tab had not loaded yet is looked at again once it loads', async () => {
+  const page = await open('/video.html', { getConfig: { interceptClicks: false }, inspectVideo: { unavailable: true } });
+  await hoverVideo(page);
+  await page.waitForFunction(() => window.__sent.some((m) => m.type === 'inspectVideo'));
+  await page.mouse.move(400, 320);
+  await page.waitForTimeout(100);
+  assert.equal((await sent(page, 'inspectVideo')).length, 1, 'one look per source');
+  assert.equal(await shadow(page, '.pill'), null);
+  // The background now knows the tab loaded it (webRequest saw the <video>'s request).
+  await page.evaluate(() => {
+    window.__answers.inspectVideo = { options: [{ label: 'Original', format: 'MP4', url: 'http://x/clip.mp4', kind: 'file' }] };
+    document.getElementById('v').dispatchEvent(new Event('loadedmetadata'));
+  });
+  await page.mouse.move(420, 300);
+  await page.waitForFunction(() => document.querySelector('ladle-video-button')?.shadowRoot.querySelector('.pill.shown'));
+  assert.equal((await sent(page, 'inspectVideo')).length, 2);
+  assert.equal(await shadow(page, '.pill'), 'Download video');
   await page.close();
 });
 

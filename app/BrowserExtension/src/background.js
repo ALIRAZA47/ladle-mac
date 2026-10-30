@@ -210,7 +210,7 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
     try {
       const query = { url };
       if (storeId) query.storeId = storeId;
-      return C.cookieHeader(await api.cookies.getAll(query));
+      return C.cookieHeader(await api.cookies.getAll(query), url);
     } catch (e) {
       return '';
     }
@@ -413,25 +413,69 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
     });
   }
 
-  async function fetchText(url) {
-    const response = await fetch(url, { credentials: 'include', cache: 'no-store' });
+  const FILE_TYPES = ['mp4', 'webm', 'mov', 'm4v'];
+
+  async function fetchText(url, credentials) {
+    const response = await fetch(url, { credentials: credentials || 'omit', cache: 'no-store' });
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.text();
   }
 
-  /** What the video button can offer for a playlist. */
-  async function inspectPlaylist(url) {
-    const cached = inspections.get(url);
+  function originOf(url) {
+    try {
+      return new URL(url).origin;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** The origin of the frame a message came from; null when it has none (sandboxed, data:). */
+  function frameOriginOf(sender) {
+    const origin = sender ? sender.origin || (sender.url ? originOf(sender.url) : null) : null;
+    return origin && origin !== 'null' ? origin : null;
+  }
+
+  function sameOrigin(url, frameOrigin) {
+    return !!frameOrigin && originOf(url) === frameOrigin;
+  }
+
+  /**
+   * Which cookies a look at `url` may carry, asked from a frame of `frameOrigin`. The page's own
+   * origin gets them: a same-origin fetch with cookies is what the page could do itself. Any other
+   * origin gets none: a cookie-less fetch tells the page nothing about the user, so what the button
+   * shows (which the page can read) never says where they're logged in.
+   */
+  function credentialsFor(url, frameOrigin) {
+    return sameOrigin(url, frameOrigin) ? 'include' : 'omit';
+  }
+
+  /** Whether the tab itself loaded `url` (webRequest saw it), so the page's own <video> already uses it. */
+  function tabLoaded(tabId, url) {
+    const plain = String(url).split('#')[0]; // requests carry no fragment; a src may (#t=10)
+    return (tabMedia.get(tabId) || []).some((e) => e.url === plain);
+  }
+
+  /** A playlist we couldn't read without the page's cookies: offered as is, for Ladle to sort out. */
+  function unreadStream(url) {
+    return { options: [{ label: 'Original', format: 'HLS', size: null, url, audio: null, bandwidth: null, kind: 'hls' }], duration: 0 };
+  }
+
+  /** What the video button can offer for a playlist, asked from a frame of `frameOrigin`. */
+  async function inspectPlaylist(url, frameOrigin) {
+    // Cached per asking origin: a result read with the page's cookies is never shown to another page.
+    const key = (frameOrigin || '') + ' ' + url;
+    const cached = inspections.get(key);
     if (cached && Date.now() - cached.time < 5 * 60 * 1000) return cached.result;
+    const credentials = credentialsFor(url, frameOrigin);
     let result;
     try {
-      const parsed = H.parse(await fetchText(url), url);
+      const parsed = H.parse(await fetchText(url, credentials), url);
       if (parsed.type === 'master') {
         if (parsed.protected) {
           result = { protected: true };
         } else {
           const probe = H.probeVariant(parsed);
-          const media = probe ? H.parse(await fetchText(probe.uri), probe.uri) : null;
+          const media = probe && C.isWebLink(probe.uri) ? H.parse(await fetchText(probe.uri, credentialsFor(probe.uri, frameOrigin)), probe.uri) : null;
           if (media && media.protected) result = { protected: true };
           else if (media && !media.complete) result = { live: true };
           else result = { options: H.menuOptions(parsed, media), duration: media ? media.duration : 0 };
@@ -448,29 +492,37 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
         };
       }
     } catch (e) {
-      result = { unavailable: true };
+      // Another origin's playlist that won't open without cookies (a CDN with signed cookies, say) is
+      // still the page's own stream: offer it as is. Ladle fetches it with the user's cookies once
+      // they've clicked, and picks the best quality itself when none is named.
+      result = credentials === 'omit' ? unreadStream(url) : { unavailable: true };
     }
-    inspections.set(url, { time: Date.now(), result });
+    inspections.set(key, { time: Date.now(), result });
     return result;
   }
 
-  async function inspectVideo(src, tabId) {
+  /** What the video button can offer for a <video> whose source is `src`, in a frame of `frameOrigin` in tab `tabId`. */
+  async function inspectVideo(src, tabId, frameOrigin) {
     const ext = C.extensionOf(src);
-    if (C.isWebLink(src) && ['mp4', 'webm', 'mov', 'm4v'].indexOf(ext) !== -1) {
+    if (C.isWebLink(src) && (ext === 'm3u8' || FILE_TYPES.indexOf(ext) !== -1)) {
+      // The page's own files, always. Another origin's only once the page's <video> has loaded it,
+      // and then without cookies (see credentialsFor): a page can't point the button at a private
+      // link somewhere else to learn whether the user can open it.
+      if (!sameOrigin(src, frameOrigin) && !tabLoaded(tabId, src)) return { unavailable: true };
+      if (ext === 'm3u8') return inspectPlaylist(src, frameOrigin);
       return {
         options: [{ label: 'Original', format: ext === 'mov' ? 'MOV' : ext.toUpperCase(), size: null, url: src, audio: null, bandwidth: null, kind: 'file' }],
       };
     }
-    if (C.isWebLink(src) && ext === 'm3u8') return inspectPlaylist(src);
     // Media Source players: use what the tab loaded.
     const seen = (tabMedia.get(tabId) || []).slice().reverse();
     const hls = seen.filter((e) => e.kind === 'hls');
     for (const entry of hls) {
-      const result = await inspectPlaylist(entry.url);
+      const result = await inspectPlaylist(entry.url, frameOrigin);
       if (!result.unavailable) return result;
     }
     const file = seen.find((e) => e.kind === 'file');
-    if (file) return inspectVideo(file.url, tabId);
+    if (file) return inspectVideo(file.url, tabId, frameOrigin);
     return { unavailable: true };
   }
 
@@ -517,7 +569,7 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
         setBadge(tabId, message.count || 0);
         return false;
       case 'inspectVideo':
-        return reply(inspectVideo(message.src, tabId));
+        return reply(inspectVideo(message.src, tabId, frameOriginOf(sender)));
       case 'saveVideo':
         return reply(saveVideo(message.option, message.title, sender && sender.tab ? sender.tab.url : message.pageUrl));
       case 'catchLink':

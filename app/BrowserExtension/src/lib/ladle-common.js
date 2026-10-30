@@ -123,10 +123,14 @@
     return { catch: true, ext };
   }
 
-  /** Cookie header for a request, from `cookies.getAll` results. */
-  function cookieHeader(cookies) {
+  /**
+   * Cookie header for a request to `url`, from `cookies.getAll` results.
+   * Secure cookies stay off plain http; without a `url` nothing is dropped.
+   */
+  function cookieHeader(cookies, url) {
+    const secureAllowed = !url || /^https:\/\//i.test(String(url));
     return (cookies || [])
-      .filter((c) => c && c.name)
+      .filter((c) => c && c.name && (secureAllowed || c.secure !== true))
       .map((c) => c.name + '=' + c.value)
       .join('; ');
   }

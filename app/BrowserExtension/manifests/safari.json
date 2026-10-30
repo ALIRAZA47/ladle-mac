@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ladle",
   "description": "Hands your downloads to Ladle, the free download manager for the Mac, and adds a Download video button to videos you’re allowed to save.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",

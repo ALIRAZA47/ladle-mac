@@ -39,9 +39,10 @@
     true
   );
 
-  function sameHost(url) {
+  /** Same scheme, host and port as the page: an http link on an https page gets no cookies. */
+  function sameOrigin(url) {
     try {
-      return new URL(url).host === location.host;
+      return new URL(url).origin === location.origin;
     } catch (e) {
       return false;
     }
@@ -69,7 +70,7 @@
         url: link.href,
         filename: link.getAttribute('download') || '',
         referrer: location.href,
-        cookies: sameHost(link.href) ? document.cookie : '',
+        cookies: sameOrigin(link.href) ? document.cookie : '',
       }).then((reply) => {
         if (reply && reply.ok) return;
         // Ladle couldn't take it: let the browser have the click after all.
@@ -191,6 +192,9 @@
       this.hideTimer = null;
       this.flash = null;
       this.host = document.createElement('ladle-video-button');
+      // Open on purpose: the page can read this UI, but what it shows was fetched from the page's own
+      // origin or without cookies (so nothing about the user), and every action needs a trusted event.
+      // Closing it would only keep the tests from reading it.
       this.root = this.host.attachShadow({ mode: 'open' });
       this.root.innerHTML = '<style>' + STYLE + '</style><div class="layer"></div>';
       this.layer = this.root.querySelector('.layer');
@@ -203,9 +207,19 @@
         this.result = null;
         this.render();
       };
+      this.onLoaded = () => {
+        // Another origin's source is only looked at once the tab has loaded it; if that hadn't
+        // happened yet (preload="none", say), ask again on the next hover.
+        if (this.state === 'ready' && this.result && this.result.unavailable) {
+          this.state = 'idle';
+          this.result = null;
+        }
+      };
       video.addEventListener('encrypted', this.onEncrypted);
       video.addEventListener('loadstart', this.onSourceChange);
+      video.addEventListener('loadedmetadata', this.onLoaded);
       this.layer.addEventListener('keydown', (event) => {
+        if (!event.isTrusted) return;
         if (event.key === 'Escape' && this.open) {
           this.open = false;
           this.render();
@@ -230,6 +244,7 @@
     detach() {
       this.video.removeEventListener('encrypted', this.onEncrypted);
       this.video.removeEventListener('loadstart', this.onSourceChange);
+      this.video.removeEventListener('loadedmetadata', this.onLoaded);
       this.host.remove();
     }
 
@@ -326,12 +341,15 @@
           '</section>';
       }
       this.layer.innerHTML = pill + menu;
-      this.layer.querySelector('.pill').addEventListener('click', () => {
+      // Real clicks only: the page can't open the menu or start a download by firing events.
+      this.layer.querySelector('.pill').addEventListener('click', (event) => {
+        if (!event.isTrusted) return;
         this.open = !this.open;
         this.render();
       });
       for (const button of this.layer.querySelectorAll('.opt')) {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (event) => {
+          if (!event.isTrusted) return;
           this.selected = Number(button.dataset.index);
           this.render();
           const again = this.layer.querySelector('.opt[data-index="' + this.selected + '"]');
@@ -339,10 +357,16 @@
         });
       }
       const go = this.layer.querySelector('.go');
-      if (go) go.addEventListener('click', () => this.save());
+      if (go) {
+        go.addEventListener('click', (event) => {
+          if (event.isTrusted) this.save();
+        });
+      }
     }
 
     save() {
+      // Ladle treats a video as the user's choice, so only a click of theirs may send one.
+      if (navigator.userActivation && !navigator.userActivation.isActive) return;
       const option = this.options[this.selected];
       if (!option) return;
       this.open = false;
@@ -402,6 +426,8 @@
   document.addEventListener(
     'mousemove',
     (event) => {
+      // The user's own pointer only: a page can't show the button (and have a video looked at) by faking a move.
+      if (!event.isTrusted) return;
       for (const button of buttons.values()) {
         const rect = button.video.getBoundingClientRect();
         if (rect.width < 160 || rect.height < 90) continue;
@@ -418,6 +444,7 @@
   document.addEventListener(
     'pointerdown',
     (event) => {
+      if (!event.isTrusted) return;
       for (const button of buttons.values()) {
         if (button.open && !event.composedPath().includes(button.host)) {
           button.open = false;

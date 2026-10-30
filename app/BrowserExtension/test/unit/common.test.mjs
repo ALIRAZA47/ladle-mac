@@ -46,6 +46,12 @@ test('leaves the browser alone when it should', () => {
 
 test('cookie headers and messages', () => {
   assert.equal(C.cookieHeader([{ name: 'a', value: '1' }, { name: 'b', value: 'x=y' }, {}]), 'a=1; b=x=y');
+  const jar = [{ name: 'sid', value: 's3cret', secure: true }, { name: 'theme', value: 'dark', secure: false }, { name: 'lang', value: 'en' }];
+  assert.equal(C.cookieHeader(jar, 'https://a.org/x.zip'), 'sid=s3cret; theme=dark; lang=en');
+  assert.equal(C.cookieHeader(jar, 'http://a.org/x.zip'), 'theme=dark; lang=en', 'Secure cookies never travel over plain http');
+  assert.equal(C.cookieHeader(jar, 'HTTPS://A.ORG/x.zip'), 'sid=s3cret; theme=dark; lang=en', 'the scheme check ignores case');
+  assert.equal(C.cookieHeader(jar), 'sid=s3cret; theme=dark; lang=en', 'without a link nothing is dropped');
+  assert.equal(C.cookieHeader([], 'http://a.org/'), '');
   const msg = C.downloadMessage({ url: 'https://a.org/x.zip', filename: 'x.zip', referrer: '', cookies: 'a=1', size: -1, mode: 'caught' });
   assert.deepEqual(msg, { type: 'download', url: 'https://a.org/x.zip', mode: 'caught', filename: 'x.zip', cookies: 'a=1' });
 });

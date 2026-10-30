@@ -29,6 +29,17 @@ const PAGES = {
     <body style="margin:0;padding:40px">
     <video id="v" src="/media/local-master.m3u8" width="680" height="383" style="display:block;background:#1D1B19" muted preload="metadata"></video>
     </body></html>`,
+  // The stream lives on this same server under its other name (localhost ↔ 127.0.0.1): another origin.
+  // "?gated" points at a copy that needs the session cookie, which a cross-site <video> load won't send.
+  '/hls-cross.html': `<!doctype html><html><head><title>Designing for Speed</title></head>
+    <body style="margin:0;padding:40px">
+    <video id="v" width="680" height="383" style="display:block;background:#1D1B19" muted preload="metadata"></video>
+    <script>
+      const other = location.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
+      const path = location.search === '?gated' ? '/gated/media/local-master.m3u8' : '/media/local-master.m3u8';
+      document.getElementById('v').src = 'http://' + other + ':' + location.port + path;
+    </script>
+    </body></html>`,
 };
 
 export async function startServer() {
@@ -68,6 +79,12 @@ export async function startServer() {
       return;
     }
     if (url.pathname.endsWith('.m3u8')) {
+      // /gated/… answers only with the session cookie, like a CDN with signed cookies.
+      if (url.pathname.startsWith('/gated/') && !/(^|;\s*)session=abc123(;|$)/.test(req.headers.cookie || '')) {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
       res.writeHead(200, { 'Content-Type': 'application/vnd.apple.mpegurl' });
       const name = url.pathname.split('/').pop();
       res.end(fixture(name === 'index.m3u8' ? 'fmp4.m3u8' : name));

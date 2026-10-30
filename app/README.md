@@ -174,7 +174,9 @@ downloads API, so there the content script takes clicks on links to watched file
 - Live HLS streams aren't offered. A separate audio track is merged into the video for fMP4
   streams; with MPEG-TS it's saved next to the video as its own "<title> (audio)" file.
 - Safari: only clicks on links are caught (not downloads started by scripts or forms), and only
-  cookies visible to the page (`document.cookie`, not HttpOnly) are passed along.
+  cookies visible to the page (`document.cookie`, not HttpOnly) are passed along. Safari has no
+  `webRequest`, so the video button there only offers videos from the page's own origin (elsewhere,
+  a video from another origin is offered once the page itself has loaded it).
 - Downloads in private windows are never caught, on purpose, so they stay out of Ladle's list. The
   extension only catches downloads while Ladle answers or has answered before, so without Ladle
   the browser downloads as usual.

@@ -3,7 +3,7 @@
   "name": "Ladle",
   "short_name": "Ladle",
   "description": "Hands your downloads to Ladle, the free download manager for the Mac, and adds a Download video button to videos you’re allowed to save.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnkXawPgtRG6Egjhs4JCilyWNDxtdbyujRBiQHVwo//tXCEe1BI/miZqgcsqHFYTCYmtqriMPivbtRHlK3qZTxSI9qtvcI1cbZuhhOjwDodR50aZ4JLKVaMQUUOV+F/Js4sR8HnE9/sIA/whv/3MVmasu3p+sOLgDEQVPZbUf1om0ZvlSdRqrEPfivD7h/ZZhu54KxaI8kbv90TDjeCQZiW5ZEpX9tnT0ciX2+wJEiQ2BpannAu8a9sVWvw2NqJqkvVFGAtkakvnftJ27RWr5AnauiXHr+nOyhuv50Fm7szbkN0edz7V6P11r6WZwV0MCm0oagC5fT9k/lS6Q+vAOOwIDAQAB",
   "minimum_chrome_version": "116",
   "icons": {
