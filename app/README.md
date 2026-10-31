@@ -131,7 +131,7 @@ npm run build:store    # the Chrome Web Store upload, without the development "k
 node build.mjs --release   # dist/Ladle-Chrome-Extension.zip, the copy each release publishes
 ```
 
-- **Chrome, Arc, Edge, Brave**: load `dist/chrome` unpacked. The `key` in
+- **Chrome, Arc, Dia, Edge, Brave**: load `dist/chrome` unpacked. The `key` in
   `manifests/chrome.json` fixes the development ID to `pleopllngomokgfeebgjmnkjhebmcmkk`, which
   `Ladle/Browser/BrowserIntegration.swift` allows. Until the Chrome Web Store listing exists,
   people load `Ladle-Chrome-Extension.zip` from the latest release the same way; it unpacks to a

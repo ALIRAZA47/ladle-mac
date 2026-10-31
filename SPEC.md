@@ -121,7 +121,7 @@ It runs on the Bash that ships with macOS, and does the following:
    reload in the browser picks up a new version.
 4. Copies that path to the clipboard and opens the browser's extensions page for **Load unpacked**.
 
-Options: `--app-only`, `--extension-only`, `--browser chrome|arc|edge|brave|none`,
+Options: `--app-only`, `--extension-only`, `--browser chrome|arc|dia|edge|brave|none`,
 `--dir FOLDER`, `--no-open`. When the Chrome Web Store listing exists, set `CHROME_STORE_URL` in
 the script, and it opens the store instead. App CI runs the script on macOS against the packaged
 app on every run of its packaging dry run.
@@ -320,7 +320,7 @@ With no releases yet, the feed is an empty channel.
 | General | Open Ladle at login (on) · Show Ladle in the menu bar (on) · Watch the clipboard for links (on) · Appearance: Auto/Light/Dark (Auto) · Notify me when downloads finish (on) · Play a sound too (off) |
 | Downloads | Save downloads to (`~/Downloads/Ladle`) · Sort into category folders (on) · If a file with the same name exists (Keep both) · When a download finishes (Just notify me) · Verify checksums (on) |
 | Speed | Downloads at the same time (3) · Connections per download (8, "recommended") · Limit total speed (off, 10 MB/s) · Retry failed downloads (3 times) · Proxy (Same as macOS) |
-| Browsers | Safari (status, Manage) · Chrome, Arc, Edge and Brave (Get extension) · Firefox (Get extension) · Everything else (copy a link) · Catch these file types (dmg pkg zip iso mp4 mov mkv mp3 flac pdf, editable) · Ask before downloading (on) |
+| Browsers | Safari (status, Manage) · Chrome, Arc, Dia, Edge and Brave (Get extension) · Firefox (Get extension) · Everything else (copy a link) · Catch these file types (dmg pkg zip iso mp4 mov mkv mp3 flac pdf, editable) · Ask before downloading (on) |
 | Schedule | Tonight queue 1:00 AM to 7:00 AM · Run on (every day) · When the queue finishes (Put the Mac to sleep) · Pause when running on battery (on) · Pause on Low Data networks (on) |
 | Updates | Check for updates automatically (on) · Download and install updates automatically (on) · Current version with **Check Now** · Last checked |
 

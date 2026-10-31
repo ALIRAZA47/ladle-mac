@@ -2,7 +2,7 @@ import Foundation
 
 /// Browsers whose extension talks to Ladle through native messaging (Safari has its own path).
 public enum BrowserFamily: String, CaseIterable, Sendable {
-    case chrome, chromeBeta, chromeCanary, chromium, arc, edge, edgeBeta, edgeDev, brave, firefox
+    case chrome, chromeBeta, chromeCanary, chromium, arc, dia, edge, edgeBeta, edgeDev, brave, firefox
 
     public var displayName: String {
         switch self {
@@ -11,6 +11,7 @@ public enum BrowserFamily: String, CaseIterable, Sendable {
         case .chromeCanary: return "Chrome Canary"
         case .chromium: return "Chromium"
         case .arc: return "Arc"
+        case .dia: return "Dia"
         case .edge: return "Edge"
         case .edgeBeta: return "Edge Beta"
         case .edgeDev: return "Edge Dev"
@@ -29,6 +30,7 @@ public enum BrowserFamily: String, CaseIterable, Sendable {
         case .chromeCanary: return "Google/Chrome Canary"
         case .chromium: return "Chromium"
         case .arc: return "Arc/User Data"
+        case .dia: return "Dia/User Data"
         case .edge: return "Microsoft Edge"
         case .edgeBeta: return "Microsoft Edge Beta"
         case .edgeDev: return "Microsoft Edge Dev"

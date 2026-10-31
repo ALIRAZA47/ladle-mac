@@ -437,7 +437,7 @@ private struct BrowserSettings: View {
             }
             GroupDivider()
             browserRow(
-                "Chrome, Arc, Edge and Brave",
+                "Chrome, Arc, Dia, Edge and Brave",
                 status: browsers.status(for: .chrome),
                 good: browsers.isConnected(.chrome),
                 action: "Get extension"

@@ -7,7 +7,9 @@ extension AppModel {
     /// Answers LadleBridge. Runs on the main thread, synchronously.
     func handleBridge(_ envelope: BridgeEnvelope) -> BridgeReply {
         let request = envelope.request
-        let browser = request.browser ?? envelope.browser ?? "your browser"
+        // The helper knows which browser started it (its parent process), which beats the extension's
+        // guess from the user agent: Arc, Dia and Brave all say "Chrome" there.
+        let browser = envelope.browser ?? request.browser ?? "your browser"
         browsers.record(browser: browser)
         if let port = envelope.replyPort {
             bridgePorts[BrowserIntegration.family(forBrowser: browser).rawValue] = port

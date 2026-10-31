@@ -8,7 +8,7 @@
 #
 #   --app-only        Install Ladle without the Chrome extension.
 #   --extension-only  Set up the Chrome extension only.
-#   --browser NAME    Where the extension goes: chrome, arc, edge, brave or none. Without it, the
+#   --browser NAME    Where the extension goes: chrome, arc, dia, edge, brave or none. Without it, the
 #                     script uses the one you have, or asks when you have several.
 #   --dir FOLDER      Install Ladle in FOLDER instead of /Applications.
 #   --no-open         Don't open Ladle or the browser at the end.
@@ -64,7 +64,7 @@ Installs Ladle and sets up its Chrome extension, from the latest release on GitH
 Options:
   --app-only        Install Ladle without the Chrome extension.
   --extension-only  Set up the Chrome extension only.
-  --browser NAME    Where the extension goes: chrome, arc, edge, brave or none.
+  --browser NAME    Where the extension goes: chrome, arc, dia, edge, brave or none.
   --dir FOLDER      Install Ladle in FOLDER instead of /Applications.
   --no-open         Don't open Ladle or the browser at the end.
   -h, --help        Show this.
@@ -226,6 +226,7 @@ browser_app() {
 	case "$1" in
 		chrome) echo "Google Chrome" ;;
 		arc) echo "Arc" ;;
+		dia) echo "Dia" ;;
 		edge) echo "Microsoft Edge" ;;
 		brave) echo "Brave Browser" ;;
 	esac
@@ -235,6 +236,7 @@ browser_page() {
 	case "$1" in
 		chrome) echo "chrome://extensions" ;;
 		arc) echo "arc://extensions" ;;
+		dia) echo "dia://extensions" ;;
 		edge) echo "edge://extensions" ;;
 		brave) echo "brave://extensions" ;;
 	esac
@@ -246,10 +248,10 @@ has_browser() {
 	[ -d "/Applications/$name.app" ] || [ -d "$HOME/Applications/$name.app" ]
 }
 
-# Prints chrome, arc, edge, brave or none.
+# Prints chrome, arc, dia, edge, brave or none.
 pick_browser() {
 	local found="" count=0 b i answer
-	for b in chrome arc edge brave; do
+	for b in chrome arc dia edge brave; do
 		if has_browser "$b"; then
 			found="$found $b"
 			count=$((count + 1))
@@ -327,7 +329,7 @@ main() {
 			--app-only) want_extension=0 ;;
 			--extension-only) want_app=0 ;;
 			--browser)
-				[ $# -ge 2 ] || die "--browser needs a name: chrome, arc, edge, brave or none."
+				[ $# -ge 2 ] || die "--browser needs a name: chrome, arc, dia, edge, brave or none."
 				browser=$2
 				shift
 				;;
@@ -349,8 +351,8 @@ main() {
 	done
 	[ "$want_app$want_extension" != 00 ] || die "Use --app-only or --extension-only, not both."
 	case "$browser" in
-		"" | chrome | arc | edge | brave | none) ;;
-		*) die "--browser takes chrome, arc, edge, brave or none, not $browser." ;;
+		"" | chrome | arc | dia | edge | brave | none) ;;
+		*) die "--browser takes chrome, arc, dia, edge, brave or none, not $browser." ;;
 	esac
 
 	[ "$(uname -s)" = Darwin ] || die "Ladle is a Mac app, so this script runs on macOS."
