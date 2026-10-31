@@ -19,7 +19,7 @@ export const SUPPORT_URL = 'https://github.com/ALIRAZA47/ladle-mac/issues';
 export const APPCAST_URL = `${SITE_URL}/appcast.xml`;
 
 /** Used when neither the appcast nor the changelog names a version. */
-export const FALLBACK_VERSION = '0.1.1';
+export const FALLBACK_VERSION = '0.1.2';
 
 export const REQUIREMENTS = 'macOS 14 Sonoma or later';
 export const CHIPS = 'Apple silicon and Intel';

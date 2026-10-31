@@ -40,6 +40,6 @@ final class LadleAppTests: XCTestCase {
         XCTAssertEqual(info["SUEnableAutomaticChecks"] as? Bool, true)
         XCTAssertEqual(info["SUAutomaticallyUpdate"] as? Bool, true)
         XCTAssertEqual(info["SUEnableSystemProfiling"] as? Bool, false)
-        XCTAssertEqual(info["CFBundleShortVersionString"] as? String, "0.1.1")
+        XCTAssertEqual(info["CFBundleShortVersionString"] as? String, "0.1.2")
     }
 }

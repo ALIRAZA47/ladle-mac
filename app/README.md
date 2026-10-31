@@ -91,9 +91,9 @@ To package Ladle exactly the way a release does (universal Release build, signed
 
 ```sh
 python3 app/scripts/sparkle_ed.py generate /tmp/key.txt     # prints a throwaway public key
-LADLE_VERSION=0.1.1 LADLE_BUILD=2 LADLE_SPARKLE_KEY_FILE=/tmp/key.txt \
+LADLE_VERSION=0.1.2 LADLE_BUILD=3 LADLE_SPARKLE_KEY_FILE=/tmp/key.txt \
   LADLE_PUBLIC_ED_KEY_OVERRIDE=<that public key> app/scripts/package-app.sh
-LADLE_VERSION=0.1.1 LADLE_BUILD=2 app/scripts/verify-package.sh
+LADLE_VERSION=0.1.2 LADLE_BUILD=3 app/scripts/verify-package.sh
 ```
 
 To sign with your own team, set `DEVELOPMENT_TEAM` and `CODE_SIGN_IDENTITY` ("Apple

@@ -39,7 +39,7 @@ rebuilds it from the published releases before every deploy.
 | Native messaging host (Chrome, Firefox) | `me.alirazakhan.ladle` |
 | URL scheme | `ladle://` |
 | App data folder | `~/Library/Application Support/Ladle` (download list, resume state, settings) |
-| Version | 0.1.1 (build 2) |
+| Version | 0.1.2 (build 3) |
 | Minimum macOS | 14.0 |
 | Distribution | `Ladle.dmg` on GitHub Releases, **ad-hoc signed and not notarized** (no paid Apple Developer account). Users approve the first launch once (see [First launch](#first-launch)). If Developer ID secrets are ever added, the release workflow signs and notarizes instead. Not sandboxed. Not on the Mac App Store. |
 
