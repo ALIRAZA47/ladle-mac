@@ -106,6 +106,12 @@ jobs:
               echo "::error::${tag} isn't newer than ${newest}. Versions go up, because the build number follows them."
               exit 1
             fi
+            if [ -z "$existing" ]; then
+              # Only the owner may create a v* tag (the Release tags ruleset), and this run isn't the
+              # owner, so it can't tag for them. Say so now rather than after the build.
+              echo "::error::${tag} doesn't exist yet, and only you can create release tags. Create it on ${GITHUB_SHA} (git tag ${tag} ${GITHUB_SHA} && git push origin ${tag}, or Releases › Draft a new release › new tag ${tag} on main, published as a pre-release): the tag starts this workflow on its own. Run workflow is for re-running a tag's release."
+              exit 1
+            fi
           fi
           # The build number (CFBundleVersion, which Sparkle compares) is this tag's place among
           # the release tags in version order, so v0.1.0 is build 1.
@@ -288,14 +294,9 @@ jobs:
             gh release edit "$TAG" --title "Ladle $LADLE_VERSION" --notes-file "$notes" \
               --draft=false --prerelease=false --latest
           else
-            # A pushed tag must already exist; a run by hand creates it on this commit. A tag made
-            # with GITHUB_TOKEN starts no second run.
-            if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-              tag_args=(--target "$GITHUB_SHA")
-            else
-              tag_args=(--verify-tag)
-            fi
-            gh release create "$TAG" "${assets[@]}" "${tag_args[@]}" \
+            # The tag exists: the owner created it (the check job made sure), so verify it rather
+            # than create it.
+            gh release create "$TAG" "${assets[@]}" --verify-tag \
               --title "Ladle $LADLE_VERSION" --notes-file "$notes" --latest
           fi
 

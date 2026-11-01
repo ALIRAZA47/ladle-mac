@@ -47,8 +47,9 @@ settings, applied once:
      **Repository admin** role, which on a personal repository is you alone, so you can merge your
      own pull requests.
    - `release-tags.json` — **Release tags**: only an admin can create, move or delete a `v*` tag,
-     so only you can start a release. (The workflow also refuses a tag whose commit isn't on
-     `main`, and a run whose actor isn't the owner.)
+     so only you can start a release: the workflow's own token can't tag, which is why a release
+     starts from a tag you create (below). The workflow also refuses a tag whose commit isn't on
+     `main`, and a run whose actor isn't the owner.
    - `other-branches.json` — **Only the owner pushes branches**: nobody else can create, push to
      or delete any branch, so nobody else can start a push-triggered workflow. Other people
      contribute from forks: their pull requests still get checked, after you approve the run (next
@@ -106,9 +107,13 @@ releases, so people have to download that version by hand once; say so in its re
 
    Leave out `date:`; the website fills in the day the release was published.
 2. Start the release, either way:
-   - **On GitHub:** **Actions › App release › Run workflow**. Leave the branch on `main`, enter the
-     version (`1.2.0`) and click **Run workflow**. The release tags that commit `v1.2.0` when it's
-     published, so a run that fails leaves no tag behind.
+   - **On GitHub, without git:** **Releases › Draft a new release**. Under **Choose a tag**, type
+     `v1.2.0` and pick **Create new tag on publish**, with **Target** `main`. Any title. Tick
+     **Set as a pre-release** (so the empty release isn't "latest" while the build runs), then
+     **Publish release**. Creating the tag starts **App release**, which uploads the files, writes
+     the notes and turns it into the normal latest release.
+   - **Run workflow** (Actions › App release) re-runs the release of a tag that already exists; it
+     stops at once, with these instructions, when the tag doesn't.
    - **With git:** tag the commit on `main` and push the tag.
 
      ```sh
