@@ -37,6 +37,15 @@ jobs:
     env:
       ASTRO_TELEMETRY_DISABLED: '1'
     steps:
+      # Only the repository owner deploys: by merging to main, or from the Actions tab. The one
+      # other allowed starter is the release workflow's own `gh workflow run`, which runs as
+      # github-actions[bot] and can only deploy what is on main.
+      - name: Only the repository owner deploys
+        if: github.actor != github.repository_owner && github.actor != 'github-actions[bot]'
+        run: |
+          echo "::error::Site deploy was started by ${GITHUB_ACTOR}, not the repository owner (${GITHUB_REPOSITORY_OWNER}). Only the owner deploys."
+          exit 1
+
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0

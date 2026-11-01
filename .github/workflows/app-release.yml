@@ -45,6 +45,15 @@ jobs:
       build: ${{ steps.version.outputs.build }}
       signing: ${{ steps.signing.outputs.signing }}
     steps:
+      # Whoever pushed the tag or pressed Run workflow must be the repository owner. The rulesets in
+      # .github/rulesets stop anyone else from creating a v* tag in the first place; this is the
+      # same rule enforced from inside the run, in case they aren't applied.
+      - name: Only the repository owner releases
+        if: github.actor != github.repository_owner
+        run: |
+          echo "::error::App release was started by ${GITHUB_ACTOR}, not the repository owner (${GITHUB_REPOSITORY_OWNER}). Only the owner releases."
+          exit 1
+
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0

@@ -300,9 +300,11 @@ Ladle updates itself with Sparkle 2.
 `site/src/content/changelog/X.Y.Z.md` (front matter: `version`, `title`, optional `date`). The
 app's release workflow, on the tag:
 
-1. fails early if the tagged commit isn't on `main` (a tag can't release code that skipped review)
-   or that changelog file is missing (tag versions in increasing order: the build number is the
-   tag's position among release tags);
+1. fails early if the run wasn't started by the repository owner, if the tagged commit isn't on
+   `main` (a tag can't release code that skipped review) or if that changelog file is missing (tag
+   versions in increasing order: the build number is the tag's position among release tags). The
+   rulesets in `.github/rulesets/` let only the owner merge to `main`, create `v*` tags or push
+   branches, and `.github/CODEOWNERS` makes only the owner's review count (`app/RELEASING.md`);
 2. in the `release` environment, which the owner protects with required reviewers so the signing
    key is read only after an approval, builds a universal app, ad-hoc signs it (or signs and
    notarizes it with Developer ID when those secrets exist), signs the update with

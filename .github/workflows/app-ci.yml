@@ -26,8 +26,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Pushes and runs from the Actions tab run only for the repository owner. A pull request from a
+  # fork runs once the owner approves it (Settings › Actions › General › "Require approval for all
+  # external contributors"), and never holds a secret or a writable token.
+  gate:
+    name: Check who started this
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only the repository owner runs CI on pushes
+        if: github.event_name != 'pull_request' && github.actor != github.repository_owner
+        run: |
+          echo "::error::This run was started by ${GITHUB_ACTOR}, not the repository owner (${GITHUB_REPOSITORY_OWNER}). Open a pull request from a fork instead; its checks run once the owner approves them."
+          exit 1
+      - run: echo "Started by ${GITHUB_ACTOR} on ${GITHUB_EVENT_NAME}"
+
   macos:
     name: App (macOS)
+    needs: gate
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
@@ -81,6 +96,7 @@ jobs:
 
   linux:
     name: LadleKit (Linux)
+    needs: gate
     runs-on: ubuntu-latest
     container: swift:6.4.1-noble
     steps:
@@ -90,6 +106,7 @@ jobs:
 
   extension:
     name: Browser extension
+    needs: gate
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -113,6 +130,7 @@ jobs:
 
   scripts:
     name: Release scripts
+    needs: gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -130,6 +148,7 @@ jobs:
   # and the update's EdDSA signature, then verify-package.sh checks it all from the mounted DMG.
   package:
     name: Packaging dry run
+    needs: gate
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: macos-latest
     env:
