@@ -20,8 +20,8 @@ version than the one before; bump the version in `package.json` and the manifest
 | Language | English |
 | Homepage URL | https://ladle.alirazakhan.me/ |
 | Support URL | https://github.com/ALIRAZA47/ladle-mac/issues |
-| Store icon | `icons/icon-128.png`, taken from the package |
-| Screenshots | `store/screenshot-1-video-button.png`, `store/screenshot-2-quality-menu.png` (1280×800) |
+| Store icon | `store/store-icon-128.png` (the app icon at 96×96 with 16 px of transparent padding, as the store asks; the package's `icons/icon-128.png` is full-bleed) |
+| Screenshots | `store/screenshot-1-video-button.png`, `store/screenshot-2-quality-menu.png`, `store/screenshot-3-protected-video.png` (1280×800); add real Mac screenshots of the catch panel and the main window when available |
 | Small promo tile | `store/promo-tile-440x280.png` |
 | Mature content | Off |
 
