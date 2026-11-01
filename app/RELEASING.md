@@ -185,8 +185,10 @@ in Chrome, Arc, Edge and Brave. `node build.mjs --release` in
 
 For the stores, package with `npm run build` in [`BrowserExtension/`](BrowserExtension/):
 
-- **Chrome Web Store** (also covers Arc and Brave): upload `dist/ladle-chrome-X.Y.Z-store.zip` from
-  `npm run build:store`, which leaves out the development `key`. The store assigns a new ID.
+- **Chrome Web Store** (also covers Arc, Dia and Brave): upload `dist/ladle-chrome-X.Y.Z-store.zip`
+  from `npm run build:store`, which leaves out the development `key`. The store assigns a new ID.
+  [`BrowserExtension/store/listing.md`](BrowserExtension/store/listing.md) has the listing text,
+  the privacy answers and the screenshots to upload.
 - **Microsoft Edge Add-ons**: upload the same zip; Edge assigns its own ID.
 - **Firefox Add-ons (AMO)**: upload `dist/ladle-firefox-X.Y.Z.zip`. The ID stays
   `ladle@alirazakhan.me`, set in `manifests/firefox.json`.

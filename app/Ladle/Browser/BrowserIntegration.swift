@@ -8,10 +8,13 @@ import SafariServices
 /// messaging host manifests, and the Safari extension's state.
 @MainActor
 final class BrowserIntegration: ObservableObject {
-    /// Chrome extension IDs allowed to talk to LadleBridge. The first is the unpacked development
-    /// build (fixed by the `key` in BrowserExtension/manifests/chrome.json). Add the Chrome Web
-    /// Store ID here once the extension is published (see RELEASING.md).
-    static let chromeExtensionIDs = ["pleopllngomokgfeebgjmnkjhebmcmkk"]
+    /// Chrome extension IDs allowed to talk to LadleBridge: the unpacked development build (fixed by
+    /// the `key` in BrowserExtension/manifests/chrome.json) and the Chrome Web Store listing. Edge
+    /// Add-ons gets its own ID here when it exists (see RELEASING.md).
+    static let chromeExtensionIDs = [
+        "pleopllngomokgfeebgjmnkjhebmcmkk",  // development build, Ladle-Chrome-Extension.zip
+        "mmpbaegnfhbjpmmokpjnbnbmlebfcfgd",  // Chrome Web Store
+    ]
     static let firefoxExtensionIDs = ["ladle@alirazakhan.me"]
     static let safariExtensionID = "me.alirazakhan.Ladle.SafariExtension"
 
@@ -39,7 +42,7 @@ final class BrowserIntegration: ObservableObject {
     }
 
     var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.2"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.3"
     }
 
     /// LadleBridge inside this copy of the app.
