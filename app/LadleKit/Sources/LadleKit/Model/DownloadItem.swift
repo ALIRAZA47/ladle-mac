@@ -135,6 +135,9 @@ public struct DownloadFailure: Codable, Equatable, Sendable, Error {
         case protectedVideo
         case liveStream
         case unsupportedLink
+        /// Ladle stopped unexpectedly while this was running, several launches in a row (see
+        /// `DownloadCoordinator.maxLaunchInterruptions`), so it isn't started again by itself.
+        case interrupted
     }
 
     public var code: Code
@@ -177,6 +180,7 @@ public struct DownloadFailure: Codable, Equatable, Sendable, Error {
         case .protectedVideo: return "Protected video can’t be saved"
         case .liveStream: return "Live streams can’t be saved"
         case .unsupportedLink: return "That link can’t be downloaded"
+        case .interrupted: return "Ladle quit unexpectedly while downloading this"
         }
     }
 }
@@ -254,6 +258,9 @@ public struct DownloadItem: Codable, Identifiable, Equatable, Sendable {
     public var failure: DownloadFailure?
     public var checksum: ExpectedChecksum?
     public var checksumState: ChecksumState?
+    /// Launches in a row that found this download still running, meaning Ladle didn't quit cleanly
+    /// while it ran. Cleared when a run ends normally. Missing in older files.
+    public var launchInterruptions: Int?
 
     public init(
         id: UUID = UUID(),

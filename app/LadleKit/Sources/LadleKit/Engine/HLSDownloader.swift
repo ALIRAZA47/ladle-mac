@@ -1,3 +1,10 @@
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#endif
 import Foundation
 
 public struct HLSJob: Sendable {
@@ -231,6 +238,7 @@ public final class HLSDownloader: @unchecked Sendable {
         let videoEntries = HLSDownloader.entries(for: video)
         let audioEntries = audio.map(HLSDownloader.entries(for:)) ?? []
         let all = videoEntries + audioEntries
+        guard all.count <= Limits.maxSegments else { throw DownloadFailure(.invalidResponse) }
         let container = HLSJoin.container(for: video)
         let audioContainer = audio.map(HLSJoin.container(for:))
         let isAudioOnly = job.qualityLabel == "Audio only"
@@ -334,8 +342,7 @@ public final class HLSDownloader: @unchecked Sendable {
                 response.body.cancel()
                 throw DownloadFailure(.invalidResponse, httpStatus: head.statusCode)
             }
-            _ = FileManager.default.createFile(atPath: temporary.path, contents: nil)
-            let handle = try FileHandle(forWritingTo: temporary)
+            let handle = try HLSDownloader.createForWriting(temporary)
             var written = 0
             do {
                 while let chunk = try await response.body.next() {
@@ -365,9 +372,15 @@ public final class HLSDownloader: @unchecked Sendable {
         }
     }
 
+    /// Creates (or empties) a file for writing. A symbolic link in its place is an error, not followed.
+    static func createForWriting(_ url: URL) throws -> FileHandle {
+        let descriptor = url.path.withCString { open($0, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0o644) }
+        guard descriptor >= 0 else { throw PartFile.error(POSIXFailure("open")) }
+        return FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+    }
+
     private func join(range: Range<Int>, in directory: URL, to output: URL) throws {
-        _ = FileManager.default.createFile(atPath: output.path, contents: nil)
-        let out = try FileHandle(forWritingTo: output)
+        let out = try HLSDownloader.createForWriting(output)
         defer { try? out.close() }
         for index in range {
             let input = try FileHandle(forReadingFrom: segmentURL(index, in: directory))

@@ -24,6 +24,10 @@ final class FileNamingTests: XCTestCase {
         XCTAssertEqual(FileNaming.sanitize("..\u{00A0}.."), "download")
         XCTAssertEqual(FileNaming.sanitize(" . .hidden.txt"), "hidden.txt")
         XCTAssertNil(FileNaming.nameFromURL(URL(string: "https://a.org/..%20..")!))
+        // Invisible bidirectional and zero-width characters can disguise the real extension.
+        XCTAssertEqual(FileNaming.sanitize("report\u{202E}fdp.dmg"), "reportfdp.dmg")
+        XCTAssertEqual(FileNaming.sanitize("a\u{200B}b\u{FEFF}\u{2066}.txt"), "ab.txt")
+        XCTAssertEqual(FileNaming.fileExtension(of: FileNaming.sanitize("report\u{202E}fdp.dmg")), "dmg")
         let long = String(repeating: "x", count: 400) + ".mp4"
         let cut = FileNaming.sanitize(long)
         XCTAssertLessThanOrEqual(cut.utf8.count, 200)

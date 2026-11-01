@@ -112,8 +112,10 @@ mode until the Chrome Web Store listing exists; Firefox waits for its Firefox Ad
 latest release without the approval step, because files `curl` downloads aren't quarantined.
 It runs on the Bash that ships with macOS, and does the following:
 
-1. Downloads `Ladle.dmg` and skips the app if that version is already installed. If Ladle is open,
-   it waits for you to quit it.
+1. Downloads `Ladle.dmg` and the release's `sparkle.json`, and checks the DMG's EdDSA signature
+   against Ladle's update key (the one in `SUPublicEDKey`), the way copies of Ladle check an update,
+   so a swapped download isn't installed. Skips the app if that version is already installed. If
+   Ladle is open, it waits for you to quit it.
 2. Copies the app into `/Applications` (`~/Applications` when the account can't write there),
    checks its signature, then opens it.
 3. Unpacks `Ladle-Chrome-Extension.zip` into
@@ -170,13 +172,17 @@ The app must behave like this and the docs must describe exactly this.
   **Not now**. Setting: *Watch the clipboard for links* (on). Nothing leaves the Mac.
 - **Drag and drop** links onto the window, and `.webloc` files onto the window or the Dock icon.
   Ladle doesn't register for `http`/`https`, so it never shows up as a possible default browser.
-- **URL scheme**: `ladle://add?url=<percent-encoded>&referrer=<…>&filename=<…>&cookies=<…>`.
-  The extension and the bridge may also pass `size`, `mime`, `sha256` or `md5`, `source`,
-  `mode` (`caught`, `direct` or `choose`), `kind`, `audio`, `title`, `quality`, `bandwidth` and `token`.
-  A link without Ladle's own `token` may come from any web page, so Ladle ignores its `cookies`,
-  `referrer`, `source` and `size`, always asks first (whatever `mode` says), contacts no server
-  before the person chooses Download, and shows the file's real address on the panel, titled
-  "A web page asked Ladle to download".
+- **URL scheme**: `ladle://add?url=<percent-encoded>&referrer=<…>&filename=<…>`.
+  The extension may also pass `size`, `mime`, `sha256` or `md5`, `source`, `mode` (`caught`,
+  `direct` or `choose`), `kind`, `audio`, `title`, `quality` and `bandwidth`. Any web page can open
+  such a link, so no link is trusted: Ladle ignores its `cookies`, `referrer`, `source`, `size` and
+  checksum, always asks first (whatever `mode` says), contacts no server before the person chooses
+  Download, and shows the file's real address on the panel, titled "A web page asked Ladle to
+  download". Cookies never travel in a link. Browsers Ladle trusts reach it another way: Chrome,
+  Arc, Dia, Edge, Brave and Firefox through the helper's local socket, where each side checks the
+  other's code signature; Safari's extension by writing the request into Ladle's inbox folder
+  (`~/Library/Application Support/Ladle/Inbox`) and opening `ladle://inbox?id=<uuid>` with Ladle
+  itself, so neither cookies nor a secret pass through the `ladle:` scheme.
 - The **clipboard suggestion** shows the file's name and site but not its size: Ladle contacts
   no server until you choose Download.
 - The extension's **toolbar button** runs Download All Links with Ladle; its badge counts the
@@ -294,13 +300,19 @@ Ladle updates itself with Sparkle 2.
 `site/src/content/changelog/X.Y.Z.md` (front matter: `version`, `title`, optional `date`). The
 app's release workflow, on the tag:
 
-1. fails early if that changelog file is missing (tag versions in increasing order: the build
-   number is the tag's position among release tags);
-2. builds a universal app, ad-hoc signs it (or signs and notarizes it with Developer ID when those
-   secrets exist), signs the update with `SPARKLE_ED_PRIVATE_KEY` (the one required secret), and
-   publishes a normal (not pre-) GitHub Release with the version-less assets `Ladle.dmg` and
-   `Ladle-Chrome-Extension.zip`, so the `releases/latest/download/…` links always work, plus
-   `sparkle.json` (`version`, `build`, `edSignature`, `length`, `minimumSystemVersion`) for the feed;
+1. fails early if the run wasn't started by the repository owner, if the tagged commit isn't on
+   `main` (a tag can't release code that skipped review) or if that changelog file is missing (tag
+   versions in increasing order: the build number is the tag's position among release tags). The
+   rulesets in `.github/rulesets/` let only the owner merge to `main`, create `v*` tags or push
+   branches, and `.github/CODEOWNERS` makes only the owner's review count (`app/RELEASING.md`);
+2. in the `release` environment, which the owner protects with required reviewers so the signing
+   key is read only after an approval, builds a universal app, ad-hoc signs it (or signs and
+   notarizes it with Developer ID when those secrets exist), signs the update with
+   `SPARKLE_ED_PRIVATE_KEY` (the one required secret), and publishes a normal (not pre-) GitHub
+   Release with the version-less assets `Ladle.dmg` and `Ladle-Chrome-Extension.zip`, so the
+   `releases/latest/download/…` links always work, plus `sparkle.json` (`version`, `build`,
+   `edSignature`, `length`, `minimumSystemVersion`) for the feed. Only GitHub's own actions run,
+   and every tool is set up before the checkout;
 3. starts `.github/workflows/site-deploy.yml` on `main` with `gh workflow run` (that job needs
    `actions: write`). A push made with the default `GITHUB_TOKEN` doesn't start other workflows,
    but a `workflow_dispatch` does, and because the deploy runs on `main`, the `github-pages`

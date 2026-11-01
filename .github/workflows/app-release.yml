@@ -2,15 +2,20 @@
 # tab on main with a version (the release then creates the tag). app/RELEASING.md has the steps and
 # the one-time setup. The workflow never commits: main requires pull requests.
 #
-#   1. check:       the tag, the release notes (site/src/content/changelog/X.Y.Z.md), and Sparkle's
-#                   keys: a real SUPublicEDKey and the SPARKLE_ED_PRIVATE_KEY secret that belongs to
-#                   it. Picks the signing: ad hoc, or Developer ID when all six Apple secrets exist.
-#                   Fails before any build if something is missing.
-#   2. release:     app/scripts/package-app.sh builds for Apple silicon and Intel, signs, makes
+#   1. check:       the tag (which must point at a commit on main, so a tag can't release code that
+#                   skipped review) and the release notes (site/src/content/changelog/X.Y.Z.md), and
+#                   picks the signing: ad hoc, or Developer ID when all six Apple secrets exist.
+#   2. release:     in the `release` environment (put required reviewers on it, so a run needs an
+#                   approval before it can read the signing key): checks Sparkle's keys, then
+#                   app/scripts/package-app.sh builds for Apple silicon and Intel, signs, makes
 #                   Ladle.dmg and Ladle-Chrome-Extension.zip, and signs the DMG for Sparkle;
 #                   verify-package.sh checks the result; then the GitHub Release vX.Y.Z gets
 #                   Ladle.dmg, Ladle-Chrome-Extension.zip and sparkle.json.
 #   3. deploy-site: starts Site deploy on main, which rebuilds the update feed from the releases.
+#
+# Only GitHub's own actions are used. The Sparkle signing key is a silent-update key for every copy
+# of Ladle, so nothing from a third party runs on the runner that holds it, and every tool is set up
+# before the repository is checked out.
 name: App release
 
 on:
@@ -40,10 +45,32 @@ jobs:
       build: ${{ steps.version.outputs.build }}
       signing: ${{ steps.signing.outputs.signing }}
     steps:
+      # Whoever pushed the tag or pressed Run workflow must be the repository owner. The rulesets in
+      # .github/rulesets stop anyone else from creating a v* tag in the first place; this is the
+      # same rule enforced from inside the run, in case they aren't applied.
+      - name: Only the repository owner releases
+        if: github.actor != github.repository_owner
+        run: |
+          echo "::error::App release was started by ${GITHUB_ACTOR}, not the repository owner (${GITHUB_REPOSITORY_OWNER}). Only the owner releases."
+          exit 1
+
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Check the commit is on main
+        run: |
+          # A tag can point at any commit. A release must be one that went through main's pull requests.
+          if ! git rev-parse -q --verify origin/main > /dev/null; then
+            git fetch --no-tags origin main
+          fi
+          commit=$(git rev-parse "${GITHUB_SHA}^{commit}")
+          if ! git merge-base --is-ancestor "$commit" origin/main; then
+            echo "::error::${GITHUB_REF_NAME} points at ${commit}, which isn't on main. Merge it first, then release."
+            exit 1
+          fi
+          echo "$commit is on main"
 
       - name: Read the version
         id: version
@@ -100,9 +127,7 @@ jobs:
           fi
           python3 app/scripts/publish_release.py check-notes "$notes" "$VERSION"
 
-      - name: Check Sparkle's keys
-        env:
-          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+      - name: Check the public update key is set
         run: |
           public_key=$(python3 -c 'import plistlib; print(plistlib.load(open("app/Ladle/Info.plist", "rb"))["SUPublicEDKey"])')
           case "$public_key" in
@@ -110,19 +135,7 @@ jobs:
               echo "::error file=app/Ladle/Info.plist::Put your Sparkle public key in SUPublicEDKey first. See app/RELEASING.md."
               exit 1 ;;
           esac
-          if [ -z "$SPARKLE_ED_PRIVATE_KEY" ]; then
-            echo "::error::The SPARKLE_ED_PRIVATE_KEY secret isn't set. See app/RELEASING.md."
-            exit 1
-          fi
-          if ! derived=$(printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | python3 app/scripts/sparkle_ed.py public-key -); then
-            echo "::error::SPARKLE_ED_PRIVATE_KEY isn't a Sparkle private key (export it with generate_keys -x)."
-            exit 1
-          fi
-          if [ "$derived" != "$public_key" ]; then
-            echo "::error file=app/Ladle/Info.plist::SPARKLE_ED_PRIVATE_KEY doesn't belong to SUPublicEDKey, so Ladle would refuse the update."
-            exit 1
-          fi
-          echo "Sparkle's keys match: $public_key"
+          echo "SUPublicEDKey: $public_key"
 
       - name: Choose the signing
         id: signing
@@ -154,6 +167,9 @@ jobs:
     name: Build, sign and publish
     needs: check
     runs-on: macos-latest
+    # Protect this environment in Settings › Environments (required reviewers), and keep
+    # SPARKLE_ED_PRIVATE_KEY as its secret, so no run reads the key before someone approves it.
+    environment: release
     permissions:
       contents: write
     env:
@@ -163,14 +179,14 @@ jobs:
       LADLE_OUT: ${{ github.workspace }}/app/build/package
       SIGNING: ${{ needs.check.outputs.signing }}
     steps:
-      # No git credential stays in the checkout while the signing key is on this runner.
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+      # Tools first, the repository last: nothing that runs before the checkout can edit the scripts
+      # that handle the signing key, and nothing but GitHub's own actions runs at all.
+      - name: Select the newest stable Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app 2> /dev/null | grep -iv beta | sort -V | tail -n 1 || true)
+          [ -n "$xcode" ] || xcode=/Applications/Xcode.app
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
 
       - uses: actions/setup-node@v7
         with:
@@ -178,6 +194,30 @@ jobs:
 
       - name: Install XcodeGen
         run: brew install xcodegen
+
+      # No git credential stays in the checkout while the signing key is on this runner.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check Sparkle's keys
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          public_key=$(python3 -c 'import plistlib; print(plistlib.load(open("app/Ladle/Info.plist", "rb"))["SUPublicEDKey"])')
+          if [ -z "$SPARKLE_ED_PRIVATE_KEY" ]; then
+            echo "::error::The SPARKLE_ED_PRIVATE_KEY secret isn't set (as a secret of the release environment, or of the repository). See app/RELEASING.md."
+            exit 1
+          fi
+          if ! derived=$(printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | python3 app/scripts/sparkle_ed.py public-key -); then
+            echo "::error::SPARKLE_ED_PRIVATE_KEY isn't a Sparkle private key (export it with generate_keys -x)."
+            exit 1
+          fi
+          if [ "$derived" != "$public_key" ]; then
+            echo "::error file=app/Ladle/Info.plist::SPARKLE_ED_PRIVATE_KEY doesn't belong to SUPublicEDKey, so Ladle would refuse the update."
+            exit 1
+          fi
+          echo "Sparkle's keys match: $public_key"
 
       - name: Set up Developer ID signing and notarization
         if: needs.check.outputs.signing == 'developer-id'

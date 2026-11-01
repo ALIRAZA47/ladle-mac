@@ -18,6 +18,10 @@
 #                                 writes sparkle.json
 #   LADLE_PUBLIC_ED_KEY_OVERRIDE  CI's dry run only: puts this SUPublicEDKey in the app before
 #                                 signing, to match a throwaway key. Releases use Info.plist's key.
+#   LADLE_HARDENED_RUNTIME=1      Ad hoc only: sign with the hardened runtime too, plus the
+#                                 library-validation exception Sparkle needs when there is no team
+#                                 to match (see RELEASING.md). Off until it has been tried on a Mac.
+#                                 Developer ID signing always uses the hardened runtime.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -26,6 +30,8 @@ app_dir="$(cd "$here/.." && pwd)"
 : "${LADLE_BUILD:?Set LADLE_BUILD, like 1}"
 out="${LADLE_OUT:-$app_dir/build/package}"
 identity="${LADLE_SIGN_IDENTITY:--}"
+hardened="${LADLE_HARDENED_RUNTIME:-0}"
+if [ "$identity" != - ]; then hardened=1; fi
 work="$out/work"
 
 step() { printf '\n==> %s\n' "$*"; }
@@ -67,17 +73,32 @@ case "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$plist")" in
   "" | REPLACE_WITH*) fail "SUPublicEDKey in app/Ladle/Info.plist is still the placeholder; Ladle could never take an update. See app/RELEASING.md." ;;
 esac
 
-step "Signing ($([ "$identity" = - ] && echo "ad hoc" || echo "$identity")), inside out"
+step "Signing ($([ "$identity" = - ] && echo "ad hoc" || echo "$identity")$([ "$hardened" = 1 ] && echo ", hardened runtime")), inside out"
 flags=(--force --sign "$identity")
+if [ "$hardened" = 1 ]; then flags+=(--options runtime); fi
 if [ "$identity" != - ]; then
-  flags+=(--options runtime --timestamp)
+  flags+=(--timestamp)
   if [ -n "${LADLE_KEYCHAIN:-}" ]; then flags+=(--keychain "$LADLE_KEYCHAIN"); fi
 fi
 
-# Signs one piece of code, keeping the entitlements it was built with.
+# Signs one piece of code, keeping the entitlements it was built with. With the hardened runtime on an
+# ad-hoc build, library validation would refuse Sparkle's framework (there is no team to match), so
+# everything that loads it gets the library-validation exception; `--keep-entitlements` leaves a
+# sandboxed piece (the Safari extension, which loads no framework of ours) as it is.
 sign() {
-  local entitlements="$work/entitlements.plist"
-  if codesign -d --entitlements - --xml "$1" > "$entitlements" 2> /dev/null && [ -s "$entitlements" ]; then
+  local entitlements="$work/entitlements.plist" has=0
+  if codesign -d --entitlements - --xml "$1" > "$entitlements" 2> /dev/null && [ -s "$entitlements" ]; then has=1; fi
+  if [ "$hardened" = 1 ] && [ "$identity" = - ] && [ "${2:-}" != --keep-entitlements ]; then
+    if [ "$has" = 0 ]; then
+      printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
+        '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
+        '<plist version="1.0"><dict/></plist>' > "$entitlements"
+    fi
+    /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.cs.disable-library-validation' "$entitlements" 2> /dev/null || true
+    /usr/libexec/PlistBuddy -c 'Add :com.apple.security.cs.disable-library-validation bool true' "$entitlements"
+    has=1
+  fi
+  if [ "$has" = 1 ]; then
     codesign "${flags[@]}" --entitlements "$entitlements" --generate-entitlement-der "$1"
   else
     codesign "${flags[@]}" "$1"
@@ -95,7 +116,7 @@ for other in "$app"/Contents/Frameworks/*; do
   if [ "$other" != "$sparkle" ] && [ -e "$other" ]; then sign "$other"; fi
 done
 sign "$app/Contents/MacOS/LadleBridge"
-sign "$app/Contents/PlugIns/SafariExtension.appex"
+sign "$app/Contents/PlugIns/SafariExtension.appex" --keep-entitlements
 sign "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 

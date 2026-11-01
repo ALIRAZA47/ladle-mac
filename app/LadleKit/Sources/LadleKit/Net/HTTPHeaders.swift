@@ -6,17 +6,23 @@ public struct ContentRange: Equatable, Sendable {
     public var end: Int64?
     public var total: Int64?
 
+    /// nil for anything malformed, negative, inconsistent (an end past the total) or beyond `Limits.maxFileSize`.
     public static func parse(_ header: String) -> ContentRange? {
         let trimmed = header.trimmingCharacters(in: .whitespaces)
         guard trimmed.lowercased().hasPrefix("bytes") else { return nil }
         let spec = trimmed.dropFirst(5).trimmingCharacters(in: .whitespaces)
         let halves = spec.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
         guard halves.count == 2 else { return nil }
-        let total: Int64? = halves[1] == "*" ? nil : Int64(halves[1].trimmingCharacters(in: .whitespaces))
-        if halves[1] != "*" && total == nil { return nil }
+        var total: Int64?
+        if halves[1] != "*" {
+            guard let value = Int64(halves[1].trimmingCharacters(in: .whitespaces)), value >= 0, value <= Limits.maxFileSize else { return nil }
+            total = value
+        }
         if halves[0] == "*" { return ContentRange(start: nil, end: nil, total: total) }
         let bounds = halves[0].split(separator: "-", maxSplits: 1)
-        guard bounds.count == 2, let start = Int64(bounds[0]), let end = Int64(bounds[1]), end >= start else { return nil }
+        guard bounds.count == 2, let start = Int64(bounds[0]), let end = Int64(bounds[1]),
+              start >= 0, end >= start, end <= Limits.maxFileSize else { return nil }
+        if let total, end >= total { return nil }
         return ContentRange(start: start, end: end, total: total)
     }
 }

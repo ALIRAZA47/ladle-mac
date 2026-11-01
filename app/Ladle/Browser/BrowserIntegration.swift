@@ -26,22 +26,16 @@ final class BrowserIntegration: ObservableObject {
     @Published private(set) var lastSeen: [String: Date] = [:]
 
     let paths: AppPaths
-    /// Proves `ladle://` links came from Ladle's own extension (Safari's handler reads it from the snapshot).
-    let token: String
 
     private let defaults = UserDefaults.standard
-    private static let tokenKey = "BrowserToken"
     private static let seenKey = "BrowserLastSeen"
+    /// Earlier versions kept a secret here that made some `ladle://` links trusted. Safari now hands
+    /// over through the inbox folder and no link is trusted, so it's removed from the defaults.
+    private static let retiredTokenKey = "BrowserToken"
 
     init(paths: AppPaths) {
         self.paths = paths
-        if let saved = defaults.string(forKey: BrowserIntegration.tokenKey), saved.count >= 32 {
-            token = saved
-        } else {
-            let fresh = UUID().uuidString.replacingOccurrences(of: "-", with: "") + UUID().uuidString.replacingOccurrences(of: "-", with: "")
-            defaults.set(fresh, forKey: BrowserIntegration.tokenKey)
-            token = fresh
-        }
+        defaults.removeObject(forKey: BrowserIntegration.retiredTokenKey)
         if let stored = defaults.dictionary(forKey: BrowserIntegration.seenKey) as? [String: Date] {
             lastSeen = stored
         }
@@ -61,7 +55,7 @@ final class BrowserIntegration: ObservableObject {
     }
 
     func snapshot(for settings: LadleKit.Settings) -> BrowserSettingsSnapshot {
-        BrowserSettingsSnapshot(settings: settings, appVersion: appVersion, token: token)
+        BrowserSettingsSnapshot(settings: settings, appVersion: appVersion, token: "")
     }
 
     /// Writes `browser-settings.json` for the helper and the Safari extension.

@@ -15,10 +15,12 @@
 #
 # What it does, from the latest release at https://github.com/ALIRAZA47/ladle-mac/releases:
 #
-#   1. Downloads Ladle.dmg, copies Ladle into /Applications (once you've quit an older copy),
-#      checks its code signature and opens it. Skipped when that version is already installed.
-#      macOS asks you to approve apps that a browser downloaded, and nothing here goes through a
-#      browser, so Ladle opens straight away.
+#   1. Downloads Ladle.dmg and the release's sparkle.json, checks that the DMG carries a valid
+#      signature from Ladle's update key (the same check copies of Ladle make before installing an
+#      update), copies Ladle into /Applications (once you've quit an older copy), checks its code
+#      signature and opens it. Skipped when that version is already installed. macOS asks you to
+#      approve apps that a browser downloaded, and nothing here goes through a browser, so Ladle
+#      opens straight away.
 #   2. Downloads Ladle-Chrome-Extension.zip into ~/Library/Application Support/Ladle, puts that
 #      folder's path on the clipboard and opens your browser's extensions page. Browsers only let
 #      you add a developer-mode extension yourself, so you finish with Load unpacked.
@@ -30,6 +32,10 @@ set -euo pipefail
 REPO="ALIRAZA47/ladle-mac"
 DOCS="https://ladle.alirazakhan.me/docs/getting-started"
 EXTENSION_DIR="$HOME/Library/Application Support/Ladle/Ladle-Chrome-Extension"
+# Ladle's update key (SUPublicEDKey in app/Ladle/Info.plist). Every release's Ladle.dmg is signed
+# with its private half, which only the release workflow holds; a DMG that doesn't verify isn't
+# installed. LADLE_PUBLIC_ED_KEY replaces it for App CI's packaging dry run, which uses a throwaway key.
+PUBLIC_KEY="${LADLE_PUBLIC_ED_KEY:-KHEwBrneF/Lth44nE+Tr7rTvjAJ1g4513i5UQmPPFoQ=}"
 # Once the extension is in the Chrome Web Store, put its listing here, as in
 # site/src/config/stores.mjs: the script then opens the store instead of setting up this copy.
 CHROME_STORE_URL=""
@@ -129,6 +135,120 @@ release_base() {
 
 app_version() { plutil -extract CFBundleShortVersionString raw -o - "$1/Contents/Info.plist" 2> /dev/null || true; }
 
+# A string or number value from sparkle.json, which the release writes one key per line.
+json_string() { sed -n 's/^ *"'"$1"'": *"\([^"]*\)".*/\1/p' "$2" | head -n 1; }
+json_number() { sed -n 's/^ *"'"$1"'": *\([0-9][0-9]*\).*/\1/p' "$2" | head -n 1; }
+
+# Ed25519 (RFC 8032) signature verification with Perl's core modules only, the same arithmetic as
+# app/scripts/sparkle_ed.py: it checks a sparkle:edSignature over a file against SUPublicEDKey.
+ed25519_verify() { # file signature_base64 public_key_base64
+	perl - "$1" "$2" "$3" <<'PERL'
+use strict;
+use warnings;
+use Math::BigInt;
+use MIME::Base64 qw(decode_base64);
+use Digest::SHA;
+
+my ($file, $signature_b64, $public_b64) = @ARGV;
+my $P = Math::BigInt->new(2)->bpow(255)->bsub(19);
+my $Q = Math::BigInt->new(2)->bpow(252)->badd(Math::BigInt->new('27742317777372353535851937790883648493'));
+sub inv { return $_[0]->copy->bmodpow($P - 2, $P); }
+my $D = (Math::BigInt->new(-121665) * inv(Math::BigInt->new(121666))) % $P;
+my $SQRT_M1 = Math::BigInt->new(2)->bmodpow(($P - 1) / 4, $P);
+
+sub add {
+	my ($a, $b) = @_;
+	my ($x1, $y1, $z1, $t1) = @$a;
+	my ($x2, $y2, $z2, $t2) = @$b;
+	my $e = (($y1 - $x1) * ($y2 - $x2)) % $P;
+	my $f = (($y1 + $x1) * ($y2 + $x2)) % $P;
+	my $g = (2 * $t1 * $t2 * $D) % $P;
+	my $h = (2 * $z1 * $z2) % $P;
+	($e, $f, $g, $h) = ($f - $e, $h - $g, $h + $g, $f + $e);
+	return [($e * $f) % $P, ($g * $h) % $P, ($f * $g) % $P, ($e * $h) % $P];
+}
+
+sub mul {
+	my ($scalar, $point) = @_;
+	my $result = [Math::BigInt->new(0), Math::BigInt->new(1), Math::BigInt->new(1), Math::BigInt->new(0)];
+	my $k = $scalar->copy;
+	while ($k > 0) {
+		$result = add($result, $point) if $k->is_odd;
+		$point = add($point, $point);
+		$k->brsft(1);
+	}
+	return $result;
+}
+
+sub equal {
+	my ($a, $b) = @_;
+	return (($a->[0] * $b->[2] - $b->[0] * $a->[2]) % $P) == 0 && (($a->[1] * $b->[2] - $b->[1] * $a->[2]) % $P) == 0;
+}
+
+sub recover_x {
+	my ($y, $sign) = @_;
+	return undef if $y >= $P;
+	my $x2 = (($y * $y - 1) * inv(($D * $y * $y + 1) % $P)) % $P;
+	if ($x2 == 0) { return $sign ? undef : Math::BigInt->new(0); }
+	my $x = $x2->copy->bmodpow(($P + 3) / 8, $P);
+	$x = ($x * $SQRT_M1) % $P if (($x * $x - $x2) % $P) != 0;
+	return undef if (($x * $x - $x2) % $P) != 0;
+	$x = $P - $x if ($x->is_odd ? 1 : 0) != $sign;
+	return $x;
+}
+
+sub little_endian { return Math::BigInt->from_hex(unpack('H*', scalar reverse $_[0])); }
+
+sub decompress {
+	my ($bytes) = @_;
+	return undef unless length($bytes) == 32;
+	my $y = little_endian($bytes);
+	my $sign = $y->copy->brsft(255)->is_odd ? 1 : 0;
+	$y = $y % (Math::BigInt->new(1)->blsft(255));
+	my $x = recover_x($y, $sign);
+	return undef unless defined $x;
+	return [$x, $y, Math::BigInt->new(1), ($x * $y) % $P];
+}
+
+my $signature = decode_base64($signature_b64);
+my $public = decode_base64($public_b64);
+exit 1 unless length($signature) == 64 && length($public) == 32;
+my $A = decompress($public) or exit 1;
+my $R = decompress(substr($signature, 0, 32)) or exit 1;
+my $S = little_endian(substr($signature, 32, 32));
+exit 1 if $S >= $Q;
+my $sha = Digest::SHA->new(512);
+$sha->add(substr($signature, 0, 32) . $public);
+open(my $fh, '<:raw', $file) or exit 1;
+$sha->addfile($fh);
+close $fh;
+my $h = little_endian($sha->digest) % $Q;
+my $gy = (4 * inv(Math::BigInt->new(5))) % $P;
+my $gx = recover_x($gy, 0);
+my $G = [$gx, $gy, Math::BigInt->new(1), ($gx * $gy) % $P];
+exit(equal(mul($S, $G), add($R, mul($h, $A))) ? 0 : 1);
+PERL
+}
+
+# Checks Ladle.dmg against the release's sparkle.json: its size, and its EdDSA signature from
+# Ladle's update key. A copy that someone swapped in isn't installed.
+verify_release() { # dmg sparkle_json
+	local dmg=$1 info=$2 signature length size
+	signature=$(json_string edSignature "$info")
+	length=$(json_number length "$info")
+	if [ -z "$signature" ] || [ -z "$length" ]; then
+		die "The release's sparkle.json has no signature for Ladle.dmg, so it wasn't installed. Report it: https://github.com/$REPO/issues"
+	fi
+	size=$(stat -f %z "$dmg")
+	[ "$size" = "$length" ] \
+		|| die "Ladle.dmg is $size bytes but the release says $length, so it wasn't installed. Try again; if it keeps happening, report it: https://github.com/$REPO/issues"
+	command -v perl > /dev/null 2>&1 \
+		|| die "Checking the download's signature needs perl, which this Mac doesn't have. Download Ladle.dmg yourself from https://github.com/$REPO/releases/latest instead."
+	ed25519_verify "$dmg" "$signature" "$PUBLIC_KEY" \
+		|| die "Ladle.dmg doesn't carry a valid signature from Ladle's update key, so it wasn't installed. Download it yourself from https://github.com/$REPO/releases/latest, or report it: https://github.com/$REPO/issues"
+	ok "Checked the signature of Ladle.dmg against Ladle's update key"
+}
+
 ladle_running() { pgrep -x Ladle > /dev/null 2>&1; }
 
 wait_for_quit() {
@@ -168,6 +288,9 @@ install_app() { # base folder
 	step "Downloading Ladle"
 	download "$base/Ladle.dmg" "$TMP/Ladle.dmg" \
 		|| die "Couldn't download Ladle.dmg. Check your internet connection, then try again."
+	download "$base/sparkle.json" "$TMP/sparkle.json" \
+		|| die "Couldn't download the release's sparkle.json, which carries the signature of Ladle.dmg. Check your internet connection, then try again."
+	verify_release "$TMP/Ladle.dmg" "$TMP/sparkle.json"
 
 	step "Installing Ladle in $(tildify "$dir")"
 	MOUNT="$TMP/mount"

@@ -75,6 +75,18 @@ final class RetryTests: XCTestCase {
         XCTAssertEqual(ContentRange.parse("bytes */0"), ContentRange(start: nil, end: nil, total: 0))
         XCTAssertNil(ContentRange.parse("bytes 9-1/10"))
         XCTAssertNil(ContentRange.parse("items 0-1/2"))
+        XCTAssertNil(ContentRange.parse("bytes 0-99/50"), "an end past the total")
+        XCTAssertNil(ContentRange.parse("bytes 0-0/9223372036854775807"), "no plausible file is that big")
+        XCTAssertNil(ContentRange.parse("bytes 0-0/-5"))
+        XCTAssertNil(ContentRange.parse("bytes */-5"))
+    }
+
+    func testContentLengthBounds() {
+        let url = URL(string: "https://a.org/x")!
+        XCTAssertEqual(HTTPResponseHead(statusCode: 200, headers: ["Content-Length": " 42 "], url: url).contentLength, 42)
+        XCTAssertNil(HTTPResponseHead(statusCode: 200, headers: ["Content-Length": "9223372036854775807"], url: url).contentLength)
+        XCTAssertNil(HTTPResponseHead(statusCode: 200, headers: ["Content-Length": "-1"], url: url).contentLength)
+        XCTAssertNil(HTTPResponseHead(statusCode: 200, headers: ["Content-Length": "lots"], url: url).contentLength)
     }
 
     func testValidators() {
@@ -238,5 +250,8 @@ final class PieceTableTests: XCTestCase {
         XCTAssertEqual(fractions[0], 1)
         XCTAssertEqual(fractions[1], 1)
         XCTAssertEqual(fractions[2], 0.25, accuracy: 1e-9)
+        // Sizes a server made up must not overflow the slot arithmetic.
+        let absurd = [Piece(start: 0, end: Int64.max, received: 1), Piece(start: Int64.max - 1, end: Int64.max, received: 1)]
+        XCTAssertEqual(PieceTable.slotFractions(pieces: absurd, total: Int64.max, slots: 32).count, 32)
     }
 }

@@ -31,6 +31,66 @@ The release workflow checks the keys before it builds anything. It stops while `
 is the placeholder, while the secret is missing, and when the secret isn't the private half of
 `SUPublicEDKey`.
 
+## One-time setup: nobody merges, releases or runs Actions but the owner
+
+The private key signs updates that every copy of Ladle installs without asking, and `main` is what
+gets signed, so the repository is set up so that only its owner can merge, create a release tag or
+start a workflow. Half of it lives in the repository and is already in place; the other half is
+settings, applied once:
+
+1. **Import the rulesets.** In **Settings › Rules › Rulesets**, choose **New ruleset › Import a
+   ruleset** and pick each file in [`.github/rulesets/`](../.github/rulesets/):
+   - `main.json` — **Protect main**: every change arrives by pull request, needs one approval from a
+     code owner (that's you, through [`.github/CODEOWNERS`](../.github/CODEOWNERS), so nobody
+     else's approval counts), stale approvals are dismissed on new pushes, review threads must be
+     resolved, and the branch can't be force-pushed or deleted. The only bypass is the
+     **Repository admin** role, which on a personal repository is you alone, so you can merge your
+     own pull requests.
+   - `release-tags.json` — **Release tags**: only an admin can create, move or delete a `v*` tag,
+     so only you can start a release. (The workflow also refuses a tag whose commit isn't on
+     `main`, and a run whose actor isn't the owner.)
+   - `other-branches.json` — **Only the owner pushes branches**: nobody else can create, push to
+     or delete any branch, so nobody else can start a push-triggered workflow. Other people
+     contribute from forks: their pull requests still get checked, after you approve the run (next
+     step). Skip this file if you'd rather give trusted collaborators their own branches.
+
+   Each ruleset is a plain JSON file, so a change to one is a reviewed pull request like any other.
+2. **Actions settings.** In **Settings › Actions › General**:
+   - **Actions permissions**: *Allow owner, and select non-owner, actions and reusable workflows*
+     with only *Allow actions created by GitHub* ticked. The workflows use nothing else, and this
+     makes it impossible to add a third-party action by accident.
+   - **Fork pull request workflows**: *Require approval for all external contributors*. A pull
+     request from a fork then runs no workflow until you press **Approve and run**.
+   - **Workflow permissions**: *Read repository contents and packages permissions*, and leave
+     *Allow GitHub Actions to create and approve pull requests* off.
+3. **A protected `release` environment.** The release job runs in the environment named
+   `release`; GitHub creates it on the first run. In **Settings › Environments › release**, turn on
+   **Required reviewers** and add yourself. From then on, every release waits in the Actions tab
+   until you approve it, and only then can the job read the key. Keep `SPARKLE_ED_PRIVATE_KEY` as
+   a secret *of that environment* (not of the repository), so no other workflow or job can read
+   it. In **Settings › Environments › github-pages**, keep the deployment branch rule at `main`.
+4. **Collaborators.** With the rulesets above, nobody needs write access: keep
+   **Settings › Collaborators** empty. Write access is what lets someone push a branch or press
+   **Run workflow**, and the only thing the in-workflow checks can't stop is a pull request from a
+   write collaborator's fork running CI (which carries no secret and a read-only token).
+
+What the workflows enforce on their own, whether or not the settings are applied:
+
+- **App release** stops at once unless the person who pushed the tag or pressed **Run workflow** is
+  the repository owner, and unless the tagged commit is on `main`.
+- **Site deploy** stops unless it was started by the owner (a merge to `main`, or **Run workflow**)
+  or by the release workflow itself, which runs as `github-actions[bot]` and can only deploy `main`.
+- **App CI** and **Site CI** run on pushes only for the owner. Pull requests run for anyone, since
+  they hold no secret and can't write anything, and fork pull requests wait for your approval.
+- Only GitHub's own actions are used (`actions/checkout`, `actions/setup-node`,
+  `actions/upload-artifact`, `actions/configure-pages`, `actions/upload-pages-artifact`,
+  `actions/deploy-pages`); Xcode is picked with `xcode-select`, and every tool is set up before the
+  checkout. Keep it that way: an action is code someone else can change, running next to the key.
+
+If the key is ever exposed, the only remedy is a new key pair: generate one, put the new public key
+in `Info.plist`, replace the secret, and release. Copies already installed can't verify the new
+releases, so people have to download that version by hand once; say so in its release notes.
+
 ## Each release
 
 1. Write the release notes in `site/src/content/changelog/X.Y.Z.md` and merge them to `main`:
@@ -61,8 +121,10 @@ is the placeholder, while the secret is missing, and when the secret isn't the p
    that isn't newer than the last release.
 
 3. Watch **Actions › App release**. It:
-   1. checks the tag, that the release notes exist and match it, and Sparkle's keys, and stops
-      there if anything is missing;
+   1. checks that you started it, that the tagged commit is on `main`, that the release notes
+      exist and match the tag, and that the public key is set, and stops there if anything is
+      missing; then waits for the `release` environment's reviewer (you) to approve the run, checks
+      Sparkle's keys, and stops if the secret isn't the private half of `SUPublicEDKey`;
    2. builds Ladle `X.Y.Z` for Apple silicon and Intel with
       [`scripts/package-app.sh`](scripts/package-app.sh), signs it ad hoc from the inside out
       (Sparkle's helpers, LadleBridge and the Safari extension, then the app), makes `Ladle.dmg`
@@ -136,6 +198,24 @@ When a store assigns an ID, add it to `chromeExtensionIDs` (or `firefoxExtension
 those IDs into the native messaging host manifests (`allowed_origins` for Chromium browsers,
 `allowed_extensions` for Firefox), and rewrites the manifests at launch, so the next release
 lets the store builds talk to LadleBridge. Then update the store links in the docs.
+
+## Later: the hardened runtime for ad-hoc builds
+
+Release builds are ad-hoc signed with the hardened runtime off, because its library validation
+refuses frameworks that aren't signed by the same team, and an ad-hoc build has no team, so Sparkle
+couldn't load. The packaging script can turn it on anyway: with `LADLE_HARDENED_RUNTIME=1`,
+[`scripts/package-app.sh`](scripts/package-app.sh) signs everything with `--options runtime` and
+gives each piece that loads Sparkle (the app, LadleBridge, Sparkle's own helpers) the
+`com.apple.security.cs.disable-library-validation` entitlement, which keeps the rest of the hardened
+runtime (no injected libraries through `DYLD_` variables, no debugger attaching) while letting
+Sparkle load. The Safari extension keeps its sandbox entitlements as they are, and
+[`scripts/verify-package.sh`](scripts/verify-package.sh) checks the result when the same variable is
+set.
+
+It hasn't been tried on a Mac yet, and CI never launches the packaged app, so it stays off until
+someone has: package with the variable set, install the DMG, open Ladle, download something, and
+check for updates. If all of that works, set `LADLE_HARDENED_RUNTIME: 1` in the `env` of the
+release job and the packaging dry run in `.github/workflows/`.
 
 ## Later: Developer ID and notarization
 

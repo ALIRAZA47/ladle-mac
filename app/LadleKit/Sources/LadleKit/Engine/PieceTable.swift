@@ -222,18 +222,20 @@ public final class PieceTable: @unchecked Sendable {
         guard let total, total > 0 else {
             return [Double](repeating: 0, count: count)
         }
+        // Sizes come from servers; within this bound, `size * n` can't overflow for up to 32 slots.
+        let size = min(total, Limits.maxFileSize)
         let n = Int64(count)
-        func boundary(_ k: Int64) -> Int64 { total * k / n }
+        func boundary(_ k: Int64) -> Int64 { size * k / n }
         func slot(of position: Int64) -> Int64 {
-            var k = min(n - 1, max(0, position * n / total))
+            var k = min(n - 1, max(0, position * n / size))
             while k < n - 1 && boundary(k + 1) <= position { k += 1 }
             while k > 0 && boundary(k) > position { k -= 1 }
             return k
         }
         var filled = [Int64](repeating: 0, count: count)
         for piece in pieces where piece.received > 0 {
-            var a = max(0, piece.start)
-            let b = min(total, piece.start + min(piece.received, piece.length))
+            var a = max(0, min(size, piece.start))
+            let b = min(size, piece.start + min(piece.received, max(0, piece.length)))
             while a < b {
                 let k = slot(of: a)
                 let upTo = min(b, boundary(k + 1))

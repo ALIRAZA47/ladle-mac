@@ -15,13 +15,34 @@ public final class PartFile: @unchecked Sendable {
     private let closed = Locked(false)
 
     /// Opens (creating if needed) the part file. With `truncate`, existing bytes are dropped.
+    /// A symbolic link in the part file's place is refused rather than followed, so nothing planted in
+    /// the download folder can send the bytes somewhere else.
     public init(url: URL, truncate: Bool = false) throws {
         self.url = url
-        var flags = O_RDWR | O_CREAT
+        var flags = O_RDWR | O_CREAT | O_NOFOLLOW
         if truncate { flags |= O_TRUNC }
         let descriptor = url.path.withCString { open($0, flags, 0o644) }
         guard descriptor >= 0 else { throw PartFile.error(POSIXFailure("open")) }
+        var info = stat()
+        guard fstat(descriptor, &info) == 0, PartFile.isRegularFile(info) else {
+            PartFile.closeDescriptor(descriptor)
+            throw DownloadFailure(.writeFailed)
+        }
         fd = descriptor
+    }
+
+    static func isRegularFile(_ info: stat) -> Bool {
+        (UInt32(info.st_mode) & UInt32(S_IFMT)) == UInt32(S_IFREG)
+    }
+
+    static func closeDescriptor(_ descriptor: Int32) {
+        #if canImport(Darwin)
+        _ = Darwin.close(descriptor)
+        #elseif canImport(Glibc)
+        _ = Glibc.close(descriptor)
+        #elseif canImport(Musl)
+        _ = Musl.close(descriptor)
+        #endif
     }
 
     deinit {
@@ -111,15 +132,7 @@ public final class PartFile: @unchecked Sendable {
             isClosed = true
             return true
         }
-        if shouldClose {
-            #if canImport(Darwin)
-            _ = Darwin.close(fd)
-            #elseif canImport(Glibc)
-            _ = Glibc.close(fd)
-            #elseif canImport(Musl)
-            _ = Musl.close(fd)
-            #endif
-        }
+        if shouldClose { PartFile.closeDescriptor(fd) }
     }
 
     static func error(_ failure: POSIXFailure) -> DownloadFailure {

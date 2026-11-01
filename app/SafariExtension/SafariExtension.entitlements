@@ -10,5 +10,10 @@
 	<array>
 		<string>/Library/Application Support/Ladle/</string>
 	</array>
+	<!-- Writes hand-offs for Ladle into its inbox folder (HandOffInbox). Ladle creates the folder. -->
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
+	<array>
+		<string>/Library/Application Support/Ladle/Inbox/</string>
+	</array>
 </dict>
 </plist>

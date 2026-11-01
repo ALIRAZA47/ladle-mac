@@ -32,6 +32,14 @@ jobs:
     env:
       ASTRO_TELEMETRY_DISABLED: '1'
     steps:
+      # Pushes run only for the repository owner; a pull request from a fork runs once the owner
+      # approves it (Settings › Actions › General).
+      - name: Only the repository owner runs CI on pushes
+        if: github.event_name != 'pull_request' && github.actor != github.repository_owner
+        run: |
+          echo "::error::This run was started by ${GITHUB_ACTOR}, not the repository owner (${GITHUB_REPOSITORY_OWNER}). Open a pull request from a fork instead; its checks run once the owner approves them."
+          exit 1
+
       - uses: actions/checkout@v7
         with:
           # Full history, so each docs page can show when it was last updated.

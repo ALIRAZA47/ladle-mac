@@ -11,7 +11,8 @@ public struct BrowserSettingsSnapshot: Codable, Equatable, Sendable {
     /// "Downloads › Ladle › Video", shown in the video button's menu.
     public var videoFolder: String
     public var appVersion: String
-    /// A random secret. `ladle://` links carrying it come from Ladle's own extension.
+    /// No longer used: Safari's extension hands over through Ladle's inbox folder (`HandOffInbox`)
+    /// instead of a secret in a link. Kept, always empty, so readers of older files keep decoding.
     public var token: String
 
     public init(settings: Settings, appVersion: String, token: String, home: URL = FileManager.default.homeDirectoryForCurrentUser) {
@@ -79,7 +80,7 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
             referrer: referrer.flatMap(LinkParser.link(from:)),
             fileName: filename.map { FileNaming.sanitize($0) }.flatMap { $0.isEmpty ? nil : $0 },
             cookies: cookies.flatMap { $0.isEmpty ? nil : $0 },
-            size: size.flatMap { $0 > 0 ? $0 : nil },
+            size: size.flatMap { $0 > 0 && $0 <= Limits.maxFileSize ? $0 : nil },
             mimeType: mime,
             checksum: checksum,
             source: browser ?? source,
@@ -125,9 +126,9 @@ public struct BridgePush: Codable, Equatable, Sendable {
     }
 }
 
-/// What the helper sends to the app over the local message port.
+/// What the helper sends to the app over its connection.
 public struct BridgeEnvelope: Codable, Equatable, Sendable {
-    /// The helper's own port, for pushes back to this browser.
+    /// Unused since the helper keeps one connection open and pushes travel back on it. Kept for decoding.
     public var replyPort: String?
     /// The browser that started the helper ("Chrome", "Firefox"…).
     public var browser: String?
