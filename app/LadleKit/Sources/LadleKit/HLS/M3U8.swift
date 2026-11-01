@@ -219,13 +219,13 @@ public enum M3U8 {
                 let a = attributes(String(line.dropFirst("#EXT-X-MAP:".count)))
                 if let uri = a["URI"].flatMap({ resolve($0, baseURL) }) {
                     var range: HLSByteRange?
-                    if let spec = a["BYTERANGE"].flatMap(parseRangeSpec), let offset = spec.offset {
+                    if let spec = try a["BYTERANGE"].flatMap(parseRangeSpec), let offset = spec.offset {
                         range = try byteRange(length: spec.length, offset: offset)
                     }
                     map = HLSMap(uri: uri, byteRange: range)
                 }
             } else if line.hasPrefix("#EXT-X-BYTERANGE:") {
-                rangeSpec = parseRangeSpec(String(line.dropFirst("#EXT-X-BYTERANGE:".count)))
+                rangeSpec = try parseRangeSpec(String(line.dropFirst("#EXT-X-BYTERANGE:".count)))
             } else if line.hasPrefix("#") {
                 continue
             } else {
@@ -266,15 +266,25 @@ public enum M3U8 {
         return value
     }
 
-    /// `n[@o]`, with both numbers within `Limits.maxFileSize`.
-    static func parseRangeSpec(_ text: String) -> (length: Int64, offset: Int64?)? {
-        let parts = text.trimmingCharacters(in: .whitespaces).split(separator: "@")
-        guard let first = parts.first, let length = Int64(first), length > 0, length <= Limits.maxFileSize else { return nil }
-        if parts.count > 1 {
-            guard let offset = Int64(parts[1]), offset >= 0, offset <= Limits.maxFileSize else { return nil }
+    /// `n[@o]`. nil when it isn't one at all; an error when it is one with numbers outside what a
+    /// file can hold (negative, zero-length, or beyond `Limits.maxFileSize`), so a playlist that
+    /// asks for the impossible is refused rather than quietly fetched whole.
+    static func parseRangeSpec(_ text: String) throws -> (length: Int64, offset: Int64?)? {
+        let parts = text.trimmingCharacters(in: .whitespaces).split(separator: "@", omittingEmptySubsequences: false)
+        guard parts.count == 1 || parts.count == 2, let length = try rangeNumber(parts[0]) else { return nil }
+        guard length > 0 else { throw M3U8Error.invalidByteRange }
+        if parts.count == 2 {
+            guard let offset = try rangeNumber(parts[1]) else { return nil }
             return (length, offset)
         }
         return (length, nil)
+    }
+
+    /// A decimal from a byte range: nil when it isn't a number, an error when it's outside 0…`Limits.maxFileSize`.
+    static func rangeNumber(_ text: Substring) throws -> Int64? {
+        guard !text.isEmpty, text.allSatisfy({ $0.isASCII && ($0.isNumber || $0 == "-") }) else { return nil }
+        guard let value = Int64(text), value >= 0, value <= Limits.maxFileSize else { throw M3U8Error.invalidByteRange }
+        return value
     }
 
     /// Splits an attribute list (`A=1,B="x,y",C=0x1F`) into a dictionary with quotes removed.

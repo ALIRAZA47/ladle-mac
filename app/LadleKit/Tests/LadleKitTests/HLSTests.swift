@@ -163,8 +163,11 @@ final class HLSTests: XCTestCase {
         XCTAssertThrowsError(try M3U8.parse("#EXTM3U\n#EXT-X-MAP:URI=\"init.mp4\",BYTERANGE=\"9223372036854775807@5\"\n#EXTINF:4,\na.m4s\n#EXT-X-ENDLIST\n", baseURL: base))
         let limit = Limits.maxFileSize
         XCTAssertThrowsError(try M3U8.parse("#EXTM3U\n#EXTINF:4,\n#EXT-X-BYTERANGE:\(limit)\na.ts\n#EXTINF:4,\n#EXT-X-BYTERANGE:1\na.ts\n#EXT-X-ENDLIST\n", baseURL: base), "the second range would start past the limit")
-        XCTAssertNil(M3U8.parseRangeSpec("0@5"))
-        XCTAssertNil(M3U8.parseRangeSpec("5@-1"))
+        XCTAssertThrowsError(try M3U8.parseRangeSpec("0@5"))
+        XCTAssertThrowsError(try M3U8.parseRangeSpec("5@-1"))
+        XCTAssertThrowsError(try M3U8.parseRangeSpec("99999999999999999999"), "too big for an Int64 is still a range, and a bad one")
+        XCTAssertNil(try M3U8.parseRangeSpec("soon"), "not a range at all")
+        XCTAssertEqual(try M3U8.parseRangeSpec("1000@720")?.offset, 720)
         // And a playlist can't ask for an absurd number of segments.
         let many = "#EXTM3U\n" + String(repeating: "#EXTINF:1,\ns.ts\n", count: Limits.maxSegments + 1) + "#EXT-X-ENDLIST\n"
         XCTAssertThrowsError(try M3U8.parse(many, baseURL: base))
