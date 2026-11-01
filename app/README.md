@@ -91,9 +91,9 @@ To package Ladle exactly the way a release does (universal Release build, signed
 
 ```sh
 python3 app/scripts/sparkle_ed.py generate /tmp/key.txt     # prints a throwaway public key
-LADLE_VERSION=0.1.2 LADLE_BUILD=3 LADLE_SPARKLE_KEY_FILE=/tmp/key.txt \
+LADLE_VERSION=0.1.3 LADLE_BUILD=4 LADLE_SPARKLE_KEY_FILE=/tmp/key.txt \
   LADLE_PUBLIC_ED_KEY_OVERRIDE=<that public key> app/scripts/package-app.sh
-LADLE_VERSION=0.1.2 LADLE_BUILD=3 app/scripts/verify-package.sh
+LADLE_VERSION=0.1.3 LADLE_BUILD=4 app/scripts/verify-package.sh
 ```
 
 To sign with your own team, set `DEVELOPMENT_TEAM` and `CODE_SIGN_IDENTITY` ("Apple
@@ -132,7 +132,8 @@ node build.mjs --release   # dist/Ladle-Chrome-Extension.zip, the copy each rele
 ```
 
 - **Chrome, Arc, Dia, Edge, Brave**: load `dist/chrome` unpacked. The `key` in
-  `manifests/chrome.json` fixes the development ID to `pleopllngomokgfeebgjmnkjhebmcmkk`, which
+  `manifests/chrome.json` fixes the development ID to `pleopllngomokgfeebgjmnkjhebmcmkk` (the Chrome
+  Web Store copy has its own ID, `mmpbaegnfhbjpmmokpjnbnbmlebfcfgd`; Ladle allows both), which
   `Ladle/Browser/BrowserIntegration.swift` allows. Until the Chrome Web Store listing exists,
   people load `Ladle-Chrome-Extension.zip` from the latest release the same way; it unpacks to a
   `Ladle-Chrome-Extension` folder.
