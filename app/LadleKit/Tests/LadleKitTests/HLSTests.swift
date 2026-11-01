@@ -149,6 +149,27 @@ final class HLSTests: XCTestCase {
         XCTAssertEqual(a["X-Y"], "0x1F")
     }
 
+    func testBoundsNumbersFromPlaylists() throws {
+        // Durations that could never be real (or would overflow a size estimate) count as unknown.
+        let odd = "#EXTM3U\n#EXTINF:1e300,\na.ts\n#EXTINF:inf,\nb.ts\n#EXTINF:nan,\nc.ts\n#EXTINF:-5,\nd.ts\n#EXTINF:4,\ne.ts\n#EXT-X-ENDLIST\n"
+        guard case .media(let media) = try M3U8.parse(odd, baseURL: base) else { return XCTFail() }
+        XCTAssertEqual(media.segments.count, 5)
+        XCTAssertEqual(media.totalDuration, 4)
+        XCTAssertNil(HLSJoin.estimatedSize(bandwidth: Int.max, duration: Limits.maxDuration))
+        XCTAssertNil(HLSJoin.estimatedSize(bandwidth: 1, duration: .infinity))
+        XCTAssertNil(HLSJoin.estimatedSize(bandwidth: 1, duration: .nan))
+        // Byte ranges whose end can't be computed without overflowing are refused outright.
+        XCTAssertThrowsError(try M3U8.parse("#EXTM3U\n#EXTINF:4,\n#EXT-X-BYTERANGE:9223372036854775807@10\na.ts\n#EXT-X-ENDLIST\n", baseURL: base))
+        XCTAssertThrowsError(try M3U8.parse("#EXTM3U\n#EXT-X-MAP:URI=\"init.mp4\",BYTERANGE=\"9223372036854775807@5\"\n#EXTINF:4,\na.m4s\n#EXT-X-ENDLIST\n", baseURL: base))
+        let limit = Limits.maxFileSize
+        XCTAssertThrowsError(try M3U8.parse("#EXTM3U\n#EXTINF:4,\n#EXT-X-BYTERANGE:\(limit)\na.ts\n#EXTINF:4,\n#EXT-X-BYTERANGE:1\na.ts\n#EXT-X-ENDLIST\n", baseURL: base), "the second range would start past the limit")
+        XCTAssertNil(M3U8.parseRangeSpec("0@5"))
+        XCTAssertNil(M3U8.parseRangeSpec("5@-1"))
+        // And a playlist can't ask for an absurd number of segments.
+        let many = "#EXTM3U\n" + String(repeating: "#EXTINF:1,\ns.ts\n", count: Limits.maxSegments + 1) + "#EXT-X-ENDLIST\n"
+        XCTAssertThrowsError(try M3U8.parse(many, baseURL: base))
+    }
+
     func testEstimatedSize() {
         XCTAssertEqual(HLSJoin.estimatedSize(bandwidth: 5_000_000, duration: 2538), 1_586_250_000)
         XCTAssertNil(HLSJoin.estimatedSize(bandwidth: 0, duration: 10))

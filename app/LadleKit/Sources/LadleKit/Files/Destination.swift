@@ -23,7 +23,12 @@ public enum Destination {
     /// Whether `name` is in use in `folder` as a finished file or a part file.
     public static func nameIsTaken(_ name: String, in folder: URL, fileManager: FileManager = .default) -> Bool {
         let target = folder.appendingPathComponent(name)
-        if fileManager.fileExists(atPath: target.path) { return true }
-        return fileManager.fileExists(atPath: target.path + FileNaming.partSuffix)
+        return exists(target.path, fileManager) || exists(target.path + FileNaming.partSuffix, fileManager)
+    }
+
+    /// Like `fileExists`, but a symbolic link counts as taken even when it points nowhere, so Ladle
+    /// never writes through one.
+    static func exists(_ path: String, _ fileManager: FileManager) -> Bool {
+        (try? fileManager.attributesOfItem(atPath: path)) != nil
     }
 }

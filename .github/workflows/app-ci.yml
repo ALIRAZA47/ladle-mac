@@ -32,9 +32,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+      # Only GitHub's own actions run here (the release workflow holds a signing key, and this one
+      # mirrors it), so Xcode is picked by hand from what the runner image ships.
+      - name: Select the newest stable Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app 2> /dev/null | grep -iv beta | sort -V | tail -n 1 || true)
+          [ -n "$xcode" ] || xcode=/Applications/Xcode.app
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -132,9 +137,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+      - name: Select the newest stable Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app 2> /dev/null | grep -iv beta | sort -V | tail -n 1 || true)
+          [ -n "$xcode" ] || xcode=/Applications/Xcode.app
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
 
       - uses: actions/setup-node@v7
         with:
@@ -163,14 +171,28 @@ jobs:
         run: app/scripts/verify-package.sh
 
       # The website's install script (site/public/install.sh) on this package, the way people run
-      # it. The second run replaces the first copy.
+      # it: it checks the DMG against sparkle.json with the (here, throwaway) update key before
+      # installing, and refuses a DMG whose signature doesn't match. The second run replaces the
+      # first copy.
       - name: Install with the install script
         env:
           LADLE_DOWNLOAD_BASE: file://${{ env.LADLE_OUT }}
+          LADLE_PUBLIC_ED_KEY: ${{ env.LADLE_PUBLIC_ED_KEY_OVERRIDE }}
         run: |
           apps="$RUNNER_TEMP/Applications"
           bash site/public/install.sh --dir "$apps" --browser none --no-open
           bash site/public/install.sh --dir "$apps" --browser none --no-open
+          tampered="$RUNNER_TEMP/tampered"
+          mkdir -p "$tampered"
+          cp "$LADLE_OUT/Ladle-Chrome-Extension.zip" "$LADLE_OUT/sparkle.json" "$tampered/"
+          cp "$LADLE_OUT/Ladle.dmg" "$tampered/Ladle.dmg"
+          # One byte changed, the size kept: only the signature check can tell.
+          printf 'x' | dd of="$tampered/Ladle.dmg" bs=1 seek=4096 conv=notrunc 2> /dev/null
+          if LADLE_DOWNLOAD_BASE="file://$tampered" bash site/public/install.sh --dir "$RUNNER_TEMP/Tampered" --app-only --no-open 2> /dev/null; then
+            echo "::error::The script installed a DMG that doesn't match the release's signature."
+            exit 1
+          fi
+          test ! -e "$RUNNER_TEMP/Tampered/Ladle.app"
           app="$apps/Ladle.app"
           codesign --verify --deep --strict "$app"
           if xattr -p com.apple.quarantine "$app" > /dev/null 2>&1; then

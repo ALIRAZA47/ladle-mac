@@ -27,9 +27,12 @@ public enum HLSJoin {
         video == .fragmentedMP4 && audio == .fragmentedMP4
     }
 
-    /// Rough size from bitrate and length, for "estimated size" in menus.
+    /// Rough size from bitrate and length, for "estimated size" in menus. nil when either number is
+    /// missing or the result isn't a plausible file size (converting an out-of-range Double would trap).
     public static func estimatedSize(bandwidth: Int, duration: Double) -> Int64? {
-        guard bandwidth > 0, duration > 0 else { return nil }
-        return Int64(Double(bandwidth) * duration / 8)
+        guard bandwidth > 0, duration.isFinite, duration > 0 else { return nil }
+        let bytes = (Double(bandwidth) * duration / 8).rounded(.down)
+        guard bytes.isFinite, bytes >= 0, bytes <= Double(Limits.maxFileSize) else { return nil }
+        return Int64(bytes)
     }
 }

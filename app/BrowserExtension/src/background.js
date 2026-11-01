@@ -205,12 +205,16 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
 
   // MARK: cookies
 
-  async function cookiesFor(url, storeId) {
+  /**
+   * The cookies Ladle may send to `url`. `firstParty` is the page the download came from: from another
+   * site, SameSite=Strict cookies stay out, as they would from the browser's own request.
+   */
+  async function cookiesFor(url, storeId, firstParty) {
     if (!api.cookies || !api.cookies.getAll || !C.isWebLink(url)) return '';
     try {
       const query = { url };
       if (storeId) query.storeId = storeId;
-      return C.cookieHeader(await api.cookies.getAll(query), url);
+      return C.cookieHeader(await api.cookies.getAll(query), url, firstParty);
     } catch (e) {
       return '';
     }
@@ -270,7 +274,7 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
       return;
     }
     quiet(api.downloads.erase({ id: item.id }));
-    const cookies = await cookiesFor(item.url, item.cookieStoreId);
+    const cookies = await cookiesFor(item.url, item.cookieStoreId, item.referrer);
     const message = C.downloadMessage({
       url: item.url,
       filename: C.baseName(item.filename),
@@ -334,8 +338,9 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
 
   async function sendLinks(tab, links) {
     if (!links.length) return;
-    const cookies = links.length === 1 ? await cookiesFor(links[0]) : '';
-    await handOff({ type: 'links', links, referrer: tab && tab.url, cookies });
+    const page = tab && tab.url;
+    const cookies = links.length === 1 ? await cookiesFor(links[0], undefined, page) : '';
+    await handOff({ type: 'links', links, referrer: page, cookies });
   }
 
   const menuApi = api.contextMenus || api.menus;
@@ -344,10 +349,11 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
       if (info.menuItemId === MENU_LINK) {
         const url = info.linkUrl || info.srcUrl;
         if (!C.isWebLink(url)) return;
+        const page = info.pageUrl || (tab && tab.url);
         const message = C.downloadMessage({
           url,
-          referrer: info.pageUrl || (tab && tab.url),
-          cookies: await cookiesFor(url),
+          referrer: page,
+          cookies: await cookiesFor(url, undefined, page),
           mode: 'direct',
         });
         await handOff(message);
@@ -535,7 +541,7 @@ if (typeof importScripts === 'function' && typeof LadleCommon === 'undefined') {
       title: title || '',
       quality: option.label === 'Original' ? '' : option.label,
       referrer: pageUrl,
-      cookies: await cookiesFor(option.url),
+      cookies: await cookiesFor(option.url, undefined, pageUrl),
     };
     if (option.audio) message.audio = option.audio;
     if (option.bandwidth) message.bandwidth = option.bandwidth;

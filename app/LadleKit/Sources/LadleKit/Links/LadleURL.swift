@@ -93,7 +93,7 @@ public enum LadleURL {
             referrer: first("referrer").flatMap(LinkParser.link(from:)),
             fileName: first("filename").map { FileNaming.sanitize($0) },
             cookies: first("cookies"),
-            size: first("size").flatMap { Int64($0) }.flatMap { $0 > 0 ? $0 : nil },
+            size: first("size").flatMap { Int64($0) }.flatMap { $0 > 0 && $0 <= Limits.maxFileSize ? $0 : nil },
             mimeType: first("mime"),
             checksum: checksum,
             source: first("source"),
@@ -105,6 +105,16 @@ public enum LadleURL {
             bandwidth: first("bandwidth").flatMap { Int($0) },
             token: first("token")
         )
+    }
+
+    /// `ladle://inbox?id=<uuid>`: a hand-off the Safari extension left as a file in Ladle's inbox folder
+    /// (see `HandOffInbox`). Returns the id, or nil for any other link.
+    public static func inboxID(from url: URL) -> String? {
+        guard url.scheme?.lowercased() == scheme, (url.host ?? "").lowercased() == "inbox",
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              let raw = items.first(where: { $0.name == "id" })?.value,
+              let id = UUID(uuidString: raw) else { return nil }
+        return id.uuidString
     }
 
     public static func make(_ handOff: HandOff) -> URL? {

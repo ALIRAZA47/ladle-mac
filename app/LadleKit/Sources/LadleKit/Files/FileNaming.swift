@@ -35,7 +35,7 @@ public enum FileNaming {
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: ":", with: "-")
             .replacingOccurrences(of: "\\", with: "-")
-        name = String(name.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) }.map(Character.init))
+        name = String(name.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) && !isInvisibleFormatting($0) }.map(Character.init))
         // Trim and strip leading dots until nothing changes, so ".. .." can't collapse into ".."
         // (a name that would point at the parent folder) and no name starts with a dot.
         var previous: String
@@ -54,6 +54,15 @@ public enum FileNaming {
             name = shortStem.isEmpty ? String(name.prefix(limit)) : shortStem + ext
         }
         return name
+    }
+
+    /// Zero-width and bidirectional formatting characters. They're invisible, and a right-to-left
+    /// override can make "report\u{202E}fdp.dmg" read as "reportgmd.pdf".
+    static func isInvisibleFormatting(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0x200B...0x200F, 0x202A...0x202E, 0x2066...0x2069, 0x061C, 0xFEFF: return true
+        default: return false
+        }
     }
 
     /// The last path component of the link, percent-decoded, or nil when the path is empty.

@@ -80,6 +80,7 @@ curl -fsSL https://ladle.alirazakhan.me/install.sh | bash
 
 Here’s what it does:
 
+- **Checks the download.** Every release carries a signature of `Ladle.dmg` from Ladle’s update key, the same one copies of Ladle check before installing an update. The script verifies it and refuses a download that doesn’t match, so a swapped file is never installed.
 - **Installs Ladle** in your Applications folder and opens it, without the [first-launch](#first-launch) approval: macOS only asks about apps a browser downloaded, and the script downloads Ladle itself. If Ladle is open, the script waits for you to quit it.
 - **Puts the extension** in `~/Library/Application Support/Ladle/Ladle-Chrome-Extension`, opens your browser’s extensions page and copies the folder’s path. Browsers only let you add an extension like this yourself, so you finish there: turn on **Developer mode**, click **Load unpacked**, press <kbd>⌘⇧G</kbd>, paste with <kbd>⌘V</kbd>, press <kbd>Return</kbd> and click **Select**.
 

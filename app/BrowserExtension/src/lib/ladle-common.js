@@ -123,14 +123,47 @@
     return { catch: true, ext };
   }
 
+  /** Second-level labels that ccTLDs commonly register under ("example.co.uk", "example.com.au"). */
+  const SECOND_LEVEL = ['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'ne', 'or', 'go', 'mil', 'sch', 'ltd', 'plc'];
+
+  /**
+   * The registrable part of a host, roughly: "cdn.example.com" → "example.com", "a.b.example.co.uk" →
+   * "example.co.uk". Close enough to the public suffix list to tell the same site from another one
+   * the way SameSite cookies do. Addresses and single labels are their own site.
+   */
+  function registrableDomain(host) {
+    const h = String(host || '').toLowerCase().replace(/\.$/, '');
+    if (!h || /^[\d.]+$/.test(h) || h.indexOf(':') !== -1) return h;
+    const labels = h.split('.');
+    if (labels.length <= 2) return h;
+    const tld = labels[labels.length - 1];
+    const second = labels[labels.length - 2];
+    const keep = tld.length === 2 && SECOND_LEVEL.indexOf(second) !== -1 ? 3 : 2;
+    return labels.slice(-keep).join('.');
+  }
+
+  /** Whether two links are on the same site: the same scheme and registrable domain ("schemeful same-site"). */
+  function sameSite(a, b) {
+    try {
+      const x = new URL(String(a));
+      const y = new URL(String(b));
+      return x.protocol === y.protocol && registrableDomain(x.hostname) === registrableDomain(y.hostname);
+    } catch (e) {
+      return false;
+    }
+  }
+
   /**
    * Cookie header for a request to `url`, from `cookies.getAll` results.
-   * Secure cookies stay off plain http; without a `url` nothing is dropped.
+   * Secure cookies stay off plain http; without a `url` nothing is dropped. With `firstParty`, the page
+   * the download came from, on another site, SameSite=Strict cookies stay out too: the browser's own
+   * request from that page wouldn't have carried them, so Ladle's mustn't either.
    */
-  function cookieHeader(cookies, url) {
+  function cookieHeader(cookies, url, firstParty) {
     const secureAllowed = !url || /^https:\/\//i.test(String(url));
+    const crossSite = !!url && !!firstParty && !sameSite(url, firstParty);
     return (cookies || [])
-      .filter((c) => c && c.name && (secureAllowed || c.secure !== true))
+      .filter((c) => c && c.name && (secureAllowed || c.secure !== true) && !(crossSite && c.sameSite === 'strict'))
       .map((c) => c.name + '=' + c.value)
       .join('; ');
   }
@@ -156,7 +189,11 @@
     return msg;
   }
 
-  /** Same parameters as `LadleURL` in the app: the fallback when native messaging isn't set up. */
+  /**
+   * Same parameters as `LadleURL` in the app: the fallback when native messaging isn't set up. Ladle
+   * treats a link like any web page's (it asks first and ignores referrer, size and cookies), so the
+   * cookies are never put in it: a link travels through the browser and the system and could be logged.
+   */
   function ladleURL(msg) {
     const params = [];
     const add = (name, value) => {
@@ -166,7 +203,6 @@
     urls.forEach((u) => add('url', u));
     add('referrer', msg.referrer);
     add('filename', msg.filename);
-    add('cookies', msg.cookies);
     add('size', msg.size);
     add('mime', msg.mime);
     add('sha256', msg.sha256);
@@ -265,6 +301,8 @@
     isWebLink,
     watchedExtension,
     shouldCatch,
+    registrableDomain,
+    sameSite,
     cookieHeader,
     browserName,
     downloadMessage,

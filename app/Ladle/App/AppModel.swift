@@ -28,17 +28,22 @@ struct ClipboardOffer: Equatable {
 
 /// How a hand-off reached Ladle. It decides what "Let the browser handle it" does.
 enum HandOffOrigin: Equatable {
-    /// Chrome, Arc, Edge, Brave or Firefox through LadleBridge.
-    case bridge(port: String?, browser: String)
-    /// Safari's extension (it opens `ladle://` links).
+    /// Chrome, Arc, Edge, Brave or Firefox through LadleBridge. `trusted` is false when the process
+    /// at the socket couldn't prove it was Ladle's own helper.
+    case bridge(connection: Int?, browser: String, trusted: Bool)
+    /// Safari's extension, through Ladle's inbox folder.
     case safari
-    /// A `ladle://` link from anywhere else. Untrusted ones always ask first.
+    /// A `ladle://add` link, which any web page can open. Never trusted.
     case link(trusted: Bool)
 
-    /// Whether a browser Ladle knows (or the person) asked for this, rather than any web page.
+    /// Whether a browser Ladle knows (or the person) asked for this, rather than any web page or
+    /// unknown process.
     var isTrusted: Bool {
-        if case .link(let trusted) = self { return trusted }
-        return true
+        switch self {
+        case .bridge(_, _, let trusted): return trusted
+        case .safari: return true
+        case .link(let trusted): return trusted
+        }
     }
 }
 
@@ -84,13 +89,13 @@ final class AppModel: ObservableObject {
     private let network = NetworkMonitor()
     private let sleepWake = SleepWakeObserver()
     private let idleSleep = IdleSleepBlocker()
-    private let bridge = BridgeServer()
+    let bridge = BridgeServer()
     /// Clipboard links answered with "Not now" (or already taken) this session.
     var dismissedClipboard: Set<String> = []
     /// Links given back to the browser, so its next catch of them is waved through.
     var returnedToBrowser: [String: Date] = [:]
-    /// LadleBridge ports by browser family, for pushes.
-    var bridgePorts: [String: String] = [:]
+    /// Verified LadleBridge connections by browser family, for pushes.
+    var bridgeConnections: [String: Int] = [:]
     var inspectTask: Task<Void, Never>?
     /// When the last browser hand-off arrived (a launch for one doesn't open the window).
     var lastHandOff = Date.distantPast
@@ -168,12 +173,14 @@ final class AppModel: ObservableObject {
         browsers.writeSnapshot(settings)
         browsers.repairNativeHosts()
         browsers.refreshSafariState()
-        bridge.handler = { [weak self] envelope in
+        prepareInbox()
+        bridge.handler = { [weak self] envelope, connection, trusted in
             MainActor.assumeIsolated {
-                self?.handleBridge(envelope) ?? BridgeReply(replyTo: envelope.request.id, ok: false, error: "starting")
+                self?.handleBridge(envelope, connection: connection, trusted: trusted)
+                    ?? BridgeReply(replyTo: envelope.request.id, ok: false, error: "starting")
             }
         }
-        bridge.start()
+        bridge.start(helperURL: URL(fileURLWithPath: browsers.bridgePath))
 
         catchPanel.model = self
 
@@ -347,10 +354,14 @@ final class AppModel: ObservableObject {
     }
 
     private func pushSettingsToBrowsers() {
-        let message = BridgePush(type: "settings", settings: browsers.snapshot(for: settings))
-        for (family, port) in bridgePorts where !BridgeServer.push(message, to: port) {
-            bridgePorts[family] = nil
-        }
+        bridge.broadcast(BridgePush(type: "settings", settings: browsers.snapshot(for: settings)))
+    }
+
+    /// The folder Safari's extension drops hand-offs into (HandOffInbox): this user's only, and
+    /// anything left uncollected is thrown away.
+    private func prepareInbox() {
+        try? FileManager.default.createDirectory(at: paths.inbox, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        HandOffInbox.sweep(paths.inbox)
     }
 
     // MARK: - List

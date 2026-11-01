@@ -1,18 +1,18 @@
-// LadleBridge: the native messaging host for Ladle's extension in Chrome, Arc, Edge, Brave and Firefox
-// (host name me.alirazakhan.ladle). The browser starts it and talks over stdin/stdout with
-// length-prefixed JSON. Each message goes to the app's local message port; the app answers
-// right away. Messages from the app ("Let the browser handle it", new settings) arrive on this
-// helper's own port and are passed to the browser.
+// LadleBridge: the native messaging host for Ladle's extension in Chrome, Arc, Dia, Edge, Brave and
+// Firefox (host name me.alirazakhan.ladle). The browser starts it and talks over stdin/stdout with
+// length-prefixed JSON. The helper keeps one connection to the app's local socket: each browser
+// message goes down it, and the app's replies and pushes ("Let the browser handle it", new settings)
+// come back up it and on to the browser. Before anything is sent, the process at the socket has to
+// prove it's the Ladle this helper belongs to (PeerVerification); an impostor gets nothing.
 
 import AppKit
-import CoreFoundation
+import Darwin
 import Foundation
 import LadleKit
+import Security
 
 enum Bridge {
     static let outputLock = NSLock()
-    static let pushPortName = BridgeIPC.helperPortName(pid: getpid())
-    static var pushPort: CFMessagePort?
 
     /// The browser that started us, from our parent process ("Arc", "Chrome", "Firefox"…).
     static let browser: String = {
@@ -35,22 +35,44 @@ enum Bridge {
 
     // MARK: The app
 
-    static func appIsListening() -> Bool {
-        guard let remote = CFMessagePortCreateRemote(nil, BridgeIPC.appPortName as CFString) else { return false }
-        CFMessagePortInvalidate(remote)
-        return true
-    }
-
     static var appURL: URL? {
         let bundle = Bundle.main.bundleURL
         if bundle.pathExtension == "app" { return bundle }
         return NSWorkspace.shared.urlForApplication(withBundleIdentifier: BridgeIPC.appBundleIdentifier)
     }
 
+    /// What the process at the socket must prove to be: the Ladle this helper lives in.
+    static let appRequirement: SecRequirement? = appURL.flatMap {
+        PeerVerification.requirement(forCodeAt: $0.appendingPathComponent("Contents/MacOS/Ladle"))
+    }
+
+    static let connectionLock = NSLock()
+    static var connection: AppConnection?
+    /// Request ids sent to the app and not answered yet, so a dropped connection can fail them.
+    static let pending = Locked<Set<Int>>([])
+
+    /// The open connection to Ladle, made (and checked) if needed. nil when Ladle isn't listening,
+    /// or whatever listens isn't Ladle.
+    static func currentConnection() -> AppConnection? {
+        connectionLock.lock()
+        defer { connectionLock.unlock() }
+        if let connection, connection.isOpen { return connection }
+        connection = nil
+        guard let fd = BridgeSocket.connect(path: BridgeIPC.socketPath()) else { return nil }
+        guard let requirement = appRequirement, PeerVerification.verify(socket: fd, against: requirement) else {
+            Darwin.close(fd)
+            return nil
+        }
+        let opened = AppConnection(socket: fd)
+        connection = opened
+        opened.startReading()
+        return opened
+    }
+
     /// Starts Ladle in the background if needed and waits (up to 15 s) for it to listen.
-    static func ensureApp() -> Bool {
-        if appIsListening() { return true }
-        guard let url = appURL else { return false }
+    static func ensureApp() -> AppConnection? {
+        if let connection = currentConnection() { return connection }
+        guard let url = appURL else { return nil }
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = false
         configuration.addsToRecentItems = false
@@ -58,27 +80,9 @@ enum Bridge {
         NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in }
         for _ in 0..<60 {
             usleep(250_000)
-            if appIsListening() { return true }
+            if let connection = currentConnection() { return connection }
         }
-        return false
-    }
-
-    static func sendToApp(_ envelope: BridgeEnvelope) -> Data? {
-        guard let remote = CFMessagePortCreateRemote(nil, BridgeIPC.appPortName as CFString),
-              let data = try? JSONEncoder().encode(envelope) else { return nil }
-        defer { CFMessagePortInvalidate(remote) }
-        var response: Unmanaged<CFData>?
-        let status = CFMessagePortSendRequest(
-            remote,
-            BridgeIPC.requestMessageID,
-            data as CFData,
-            5,
-            20,
-            CFRunLoopMode.defaultMode.rawValue,
-            &response
-        )
-        guard status == kCFMessagePortSuccess, let response else { return nil }
-        return response.takeRetainedValue() as Data
+        return nil
     }
 
     /// Settings the app left for us, to answer `hello` without starting Ladle.
@@ -96,42 +100,87 @@ enum Bridge {
             reply(BridgeReply(replyTo: nil, ok: false, error: "unreadable"))
             return
         }
-        if request.type == "hello" && !appIsListening() {
-            // Without the trust token: that's for Safari's extension, which reads the file itself.
+        if request.type == "hello" && currentConnection() == nil {
             var stored = storedSettings()
             stored?.token = ""
             reply(BridgeReply(replyTo: request.id, ok: true, settings: stored))
             return
         }
-        guard ensureApp() else {
+        guard let connection = ensureApp() else {
             reply(BridgeReply(replyTo: request.id, ok: false, error: "Ladle didn’t start"))
             return
         }
-        let envelope = BridgeEnvelope(replyPort: pushPortName, browser: browser.isEmpty ? nil : browser, request: request)
-        if let answer = sendToApp(envelope) {
-            write(answer)
-        } else {
+        let envelope = BridgeEnvelope(replyPort: nil, browser: browser.isEmpty ? nil : browser, request: request)
+        guard let data = try? JSONEncoder().encode(envelope) else {
+            reply(BridgeReply(replyTo: request.id, ok: false, error: "unreadable"))
+            return
+        }
+        if let id = request.id { pending.withLock { _ = $0.insert(id) } }
+        if !connection.send(NativeMessaging.frame(data)) {
+            if let id = request.id { pending.withLock { _ = $0.remove(id) } }
             reply(BridgeReply(replyTo: request.id, ok: false, error: "Ladle didn’t answer"))
         }
     }
 
     // MARK: Messages from the app
 
-    static func listenForPushes() {
-        var context = CFMessagePortContext(version: 0, info: nil, retain: nil, release: nil, copyDescription: nil)
-        let callback: CFMessagePortCallBack = { _, _, data, _ in
-            if let data { Bridge.write(data as Data) }
-            return nil
+    /// A frame from the app: the reply to one of our requests, or a push for the browser. Both go to
+    /// the browser as they are; the extension tells them apart by `replyTo`.
+    static func forward(_ frame: Data) {
+        if let answer = try? JSONDecoder().decode(BridgeReply.self, from: frame), let id = answer.replyTo {
+            pending.withLock { _ = $0.remove(id) }
         }
-        guard let port = CFMessagePortCreateLocal(nil, pushPortName as CFString, callback, &context, nil) else { return }
-        pushPort = port
-        if let source = CFMessagePortCreateRunLoopSource(nil, port, 0) {
-            CFRunLoopAddSource(CFRunLoopGetMain(), source, CFRunLoopMode.commonModes)
+        write(frame)
+    }
+
+    /// The connection dropped: whatever was still waiting gets an answer.
+    static func connectionClosed() {
+        let waiting = pending.withLock { (ids: inout Set<Int>) -> Set<Int> in
+            let copy = ids
+            ids.removeAll()
+            return copy
+        }
+        for id in waiting.sorted() {
+            reply(BridgeReply(replyTo: id, ok: false, error: "Ladle didn’t answer"))
         }
     }
 }
 
-Bridge.listenForPushes()
+/// The helper's connection to the app. Only its reading thread closes the descriptor.
+final class AppConnection {
+    private let socket: Int32
+    private let lock = NSLock()
+    private var open = true
+
+    init(socket: Int32) {
+        self.socket = socket
+    }
+
+    var isOpen: Bool {
+        lock.withLock { open }
+    }
+
+    func send(_ frame: Data) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard open else { return false }
+        if BridgeSocket.writeAll(socket, frame) { return true }
+        open = false
+        _ = Darwin.shutdown(socket, SHUT_RDWR)
+        return false
+    }
+
+    func startReading() {
+        let thread = Thread { [self] in
+            BridgeSocket.readFrames(socket) { frame in Bridge.forward(frame) }
+            lock.withLock { open = false }
+            Darwin.close(socket)
+            Bridge.connectionClosed()
+        }
+        thread.name = "Ladle connection"
+        thread.start()
+    }
+}
 
 Thread.detachNewThread {
     var buffer = Data()
@@ -149,4 +198,4 @@ Thread.detachNewThread {
     }
 }
 
-CFRunLoopRun()
+dispatchMain()

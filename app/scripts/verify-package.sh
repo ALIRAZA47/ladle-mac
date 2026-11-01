@@ -4,8 +4,9 @@
 #
 #   LADLE_VERSION=0.1.0 LADLE_BUILD=1 app/scripts/verify-package.sh
 #
-# Environment: LADLE_VERSION, LADLE_BUILD and LADLE_OUT as for package-app.sh, and
-# LADLE_SIGN_IDENTITY when the app should carry a Developer ID signature rather than an ad-hoc one.
+# Environment: LADLE_VERSION, LADLE_BUILD and LADLE_OUT as for package-app.sh,
+# LADLE_SIGN_IDENTITY when the app should carry a Developer ID signature rather than an ad-hoc one,
+# and LADLE_HARDENED_RUNTIME=1 when an ad-hoc build was signed with the hardened runtime.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -14,6 +15,7 @@ app_dir="$(cd "$here/.." && pwd)"
 : "${LADLE_BUILD:?Set LADLE_BUILD}"
 out="${LADLE_OUT:-$app_dir/build/package}"
 identity="${LADLE_SIGN_IDENTITY:--}"
+hardened="${LADLE_HARDENED_RUNTIME:-0}"
 dmg="$out/Ladle.dmg"
 extension_zip="$out/Ladle-Chrome-Extension.zip"
 
@@ -46,8 +48,17 @@ codesign --verify --deep --strict --verbose=2 "$app"
 details="$(codesign -dv "$app" 2>&1)"
 if [ "$identity" = - ]; then
   grep -q "Signature=adhoc" <<< "$details" || fail "Ladle.app isn't ad-hoc signed: $details"
-  if grep -qE 'flags=0x[0-9a-f]+\([^)]*runtime' <<< "$details"; then fail "the hardened runtime is on; with ad-hoc signatures it can't load Sparkle"; fi
-  ok "Ladle.app and everything in it are ad-hoc signed, hardened runtime off"
+  if grep -qE 'flags=0x[0-9a-f]+\([^)]*runtime' <<< "$details"; then
+    [ "$hardened" = 1 ] || fail "the hardened runtime is on, but LADLE_HARDENED_RUNTIME isn't set; an ad-hoc build needs the library-validation exception to load Sparkle"
+    for code in "$app" "$contents/MacOS/LadleBridge" "$sparkle"; do
+      codesign -d --entitlements - --xml "$code" 2> /dev/null | grep -q "com.apple.security.cs.disable-library-validation" \
+        || fail "${code#"$mount/"} has the hardened runtime without the library-validation exception, so Sparkle couldn't load"
+    done
+    ok "Ladle.app and everything in it are ad-hoc signed, hardened runtime on with the library-validation exception"
+  else
+    [ "$hardened" != 1 ] || fail "LADLE_HARDENED_RUNTIME is set, but the hardened runtime is off"
+    ok "Ladle.app and everything in it are ad-hoc signed, hardened runtime off"
+  fi
 else
   grep -q "Authority=Developer ID Application" <<< "$details" || fail "Ladle.app isn't signed with Developer ID: $details"
   grep -qE 'flags=0x[0-9a-f]+\([^)]*runtime' <<< "$details" || fail "the hardened runtime is off"

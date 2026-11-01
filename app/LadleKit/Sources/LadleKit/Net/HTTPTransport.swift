@@ -72,8 +72,11 @@ public struct HTTPResponseHead: Sendable {
         headers[name.lowercased()]
     }
 
+    /// The declared size, when it's a plausible one: 0 up to `Limits.maxFileSize`. Anything else is "unknown".
     public var contentLength: Int64? {
-        header("content-length").flatMap { Int64($0.trimmingCharacters(in: .whitespaces)) }
+        guard let value = header("content-length").flatMap({ Int64($0.trimmingCharacters(in: .whitespaces)) }),
+              value >= 0, value <= Limits.maxFileSize else { return nil }
+        return value
     }
 
     public var contentRange: ContentRange? {

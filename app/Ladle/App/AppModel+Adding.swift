@@ -203,11 +203,16 @@ extension AppModel {
     /// `application(_:open:)`: ladle:// links, .webloc files and web links (Dock drops).
     func open(urls: [URL]) {
         for url in urls {
-            if url.scheme?.lowercased() == LadleURL.scheme {
+            if let id = LadleURL.inboxID(from: url) {
+                // Safari's extension left the request in Ladle's inbox folder, where only this user's
+                // own processes can write (and the extension's sandbox allows nothing else of Ladle's).
+                guard let request = HandOffInbox.take(id: id, from: paths.inbox),
+                      let handOff = request.handOff(source: "Safari") else { continue }
+                receive(handOff, origin: .safari, userAgent: request.userAgent)
+            } else if url.scheme?.lowercased() == LadleURL.scheme {
+                // Any web page can open a ladle://add link, so it's never trusted: it always asks first.
                 guard let handOff = LadleURL.parse(url) else { continue }
-                let trusted = handOff.token != nil && handOff.token == browsers.token
-                let origin: HandOffOrigin = trusted && handOff.source?.lowercased() == "safari" ? .safari : .link(trusted: trusted)
-                receive(handOff, origin: origin, userAgent: nil)
+                receive(handOff, origin: .link(trusted: false), userAgent: nil)
             } else {
                 receiveDropped(url)
             }

@@ -18,6 +18,8 @@ public struct AppPaths: Sendable {
     public var settings: URL { directory.appendingPathComponent("settings.json") }
     /// Read by the native messaging helper and the Safari extension.
     public var browserSettings: URL { directory.appendingPathComponent("browser-settings.json") }
+    /// Hand-offs the Safari extension writes for Ladle (see `HandOffInbox`). Ladle creates it.
+    public var inbox: URL { directory.appendingPathComponent("Inbox", isDirectory: true) }
 }
 
 /// A Codable value in a JSON file, written atomically (temporary file, then rename).
@@ -61,8 +63,14 @@ public final class JSONFileStore<Value: Codable>: @unchecked Sendable {
         let data = try JSONFileStore.encoder.encode(value)
         lock.lock()
         defer { lock.unlock() }
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let folder = url.deletingLastPathComponent()
+        let fileManager = FileManager.default
+        try fileManager.createDirectory(at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         try data.write(to: url, options: [.atomic])
+        // The files hold the download history and, while a download runs, its cookies: this user only,
+        // like a browser's own profile folder.
+        try? fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: folder.path)
+        try? fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
     }
 }
 

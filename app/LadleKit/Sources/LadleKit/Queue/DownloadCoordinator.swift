@@ -156,6 +156,10 @@ public actor DownloadCoordinator {
 
     // MARK: - Lifecycle
 
+    /// A download found still running at this many launches in a row is marked failed instead of
+    /// started again: a playlist or file that crashes Ladle must not crash it at every launch.
+    public static let maxLaunchInterruptions = 3
+
     /// Loads the saved list and starts scheduling. Downloads that were running pick up again.
     public func start() {
         guard !started else { return }
@@ -163,8 +167,21 @@ public actor DownloadCoordinator {
         if env.persists, let file = store.load() {
             items = file.items.map { saved in
                 var item = saved
-                if item.status == .downloading { item.status = .queued }
+                if item.status == .downloading {
+                    // A clean quit leaves downloads queued (prepareForQuit), so this one saw a crash or a force quit.
+                    let interruptions = (item.launchInterruptions ?? 0) + 1
+                    item.launchInterruptions = interruptions
+                    if interruptions >= DownloadCoordinator.maxLaunchInterruptions {
+                        item.status = .failed
+                        item.failure = DownloadFailure(.interrupted)
+                        item.manualStart = false
+                    } else {
+                        item.status = .queued
+                    }
+                }
                 if item.checksumState == .verifying { item.checksumState = nil }
+                // Finished downloads keep their history, not the browser's cookies.
+                if item.status == .completed { item.cookies = nil }
                 return item
             }
         }
@@ -378,6 +395,7 @@ public actor DownloadCoordinator {
         items[index].manualStart = true
         items[index].failure = nil
         items[index].attempts = 0
+        items[index].launchInterruptions = nil
         dirty = true
         schedule()
         publish()
@@ -405,6 +423,7 @@ public actor DownloadCoordinator {
         items[index].resetProgress()
         items[index].status = .queued
         items[index].manualStart = true
+        items[index].launchInterruptions = nil
         dirty = true
     }
 
@@ -650,6 +669,7 @@ public actor DownloadCoordinator {
         let (runner, found) = endRun(id)
         if handledIntent(runner, id) { return }
         guard let index = found else { return }
+        items[index].launchInterruptions = nil
         if case .file(let downloader) = runner?.engine {
             let progress = downloader.progress()
             if let pieces = downloader.checkpoint() { items[index].pieces = pieces }
@@ -681,6 +701,7 @@ public actor DownloadCoordinator {
         let (runner, found) = endRun(id)
         if handledIntent(runner, id) { return }
         guard let index = found else { return }
+        items[index].launchInterruptions = nil
         if case .hls(let downloader) = runner?.engine {
             let progress = downloader.progress()
             items[index].hls?.completedSegments = progress.completedSegments
@@ -728,6 +749,8 @@ public actor DownloadCoordinator {
         item.failure = nil
         items[index] = item
         verifyAndAnnounce(item.id)
+        // The checksum lookup above took its own copy; the saved list keeps no cookies for a finished file.
+        items[index].cookies = nil
     }
 
     private func completeHLS(_ index: Int, video: URL, audio: URL?, plan: HLSPlanInfo) {

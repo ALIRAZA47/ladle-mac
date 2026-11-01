@@ -52,6 +52,26 @@ test('cookie headers and messages', () => {
   assert.equal(C.cookieHeader(jar, 'HTTPS://A.ORG/x.zip'), 'sid=s3cret; theme=dark; lang=en', 'the scheme check ignores case');
   assert.equal(C.cookieHeader(jar), 'sid=s3cret; theme=dark; lang=en', 'without a link nothing is dropped');
   assert.equal(C.cookieHeader([], 'http://a.org/'), '');
+  // SameSite: a download caught on another site gets what the browser would have sent from there, never Strict cookies.
+  const strict = [
+    { name: 'sid', value: 's', sameSite: 'strict' },
+    { name: 'pref', value: 'p', sameSite: 'lax' },
+    { name: 'ad', value: 'a', sameSite: 'no_restriction', secure: true },
+    { name: 'old', value: 'o' },
+  ];
+  assert.equal(C.cookieHeader(strict, 'https://files.example.com/x.zip', 'https://www.example.com/page'), 'sid=s; pref=p; ad=a; old=o', 'the same site keeps everything');
+  assert.equal(C.cookieHeader(strict, 'https://files.example.com/x.zip', 'https://other.net/page'), 'pref=p; ad=a; old=o', 'another site never gets Strict cookies');
+  assert.equal(C.cookieHeader(strict, 'https://files.example.com/x.zip'), 'sid=s; pref=p; ad=a; old=o', 'without a page nothing is dropped');
+  assert.equal(C.cookieHeader(strict, 'http://files.example.com/x.zip', 'https://www.example.com/'), 'pref=p; old=o', 'a scheme change is another site, and plain http gets no Secure cookies');
+  assert.equal(C.registrableDomain('cdn.files.example.com'), 'example.com');
+  assert.equal(C.registrableDomain('a.b.example.co.uk'), 'example.co.uk');
+  assert.equal(C.registrableDomain('example.com'), 'example.com');
+  assert.equal(C.registrableDomain('127.0.0.1'), '127.0.0.1');
+  assert.equal(C.registrableDomain('localhost'), 'localhost');
+  assert.ok(C.sameSite('https://a.example.com/x', 'https://b.example.com/y'));
+  assert.ok(!C.sameSite('https://example.com/x', 'https://example.org/y'));
+  assert.ok(!C.sameSite('http://example.com/x', 'https://example.com/y'), 'schemeful');
+  assert.ok(!C.sameSite('not a url', 'https://example.com/'));
   const msg = C.downloadMessage({ url: 'https://a.org/x.zip', filename: 'x.zip', referrer: '', cookies: 'a=1', size: -1, mode: 'caught' });
   assert.deepEqual(msg, { type: 'download', url: 'https://a.org/x.zip', mode: 'caught', filename: 'x.zip', cookies: 'a=1' });
 });
@@ -63,7 +83,7 @@ test('ladle:// links use the same parameters as the app', () => {
   assert.equal(parsed.searchParams.get('url'), 'https://a.org/x.zip?a=1&b=2');
   assert.equal(parsed.searchParams.get('referrer'), 'https://a.org/');
   assert.equal(parsed.searchParams.get('filename'), 'x.zip');
-  assert.equal(parsed.searchParams.get('cookies'), 'a=1; b=2');
+  assert.equal(parsed.searchParams.get('cookies'), null, 'cookies never travel in a link');
   assert.equal(parsed.searchParams.get('size'), '10');
   assert.equal(parsed.searchParams.get('source'), 'Chrome');
   assert.equal(parsed.searchParams.get('mode'), 'direct');

@@ -31,6 +31,30 @@ The release workflow checks the keys before it builds anything. It stops while `
 is the placeholder, while the secret is missing, and when the secret isn't the private half of
 `SUPublicEDKey`.
 
+## One-time setup: protecting the key
+
+The private key signs updates that every copy of Ladle installs without asking, so three settings
+in the repository keep it from being used without a person's say-so:
+
+1. **A protected `release` environment.** The release job runs in the environment named
+   `release`; GitHub creates it on the first run. In **Settings › Environments › release**, turn on
+   **Required reviewers** and add yourself. From then on, every release waits in the Actions tab
+   until a reviewer approves it, and only then can the job read the key. Keep
+   `SPARKLE_ED_PRIVATE_KEY` as a secret *of that environment* (not of the repository), so no other
+   workflow or job can read it.
+2. **A tag ruleset.** The workflow refuses to release a commit that isn't on `main`, so a tag
+   can't ship code that skipped review. Also limit who may create `v*` tags: in
+   **Settings › Rules › Rulesets**, add a ruleset for tags matching `v*` that restricts creation
+   and updates to the people who release.
+3. **No third-party actions.** The release and CI workflows use only GitHub's own actions
+   (`actions/checkout`, `actions/setup-node`, `actions/upload-artifact`), pick Xcode with
+   `xcode-select` and set every tool up before the checkout. Keep it that way: an action is code
+   someone else can change, running next to the key.
+
+If the key is ever exposed, the only remedy is a new key pair: generate one, put the new public key
+in `Info.plist`, replace the secret, and release. Copies already installed can't verify the new
+releases, so people have to download that version by hand once; say so in its release notes.
+
 ## Each release
 
 1. Write the release notes in `site/src/content/changelog/X.Y.Z.md` and merge them to `main`:
@@ -61,8 +85,10 @@ is the placeholder, while the secret is missing, and when the secret isn't the p
    that isn't newer than the last release.
 
 3. Watch **Actions › App release**. It:
-   1. checks the tag, that the release notes exist and match it, and Sparkle's keys, and stops
-      there if anything is missing;
+   1. checks that the tagged commit is on `main`, that the release notes exist and match the tag,
+      and that the public key is set, and stops there if anything is missing; then waits for the
+      `release` environment's reviewer (you) to approve the run, checks Sparkle's keys, and stops
+      if the secret isn't the private half of `SUPublicEDKey`;
    2. builds Ladle `X.Y.Z` for Apple silicon and Intel with
       [`scripts/package-app.sh`](scripts/package-app.sh), signs it ad hoc from the inside out
       (Sparkle's helpers, LadleBridge and the Safari extension, then the app), makes `Ladle.dmg`
@@ -134,6 +160,24 @@ When a store assigns an ID, add it to `chromeExtensionIDs` (or `firefoxExtension
 those IDs into the native messaging host manifests (`allowed_origins` for Chromium browsers,
 `allowed_extensions` for Firefox), and rewrites the manifests at launch, so the next release
 lets the store builds talk to LadleBridge. Then update the store links in the docs.
+
+## Later: the hardened runtime for ad-hoc builds
+
+Release builds are ad-hoc signed with the hardened runtime off, because its library validation
+refuses frameworks that aren't signed by the same team, and an ad-hoc build has no team, so Sparkle
+couldn't load. The packaging script can turn it on anyway: with `LADLE_HARDENED_RUNTIME=1`,
+[`scripts/package-app.sh`](scripts/package-app.sh) signs everything with `--options runtime` and
+gives each piece that loads Sparkle (the app, LadleBridge, Sparkle's own helpers) the
+`com.apple.security.cs.disable-library-validation` entitlement, which keeps the rest of the hardened
+runtime (no injected libraries through `DYLD_` variables, no debugger attaching) while letting
+Sparkle load. The Safari extension keeps its sandbox entitlements as they are, and
+[`scripts/verify-package.sh`](scripts/verify-package.sh) checks the result when the same variable is
+set.
+
+It hasn't been tried on a Mac yet, and CI never launches the packaged app, so it stays off until
+someone has: package with the variable set, install the DMG, open Ladle, download something, and
+check for updates. If all of that works, set `LADLE_HARDENED_RUNTIME: 1` in the `env` of the
+release job and the packaging dry run in `.github/workflows/`.
 
 ## Later: Developer ID and notarization
 

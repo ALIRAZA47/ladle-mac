@@ -85,6 +85,61 @@ final class CoordinatorTests: XCTestCase {
         await coordinator.prepareForQuit()
     }
 
+    func testFinishedDownloadsKeepNoCookies() async throws {
+        server.serve(URL(string: "https://a.org/private.zip")!, FakeFile(data: TestData.bytes(100_000)))
+        let coordinator = makeCoordinator()
+        await coordinator.start()
+        let plans = await coordinator.plan([DownloadRequest(url: URL(string: "https://a.org/private.zip")!, cookies: "session=s3cret", source: "Chrome")])
+        let id = await coordinator.add(plans, start: .now)[0]
+        try await waitUntil("completion") { await coordinator.item(id)?.status == .completed }
+        let finishedItem = await coordinator.item(id)
+        let finished = try XCTUnwrap(finishedItem)
+        XCTAssertNil(finished.cookies, "cookies are for the download, not the history")
+        XCTAssertEqual(finished.source, "Chrome")
+        let saved = JSONFileStore<DownloadsFile>(url: paths.downloads).load()
+        XCTAssertNil(saved?.items.first?.cookies)
+        await coordinator.prepareForQuit()
+        // An older list with cookies on finished downloads is scrubbed when it's loaded.
+        var stale = try XCTUnwrap(saved?.items.first)
+        stale.cookies = "session=s3cret"
+        try JSONFileStore<DownloadsFile>(url: paths.downloads).save(DownloadsFile(items: [stale]))
+        let again = makeCoordinator()
+        await again.start()
+        let reloaded = await again.item(id)
+        XCTAssertNil(reloaded?.cookies)
+        await again.prepareForQuit()
+    }
+
+    func testRepeatedInterruptionsStopADownload() async throws {
+        // Tonight-queue items don't start at noon, so the state at load can be read without a race.
+        var item = DownloadItem(url: URL(string: "https://a.org/crashy.m3u8")!, kind: .hls, fileName: "crashy.mp4", directory: folder.url.path, queue: .tonight, addedAt: clock.now())
+        item.status = .downloading
+        try JSONFileStore<DownloadsFile>(url: paths.downloads).save(DownloadsFile(items: [item]))
+        let first = makeCoordinator()
+        await first.start()
+        let onceItem = await first.item(item.id)
+        let once = try XCTUnwrap(onceItem)
+        XCTAssertEqual(once.status, .queued, "one unclean quit is forgiven")
+        XCTAssertEqual(once.launchInterruptions, 1)
+        await first.prepareForQuit()
+
+        item.launchInterruptions = DownloadCoordinator.maxLaunchInterruptions - 1
+        try JSONFileStore<DownloadsFile>(url: paths.downloads).save(DownloadsFile(items: [item]))
+        let third = makeCoordinator()
+        await third.start()
+        let stoppedItem = await third.item(item.id)
+        let stopped = try XCTUnwrap(stoppedItem)
+        XCTAssertEqual(stopped.status, .failed)
+        XCTAssertEqual(stopped.failure, DownloadFailure(.interrupted))
+        XCTAssertFalse(stopped.failure?.isRetryable ?? true, "it waits for the person")
+        await third.retry(item.id)
+        let retriedItem = await third.item(item.id)
+        let retried = try XCTUnwrap(retriedItem)
+        XCTAssertNil(retried.launchInterruptions, "Retry starts the count over")
+        XCTAssertNotEqual(retried.failure, DownloadFailure(.interrupted))
+        await third.prepareForQuit()
+    }
+
     func testRunsThreeAtATime() async throws {
         for n in 1...5 {
             server.serve(URL(string: "https://a.org/f\(n).zip")!, FakeFile(data: TestData.bytes(200_000), chunkSize: 8 * 1024, chunkDelay: 0.004))

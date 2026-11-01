@@ -53,17 +53,26 @@ on quit).
 
 **Browser hand-offs** take one of three roads to the same `receive(_:)`:
 
-1. Chrome, Arc, Edge, Brave, Firefox: the extension talks native messaging to `LadleBridge`
-   (host `me.alirazakhan.ladle`), which starts Ladle in the background if needed and forwards
-   each message over a local `CFMessagePort`. Replies and pushes ("Let the browser handle it",
-   new settings) go back the same way.
-2. Safari: `SafariWebExtensionHandler` answers the extension's `sendNativeMessage` and opens a
-   `ladle://add` link carrying Ladle's token, so Ladle trusts it like the other browsers.
-3. Anything else, or an extension that can't reach the helper: a plain `ladle://add` link.
-   Ladle always asks before downloading one of these.
+1. Chrome, Arc, Dia, Edge, Brave, Firefox: the extension talks native messaging to `LadleBridge`
+   (host `me.alirazakhan.ladle`), which starts Ladle in the background if needed and keeps one
+   connection to the app's Unix socket (`~/Library/Application Support/Ladle/bridge.sock`), sending
+   each message as a frame. Replies and pushes ("Let the browser handle it", new settings) come back
+   on the same connection. Before trusting anything, each side checks the other with the Security
+   framework (`Shared/PeerVerification.swift`): the app accepts the peer's hand-offs as a browser's
+   only if the process is the `LadleBridge` inside its own bundle, and the helper sends nothing to a
+   process that isn't the Ladle it belongs to. Any other process that connects is treated like a
+   web page: no cookies, and the catch panel always asks.
+2. Safari: `SafariWebExtensionHandler` answers the extension's `sendNativeMessage`, writes the
+   request into Ladle's inbox folder (`Inbox/<uuid>.json`, the one place its sandbox may write) and
+   opens `ladle://inbox?id=<uuid>` with Ladle itself, by path, so cookies never travel in a URL and
+   no other app that claims the `ladle:` scheme can receive them.
+3. Anything else, or an extension that can't reach the helper: a plain `ladle://add` link, which
+   Ladle never trusts: it always asks, and ignores the link's cookies, referrer, size and checksum.
 
-The app writes `browser-settings.json` (file types to catch, ask or not, folders, the token) to
-its data folder, so the helper and the Safari handler can answer `hello` without starting Ladle.
+The app writes `browser-settings.json` (file types to catch, ask or not, folders) to its data
+folder, so the helper and the Safari handler can answer `hello` without starting Ladle. The data
+folder and its files are this user's only (0700/0600); cookies a download needed are dropped from
+the list as soon as it finishes.
 
 ## Building on a Mac
 
@@ -83,8 +92,9 @@ things that come with that:
   **Safari › Settings › Advanced › Show features for web developers**, then
   **Develop › Allow Unsigned Extensions**, and enable Ladle in **Safari › Settings › Extensions**.
 - The hardened runtime is off, because its library validation refuses ad-hoc signed frameworks
-  such as Sparkle. Releases are ad-hoc signed the same way; only a Developer ID release turns it
-  on ([`RELEASING.md`](RELEASING.md)).
+  such as Sparkle. Releases are ad-hoc signed the same way for now; `LADLE_HARDENED_RUNTIME=1`
+  turns it on for a packaged ad-hoc build, with the library-validation exception, once that has
+  been tried on a Mac ([`RELEASING.md`](RELEASING.md)). A Developer ID release always uses it.
 
 To package Ladle exactly the way a release does (universal Release build, signed inside out,
 `Ladle.dmg`, `Ladle-Chrome-Extension.zip`, and `sparkle.json` when given a Sparkle key):

@@ -70,6 +70,39 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(back.isBatch)
     }
 
+    func testInboxHandOffs() throws {
+        let folder = TempFolder()
+        var request = BridgeRequest(type: "download", id: 7)
+        request.url = "https://a.org/x.zip"
+        request.cookies = "a=1"
+        request.browser = "Safari"
+        let id = try HandOffInbox.drop(request, in: folder.url)
+        let link = try XCTUnwrap(HandOffInbox.link(id: id))
+        XCTAssertEqual(LadleURL.inboxID(from: link), id)
+        XCTAssertNil(LadleURL.parse(link), "an inbox link isn't an add link")
+        XCTAssertNil(LadleURL.inboxID(from: URL(string: "ladle://inbox?id=../settings")!), "only a UUID names a file")
+        XCTAssertNil(LadleURL.inboxID(from: URL(string: "ladle://add?url=https%3A%2F%2Fa.org%2Fx")!))
+        XCTAssertEqual(HandOffInbox.take(id: id, from: folder.url), request)
+        XCTAssertNil(HandOffInbox.take(id: id, from: folder.url), "collected once")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.url.appendingPathComponent(id + ".json").path))
+        let stale = try HandOffInbox.drop(request, in: folder.url)
+        XCTAssertNil(HandOffInbox.take(id: stale, from: folder.url, now: Date().addingTimeInterval(HandOffInbox.maxAge + 1)), "too old to be the one just opened")
+        let forgotten = try HandOffInbox.drop(request, in: folder.url)
+        HandOffInbox.sweep(folder.url, now: Date().addingTimeInterval(HandOffInbox.maxAge + 1))
+        XCTAssertNil(HandOffInbox.take(id: forgotten, from: folder.url))
+    }
+
+    func testSizesFromBrowsersAreBounded() throws {
+        var request = BridgeRequest(type: "download", id: 1)
+        request.url = "https://a.org/x.zip"
+        request.size = Int64.max
+        XCTAssertNil(request.handOff(source: nil)?.size)
+        request.size = 1234
+        XCTAssertEqual(request.handOff(source: nil)?.size, 1234)
+        let link = URL(string: "ladle://add?url=https%3A%2F%2Fa.org%2Fx.zip&size=9223372036854775807")!
+        XCTAssertNil(try XCTUnwrap(LadleURL.parse(link)).size)
+    }
+
     func testSettingsSnapshotForTheExtension() throws {
         var settings = Settings()
         settings.alwaysDownloadTypes = ["dmg"]

@@ -6,6 +6,30 @@ the release and deploy workflows, the release scripts, and the website. Static r
 source; nothing was run on a Mac. Severity is relative to Ladle's own threat model (a non-sandboxed,
 ad-hoc-signed app that takes links from any web page and cookies from the browser).
 
+## Status of the fixes
+
+Every finding below has a fix on this branch. What each one changed, and what still needs a Mac:
+
+| # | Fix | Needs checking on a Mac |
+| --- | --- | --- |
+| 1 | `app-release.yml`: the tagged commit must be on `main`; the `release` job runs in a `release` environment (add required reviewers in Settings › Environments and keep the key as its secret); the third-party Xcode action is gone (`xcode-select` picks the newest stable Xcode); tools are set up before the checkout; `RELEASING.md` documents the environment, a `v*` tag ruleset and key rotation | Create the environment's reviewers and the tag ruleset in the repository settings |
+| 2 | `Limits.swift` bounds every size, offset, duration and segment count a playlist or server sends; `M3U8` refuses byte ranges that could overflow and treats absurd durations as unknown; `HLSJoin.estimatedSize` never converts an out-of-range Double; a download found running at three launches in a row is marked failed (`DownloadFailure.interrupted`) instead of started again | Swift tests cover it; `swift test --package-path app/LadleKit` runs on Linux in CI |
+| 3 | Cookies are dropped from a download as soon as it finishes, scrubbed from finished items in older lists at load, and `JSONFileStore` writes 0600 files in a 0700 folder | No |
+| 4 | `cookieHeader` in the extension drops `SameSite=Strict` cookies when the download's site differs from the page's (schemeful, registrable-domain match); every caller passes the page; unit tests added; Chromium tests pass | No |
+| 5 | `install.sh` downloads the release's `sparkle.json`, checks the DMG's size and verifies its Ed25519 signature against the pinned `SUPublicEDKey` with a Perl implementation of RFC 8032 (Perl ships with macOS; no other dependency); App CI's dry run installs with a throwaway key and checks that a tampered DMG is refused | CI's packaging dry run exercises it on macOS |
+| 6 | The CFMessagePort is replaced by a Unix socket (`bridge.sock`, 0600, in Ladle's data folder). The app verifies each connecting process against LadleBridge's designated requirement (`SecCodeCheckValidity`), and LadleBridge verifies the listener is the Ladle it belongs to before sending anything; an unverified peer's hand-offs are treated like a web page's | Yes: the browser hand-off path can only be tried in a real browser with a built app |
+| 7 | `PartFile` and the HLS segment writer open with `O_NOFOLLOW` and refuse anything but a regular file; `nameIsTaken` uses `lstat`, so a dangling symlink counts as taken | No |
+| 8 | `Content-Length` and `Content-Range` outside `0 … 1 PiB` are treated as unknown or invalid; `slotFractions` clamps the total; sizes from hand-offs are bounded | No |
+| 9 | The extension's `ladle://` fallback carries no cookies; Safari's handler writes the request into `~/Library/Application Support/Ladle/Inbox/<uuid>.json` (its sandbox's one writable place in Ladle's data) and opens `ladle://inbox?id=…` with Ladle itself by path, so neither cookies nor a secret pass through the scheme; the trust token is gone | Yes, with a Developer ID build, since Safari won't load the extension otherwise |
+| 10 | `receive` drops the checksum of an untrusted hand-off along with its cookies, referrer, source and size | No |
+| 11 | `FileNaming.sanitize` removes zero-width and bidirectional formatting characters | No |
+| 12 | `LADLE_HARDENED_RUNTIME=1` packages an ad-hoc build with the hardened runtime and the library-validation exception; off by default until tried on a Mac (`RELEASING.md`). The rest stays as documented: `NSAllowsArbitraryLoads` is needed for plain-http downloads, and sandboxing a download manager is out of scope | Yes: package with the variable, install, download, check for updates |
+
+The Swift changes were written without a Mac and have not been compiled here; `app-ci.yml` builds
+and tests them on macOS and Linux on push. Everything that could be run here was run: the extension's
+unit and Chromium tests, the release scripts' Python tests, `bash -n` on every shell script, and the
+Perl verifier against `sparkle_ed.py`'s signatures (valid, tampered, wrong key and short signature).
+
 The earlier pre-launch fixes (commit `b48f4e8`, `fe4c072`) hold up: untrusted `ladle://` links lose
 their cookies, referrer, source and size and always ask; cookies and referrer stay on the download's
 origin across redirects; file names can't escape their folder; the video button needs trusted

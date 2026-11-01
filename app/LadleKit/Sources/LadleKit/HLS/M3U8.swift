@@ -117,6 +117,10 @@ public enum HLSPlaylist: Equatable, Sendable {
 
 public enum M3U8Error: Error, Equatable {
     case notAPlaylist
+    /// A byte range that is negative, empty or beyond `Limits.maxFileSize`.
+    case invalidByteRange
+    /// More than `Limits.maxSegments` segments.
+    case tooManySegments
 }
 
 /// Parses HLS playlists (RFC 8216). Relative URIs resolve against `baseURL`.
@@ -131,7 +135,7 @@ public enum M3U8 {
         if lines.contains(where: { $0.hasPrefix("#EXT-X-STREAM-INF") }) {
             return .master(parseMaster(lines, baseURL: baseURL))
         }
-        return .media(parseMedia(lines, baseURL: baseURL))
+        return .media(try parseMedia(lines, baseURL: baseURL))
     }
 
     static func parseMaster(_ lines: [String], baseURL: URL) -> HLSMasterPlaylist {
@@ -185,7 +189,7 @@ public enum M3U8 {
         return HLSMasterPlaylist(variants: variants, renditions: renditions, isProtected: isProtected)
     }
 
-    static func parseMedia(_ lines: [String], baseURL: URL) -> HLSMediaPlaylist {
+    static func parseMedia(_ lines: [String], baseURL: URL) throws -> HLSMediaPlaylist {
         var segments: [HLSSegment] = []
         var targetDuration: Double?
         var map: HLSMap?
@@ -199,9 +203,10 @@ public enum M3U8 {
             if line.isEmpty { continue }
             if line.hasPrefix("#EXTINF:") {
                 let value = line.dropFirst("#EXTINF:".count).split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
-                pendingDuration = Double(value.trimmingCharacters(in: .whitespaces)) ?? 0
+                pendingDuration = duration(String(value))
             } else if line.hasPrefix("#EXT-X-TARGETDURATION:") {
-                targetDuration = Double(line.dropFirst("#EXT-X-TARGETDURATION:".count))
+                let value = duration(String(line.dropFirst("#EXT-X-TARGETDURATION:".count)))
+                targetDuration = value > 0 ? value : nil
             } else if line.hasPrefix("#EXT-X-ENDLIST") {
                 isComplete = true
             } else if line.hasPrefix("#EXT-X-PLAYLIST-TYPE:") {
@@ -215,7 +220,7 @@ public enum M3U8 {
                 if let uri = a["URI"].flatMap({ resolve($0, baseURL) }) {
                     var range: HLSByteRange?
                     if let spec = a["BYTERANGE"].flatMap(parseRangeSpec), let offset = spec.offset {
-                        range = HLSByteRange(length: spec.length, offset: offset)
+                        range = try byteRange(length: spec.length, offset: offset)
                     }
                     map = HLSMap(uri: uri, byteRange: range)
                 }
@@ -230,11 +235,12 @@ public enum M3U8 {
                     continue
                 }
                 if let spec = rangeSpec {
-                    let offset = spec.offset ?? lastRangeEnd[uri] ?? 0
-                    pendingRange = HLSByteRange(length: spec.length, offset: offset)
-                    lastRangeEnd[uri] = offset + spec.length
+                    let range = try byteRange(length: spec.length, offset: spec.offset ?? lastRangeEnd[uri] ?? 0)
+                    pendingRange = range
+                    lastRangeEnd[uri] = range.offset + range.length
                 }
                 segments.append(HLSSegment(uri: uri, duration: pendingDuration ?? 0, byteRange: pendingRange))
+                guard segments.count <= Limits.maxSegments else { throw M3U8Error.tooManySegments }
                 pendingDuration = nil
                 pendingRange = nil
                 rangeSpec = nil
@@ -243,12 +249,29 @@ public enum M3U8 {
         return HLSMediaPlaylist(segments: segments, targetDuration: targetDuration, map: map, isComplete: isComplete, isProtected: isProtected)
     }
 
-    /// `n[@o]`
+    /// A byte range whose end stays within `Limits.maxFileSize`, so no arithmetic on it can overflow.
+    static func byteRange(length: Int64, offset: Int64) throws -> HLSByteRange {
+        guard length > 0, offset >= 0, length <= Limits.maxFileSize, offset <= Limits.maxFileSize - length else {
+            throw M3U8Error.invalidByteRange
+        }
+        return HLSByteRange(length: length, offset: offset)
+    }
+
+    /// A duration from the playlist: finite, not negative and at most `Limits.maxDuration`.
+    /// Anything else ("inf", "1e300", "nan") counts as unknown, which is 0.
+    static func duration(_ text: String) -> Double {
+        guard let value = Double(text.trimmingCharacters(in: .whitespaces)), value.isFinite, value >= 0, value <= Limits.maxDuration else {
+            return 0
+        }
+        return value
+    }
+
+    /// `n[@o]`, with both numbers within `Limits.maxFileSize`.
     static func parseRangeSpec(_ text: String) -> (length: Int64, offset: Int64?)? {
         let parts = text.trimmingCharacters(in: .whitespaces).split(separator: "@")
-        guard let first = parts.first, let length = Int64(first), length > 0 else { return nil }
+        guard let first = parts.first, let length = Int64(first), length > 0, length <= Limits.maxFileSize else { return nil }
         if parts.count > 1 {
-            guard let offset = Int64(parts[1]) else { return nil }
+            guard let offset = Int64(parts[1]), offset >= 0, offset <= Limits.maxFileSize else { return nil }
             return (length, offset)
         }
         return (length, nil)
