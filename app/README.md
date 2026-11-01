@@ -166,9 +166,8 @@ downloads API, so there the content script takes clicks on links to watched file
   **Develop › Allow Unsigned Extensions**, which Safari turns off each time it quits). Settings ›
   Browsers says so and links to the docs. Chrome, Arc, Edge and Brave can load
   `Ladle-Chrome-Extension.zip` from the latest release in developer mode.
-- Not yet run for real: an update from one release to the next (Sparkle's checks are described
-  in [`RELEASING.md`](RELEASING.md)), and the Developer ID path, which only runs once its secrets
-  exist.
+- Not yet run for real: the Developer ID path, which only runs once its secrets exist. (The
+  update from one ad-hoc release to the next has been: 0.1.1 took 0.1.2 through Sparkle on a Mac.)
 - Ladle can't wake a sleeping Mac. The Tonight queue starts at 1:00 AM only if the Mac is awake;
   while something downloads, Ladle keeps the Mac from idling to sleep.
 - Live HLS streams aren't offered. A separate audio track is merged into the video for fMP4
