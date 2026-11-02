@@ -40,6 +40,8 @@ What it does
 
 Requires Ladle for macOS 14 Sonoma or later, free at https://ladle.alirazakhan.me — no account, no license key.
 
+Ladle and this extension are free software under the GNU GPL v3: the source code is at https://github.com/ALIRAZA47/ladle-mac, and anyone may use, change and share them, as long as what they share stays free too.
+
 Privacy
 
 The extension sends nothing to any server of ours and has no analytics. When it hands a download to Ladle, it passes the file’s link, the page you were on, the file’s name and the cookies that site needs directly to the Ladle app on your Mac, so Ladle can download exactly what your browser would have. It keeps no history. Full details: https://ladle.alirazakhan.me/privacy/
