@@ -2,6 +2,7 @@
   "name": "ladle-browser-extension",
   "version": "0.1.3",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "description": "Ladle's browser extension for Chrome, Arc, Edge, Brave, Firefox and Safari.",
   "scripts": {
     "build": "node build.mjs",

@@ -10,7 +10,10 @@ A free download manager for the Mac. It splits each file into several connection
 catches downloads from the browser, saves videos you're allowed to save, queues big
 files for the night, sorts everything into folders, and updates itself.
 
-- **Free.** No price, trial, license key, account, or checkout anywhere — app or site.
+- **Free.** No price, trial, license key, account, or checkout anywhere — app or site. Free software
+  under the GNU GPL v3 or later (`LICENSE`): anyone may use, change and share Ladle, and every
+  version they pass on must stay under the same license with its source, so nobody can sell a
+  closed version.
 - **Private.** No account, analytics, telemetry, or tracking. See [Privacy](#privacy).
 - **Native.** Swift + SwiftUI/AppKit, macOS 14 Sonoma or later, universal (Apple silicon + Intel).
 

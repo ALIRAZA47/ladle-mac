@@ -1,6 +1,7 @@
 {
   "name": "ladle-site",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "version": "1.0.0",
   "description": "Website and docs for Ladle, the download manager for Mac.",

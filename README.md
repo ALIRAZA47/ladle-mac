@@ -26,3 +26,11 @@ everything into folders, and updates itself.
 - To use Ladle: macOS 14 Sonoma or later, Apple silicon or Intel.
 - To build the app: Xcode 16 or later on macOS, plus [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 - To build the site: Node.js 22.23.4 or later (24 recommended).
+
+## License
+
+Ladle is free software, released under the GNU General Public License, version 3 or (at your
+option) any later version; see [`LICENSE`](LICENSE). You may use, study, change and share it. Any
+version you distribute, changed or not, must carry the same license and come with its source
+code, so Ladle and everything built from it stay free. The license covers the app, LadleKit,
+LadleBridge, the browser extensions, the install script and the website in this repository.
