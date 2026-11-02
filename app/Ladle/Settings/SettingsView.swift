@@ -719,6 +719,7 @@ private struct ScheduleSettings: View {
 
 private struct UpdateSettings: View {
     @ObservedObject var updates: UpdateController
+    @EnvironmentObject private var model: AppModel
     @Environment(\.palette) private var palette
 
     var body: some View {
@@ -733,10 +734,19 @@ private struct UpdateSettings: View {
             }
         }
         SettingsGroup {
-            SettingsRow("Ladle \(updates.currentVersion)", note: "Build \(updates.currentBuild)") {
-                Button("Check Now") { updates.checkForUpdates() }
-                    .buttonStyle(PillButtonStyle(kind: .glass, height: 32, fontSize: 12.5))
-                    .disabled(!updates.canCheckForUpdates)
+            if let ready = updates.readyVersion {
+                // Sparkle blocks new checks while an update waits to install, so say what's waiting
+                // instead of showing a greyed-out button.
+                SettingsRow("Ladle \(updates.currentVersion)", note: "Ladle \(ready) is downloaded and installs when Ladle restarts.") {
+                    Button("Restart to Update") { updates.restartToUpdate(downloading: model.downloadingCount) }
+                        .buttonStyle(PillButtonStyle(kind: .accent, height: 32, fontSize: 12.5))
+                }
+            } else {
+                SettingsRow("Ladle \(updates.currentVersion)", note: "Build \(updates.currentBuild)") {
+                    Button("Check Now") { updates.checkForUpdates() }
+                        .buttonStyle(PillButtonStyle(kind: .glass, height: 32, fontSize: 12.5))
+                        .disabled(!updates.canCheckForUpdates)
+                }
             }
             GroupDivider()
             SettingsRow("Last checked") {

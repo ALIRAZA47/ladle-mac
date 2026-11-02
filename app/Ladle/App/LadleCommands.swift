@@ -15,7 +15,7 @@ struct LadleCommands: Commands {
                 .keyboardShortcut(",", modifiers: .command)
         }
         CommandGroup(after: .appInfo) {
-            CheckForUpdatesButton(updates: updates)
+            CheckForUpdatesButton(updates: updates, model: model)
         }
         CommandGroup(replacing: .newItem) {
             Button("Add Downloads…") { model.openAddSheet() }
@@ -43,10 +43,17 @@ struct LadleCommands: Commands {
 
 private struct CheckForUpdatesButton: View {
     @ObservedObject var updates: UpdateController
+    @ObservedObject var model: AppModel
 
     var body: some View {
-        Button("Check for Updates…") { updates.checkForUpdates() }
-            .disabled(!updates.canCheckForUpdates)
+        if let ready = updates.readyVersion {
+            // Sparkle blocks new checks while an update waits to install; offer the restart instead
+            // of a greyed-out item, since the main window's banner may not be in view.
+            Button("Restart to Update to Ladle \(ready)") { updates.restartToUpdate(downloading: model.downloadingCount) }
+        } else {
+            Button("Check for Updates…") { updates.checkForUpdates() }
+                .disabled(!updates.canCheckForUpdates)
+        }
     }
 }
 
